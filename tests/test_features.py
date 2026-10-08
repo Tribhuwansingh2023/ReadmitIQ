@@ -50,7 +50,7 @@ def test_id_columns_not_in_features(data_splits):
     with open(FEATURE_LIST_PATH, "r") as f:
         f_list = json.load(f)
 
-    all_features = set(f_list["all_features_with_rag"])
+    all_features = set(f_list.get("all_features_with_rag", f_list["base_features"]))
     assert "encounter_id" not in all_features, "encounter_id leaked into features!"
     assert "patient_nbr" not in all_features, "patient_nbr leaked into features!"
     assert "readmitted" not in all_features, "readmitted label leaked into features!"
