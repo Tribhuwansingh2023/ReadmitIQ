@@ -1,19 +1,22 @@
 import re
 from pathlib import Path
 import faiss
+import joblib
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.model_selection import StratifiedGroupKFold
 
 from src.config import (
     MODELS_DIR,
+    PREPROCESSOR_BASE_PATH,
     PROCESSED_DATA_DIR,
+    RANDOM_SEED,
     TEST_PARQUET,
     TRAIN_PARQUET,
     VAL_PARQUET,
 )
-from src.notes import generate_single_clinical_note
-from src.rag import ClinicalRAGEngine
+from src.rag import StructuredRAGEngine
 
 
 @pytest.fixture(scope="module")
@@ -25,6 +28,8 @@ def rag_artifacts():
     meta_path = MODELS_DIR / "rag_train_meta.parquet"
 
     assert train_rag_path.exists(), "train_rag.parquet not found"
+    assert val_rag_path.exists(), "val_rag.parquet not found"
+    assert test_rag_path.exists(), "test_rag.parquet not found"
     assert index_path.exists(), "rag_faiss_train.index not found"
     assert meta_path.exists(), "rag_train_meta.parquet not found"
 
@@ -43,8 +48,8 @@ def rag_artifacts():
     }
 
 
-def test_notes_contain_no_label_leakage(rag_artifacts):
-    """Test that generated clinical notes contain zero hint of readmission labels or targets."""
+def test_notes_contain_no_label_leakage_full_corpus(rag_artifacts):
+    """Test that generated clinical notes contain zero hint of readmission labels across ALL rows."""
     train_df = rag_artifacts["train_df"]
     val_df = rag_artifacts["val_df"]
     test_df = rag_artifacts["test_df"]
@@ -60,82 +65,105 @@ def test_notes_contain_no_label_leakage(rag_artifacts):
     ]
 
     for name, df in [("train", train_df), ("val", val_df), ("test", test_df)]:
-        assert "clinical_note" in df.columns, f"Missing clinical_note column in {name}"
-        # Inspect notes across split
-        for note in df["clinical_note"].iloc[:500]:
+        assert "clinical_note" in df.columns, f"Missing clinical_note in {name}"
+        notes = df["clinical_note"].tolist()
+        for idx, note in enumerate(notes):
             for pat in forbidden_patterns:
-                assert not pat.search(note), f"Label leakage pattern '{pat.pattern}' found in {name} note:\n{note}"
+                assert not pat.search(note), (
+                    f"Label leakage '{pat.pattern}' found in {name} row {idx}: {note}"
+                )
 
 
-def test_faiss_index_contains_train_patients_only(rag_artifacts):
-    """Test that the FAISS index indexes ONLY train encounters and zero val/test patients."""
+def test_faiss_index_full_train_size_and_disjoint_patients(rag_artifacts):
+    """Test that the FAISS index indexes ALL 69,535 train encounters and zero val/test patients."""
     meta_df = rag_artifacts["meta_df"]
     val_df = rag_artifacts["val_df"]
     test_df = rag_artifacts["test_df"]
     index = rag_artifacts["index"]
 
     assert index.ntotal == len(meta_df), "Mismatch between FAISS total and metadata rows"
+    assert index.ntotal == 69535, f"Expected 69,535 full train rows, got {index.ntotal}"
 
     indexed_patients = set(meta_df["patient_nbr"])
     val_patients = set(val_df["patient_nbr"])
     test_patients = set(test_df["patient_nbr"])
 
-    # Strict isolation: 0 val or test patients may exist in FAISS index
     assert len(indexed_patients.intersection(val_patients)) == 0, "Val patients leaked into FAISS index!"
     assert len(indexed_patients.intersection(test_patients)) == 0, "Test patients leaked into FAISS index!"
 
 
-def test_retrieval_strictly_excludes_self_and_same_patient(rag_artifacts):
-    """Hard Rule 3 Test: Verify that a patient NEVER retrieves themselves or any encounter of the same patient."""
+def test_oof_folds_are_patient_disjoint():
+    """Verify that train OOF folds are strictly patient-disjoint."""
+    train_df = pd.read_parquet(TRAIN_PARQUET, columns=["patient_nbr", "readmitted_30d"])
+    sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
+
+    groups = train_df["patient_nbr"].values
+    y = train_df["readmitted_30d"].values
+
+    for fold, (train_idx, val_idx) in enumerate(sgkf.split(train_df, y, groups)):
+        train_pts = set(groups[train_idx])
+        val_pts = set(groups[val_idx])
+        overlap = train_pts.intersection(val_pts)
+        assert len(overlap) == 0, f"OOF fold {fold} has {len(overlap)} overlapping patients!"
+
+
+def test_retrieval_strictly_excludes_self_and_same_patient_all_splits(rag_artifacts):
+    """Verify that querying the FAISS index never retrieves any encounter of the same patient."""
     meta_df = rag_artifacts["meta_df"]
+    val_df = rag_artifacts["val_df"]
+    test_df = rag_artifacts["test_df"]
     index = rag_artifacts["index"]
 
-    engine = ClinicalRAGEngine(k_neighbors=20)
+    svd = joblib.load(MODELS_DIR / "structured_svd.joblib")
+    preprocessor = joblib.load(PREPROCESSOR_BASE_PATH)
+    base_features = preprocessor.transformers_[0][2] + preprocessor.transformers_[1][2]
+
+    engine = StructuredRAGEngine(n_components=64)
+    engine.svd = svd
     engine.index = index
-    engine.train_meta_df = meta_df
+    engine.train_pts = meta_df["patient_nbr"].values.astype(np.int64)
+    engine.train_encs = meta_df["encounter_id"].values.astype(np.int64)
+    engine.train_labels = meta_df["readmitted_30d"].values.astype(np.int32)
+    engine.train_stays = meta_df["time_in_hospital"].values.astype(np.float32)
 
-    # Load saved train embeddings
-    train_embs = np.load(PROCESSED_DATA_DIR / "embeddings_train.npy")
+    train_df = rag_artifacts["train_df"]
+    for name, df in [("train", train_df), ("val", val_df), ("test", test_df)]:
+        sub_sample = df.sample(min(50, len(df)), random_state=42)
+        X_trans = preprocessor.transform(sub_sample[base_features])
+        embs = engine.transform(X_trans)
 
-    # Sample 100 queries from train set
-    np.random.seed(42)
-    sample_indices = np.random.choice(len(meta_df), size=min(100, len(meta_df)), replace=False)
+        for i, (_, row) in enumerate(sub_sample.iterrows()):
+            q_pt = int(row["patient_nbr"])
+            q_enc = int(row["encounter_id"])
+            q_emb = embs[i]
 
-    for idx in sample_indices:
-        query_row = meta_df.iloc[idx]
-        query_emb = train_embs[idx]
-        query_pt = int(query_row["patient_nbr"])
-        query_enc = int(query_row["encounter_id"])
+            neighbors = engine.retrieve_similar_patients(
+                query_embedding=q_emb,
+                query_patient_nbr=q_pt,
+                k=20,
+                k_search=60,
+            )
 
-        neighbors = engine.retrieve_similar_patients(
-            query_embedding=query_emb,
-            query_patient_nbr=query_pt,
-            k=20,
-            k_search=50,
-        )
-
-        assert len(neighbors) == 20, f"Expected 20 neighbors, got {len(neighbors)}"
-
-        retrieved_patients = [n["patient_nbr"] for n in neighbors]
-        retrieved_encounters = [n["encounter_id"] for n in neighbors]
-
-        # PROOF: Patient never retrieves themselves
-        assert query_enc not in retrieved_encounters, f"Encounter {query_enc} retrieved itself!"
-        # PROOF: Patient never retrieves ANY encounter of the same patient
-        assert query_pt not in retrieved_patients, f"Patient {query_pt} retrieved an encounter of themselves!"
+            assert len(neighbors) == 20, f"Expected 20 neighbors for {name} row, got {len(neighbors)}"
+            for nbr in neighbors:
+                assert nbr["patient_nbr"] != q_pt, f"Retrieved encounter of same patient {q_pt} in {name}!"
+                assert nbr["encounter_id"] != q_enc, f"Retrieved identical encounter {q_enc} in {name}!"
 
 
-def test_rag_feature_bounds_and_validity(rag_artifacts):
-    """Test that rag_readmit_rate_k20 is a valid probability with no missing values."""
-    for name in ["train_df", "val_df", "test_df"]:
-        df = rag_artifacts[name]
-        assert "rag_readmit_rate_k20" in df.columns, f"Missing rag_readmit_rate_k20 in {name}"
-        col = df["rag_readmit_rate_k20"]
+def test_train_val_rate_distributions_same_k(rag_artifacts):
+    """Test that train and validation RAG features use the exact same k=20 denominator."""
+    train_df = rag_artifacts["train_df"]
+    val_df = rag_artifacts["val_df"]
 
-        assert col.isnull().sum() == 0, f"NaNs found in {name} rag_readmit_rate_k20"
-        assert (col >= 0.0).all(), f"Values below 0 in {name} rag_readmit_rate_k20"
-        assert (col <= 1.0).all(), f"Values above 1 in {name} rag_readmit_rate_k20"
+    col = "rag_struct_rate_k20"
+    assert col in train_df.columns, f"Missing {col} in train_df"
+    assert col in val_df.columns, f"Missing {col} in val_df"
 
-        # Mean rate should be close to empirical target rate (~11%)
-        mean_rate = col.mean()
-        assert 0.05 <= mean_rate <= 0.25, f"Unreasonable RAG mean rate in {name}: {mean_rate:.4f}"
+    # Distinct values must be multiples of 0.05 (1/20)
+    for name, df in [("train", train_df), ("val", val_df)]:
+        unique_vals = np.round(df[col].unique(), 4)
+        for v in unique_vals:
+            remainder = round(v * 20.0, 3) % 1.0
+            assert remainder < 1e-3 or remainder > 0.999, (
+                f"Non-k=20 fraction found in {name} {col}: {v}"
+            )
