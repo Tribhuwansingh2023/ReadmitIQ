@@ -1,0 +1,227 @@
+[
+  {
+    "encounter_id": 500364,
+    "risk_score": 0.0724,
+    "actual_outcome": 0,
+    "top_risk_increasing": [
+      {
+        "feature": "payer_code",
+        "value": "Missing",
+        "shap_value": 0.0718,
+        "explanation": "Payer code 'Missing' raises risk"
+      },
+      {
+        "feature": "diag_2_group",
+        "value": "diabetes",
+        "shap_value": 0.0686,
+        "explanation": "Secondary diagnosis category 'diabetes' raises risk"
+      },
+      {
+        "feature": "medical_specialty",
+        "value": "Missing",
+        "shap_value": 0.0585,
+        "explanation": "Admitting medical specialty 'Missing' raises risk"
+      }
+    ],
+    "top_risk_reducing": [
+      {
+        "feature": "discharge_disposition_group",
+        "value": "home",
+        "shap_value": -0.1998,
+        "explanation": "Routine discharge directly to home lowers risk"
+      },
+      {
+        "feature": "number_inpatient",
+        "value": 0,
+        "shap_value": -0.1848,
+        "explanation": "No prior inpatient hospitalizations in the past year lowers risk"
+      },
+      {
+        "feature": "total_prior_visits",
+        "value": 0,
+        "shap_value": -0.0837,
+        "explanation": "0 total prior healthcare visits in past year lowers risk"
+      }
+    ]
+  },
+  {
+    "encounter_id": 676416,
+    "risk_score": 0.1083,
+    "actual_outcome": 0,
+    "top_risk_increasing": [
+      {
+        "feature": "number_inpatient",
+        "value": 1,
+        "shap_value": 0.1279,
+        "explanation": "1 prior inpatient admission in the past year raises risk"
+      },
+      {
+        "feature": "insulin",
+        "value": "Down",
+        "shap_value": 0.0852,
+        "explanation": "Active insulin titration (Down) raises risk"
+      },
+      {
+        "feature": "medical_specialty",
+        "value": "Missing",
+        "shap_value": 0.078,
+        "explanation": "Admitting medical specialty 'Missing' raises risk"
+      }
+    ],
+    "top_risk_reducing": [
+      {
+        "feature": "meds_per_day",
+        "value": 1.1428571428571428,
+        "shap_value": -0.0743,
+        "explanation": "Meds per day of 1.14 lowers risk"
+      },
+      {
+        "feature": "discharge_disposition_group",
+        "value": "home_health",
+        "shap_value": -0.0718,
+        "explanation": "Discharge disposition 'home_health' lowers risk"
+      },
+      {
+        "feature": "diag_1_group",
+        "value": "injury",
+        "shap_value": -0.0468,
+        "explanation": "Primary diagnosis of injury lowers risk"
+      }
+    ]
+  },
+  {
+    "encounter_id": 3595830,
+    "risk_score": 0.0908,
+    "actual_outcome": 0,
+    "top_risk_increasing": [
+      {
+        "feature": "medical_specialty",
+        "value": "Family/GeneralPractice",
+        "shap_value": 0.0944,
+        "explanation": "Admitting medical specialty 'Family/GeneralPractice' raises risk"
+      },
+      {
+        "feature": "payer_code",
+        "value": "Missing",
+        "shap_value": 0.0503,
+        "explanation": "Payer code 'Missing' raises risk"
+      },
+      {
+        "feature": "number_diagnoses",
+        "value": 8,
+        "shap_value": 0.0412,
+        "explanation": "Diagnoses recorded '8' raises risk"
+      }
+    ],
+    "top_risk_reducing": [
+      {
+        "feature": "number_inpatient",
+        "value": 0,
+        "shap_value": -0.1214,
+        "explanation": "No prior inpatient hospitalizations in the past year lowers risk"
+      },
+      {
+        "feature": "total_prior_visits",
+        "value": 0,
+        "shap_value": -0.0699,
+        "explanation": "0 total prior healthcare visits in past year lowers risk"
+      },
+      {
+        "feature": "metformin",
+        "value": "Steady",
+        "shap_value": -0.0543,
+        "explanation": "Metformin therapy 'Steady' lowers risk"
+      }
+    ]
+  },
+  {
+    "encounter_id": 5197890,
+    "risk_score": 0.1083,
+    "actual_outcome": 0,
+    "top_risk_increasing": [
+      {
+        "feature": "discharge_disposition_group",
+        "value": "other_unknown",
+        "shap_value": 0.1676,
+        "explanation": "Discharge disposition 'other_unknown' raises risk"
+      },
+      {
+        "feature": "time_in_hospital",
+        "value": 8,
+        "shap_value": 0.0713,
+        "explanation": "8 days length of stay raises risk"
+      },
+      {
+        "feature": "payer_code",
+        "value": "Missing",
+        "shap_value": 0.0693,
+        "explanation": "Payer code 'Missing' raises risk"
+      }
+    ],
+    "top_risk_reducing": [
+      {
+        "feature": "number_inpatient",
+        "value": 0,
+        "shap_value": -0.129,
+        "explanation": "No prior inpatient hospitalizations in the past year lowers risk"
+      },
+      {
+        "feature": "total_prior_visits",
+        "value": 0,
+        "shap_value": -0.0733,
+        "explanation": "0 total prior healthcare visits in past year lowers risk"
+      },
+      {
+        "feature": "rag_struct_rate_k20",
+        "value": 0.0,
+        "shap_value": -0.0654,
+        "explanation": "Low readmission rate (0%) among top-20 similar historical patients lowers risk"
+      }
+    ]
+  },
+  {
+    "encounter_id": 9804906,
+    "risk_score": 0.0499,
+    "actual_outcome": 0,
+    "top_risk_increasing": [
+      {
+        "feature": "diag_1_group",
+        "value": "circulatory",
+        "shap_value": 0.0914,
+        "explanation": "Primary diagnosis of circulatory raises risk"
+      },
+      {
+        "feature": "payer_code",
+        "value": "Missing",
+        "shap_value": 0.05,
+        "explanation": "Payer code 'Missing' raises risk"
+      },
+      {
+        "feature": "num_medications",
+        "value": 23,
+        "shap_value": 0.033,
+        "explanation": "23 distinct medications prescribed raises risk"
+      }
+    ],
+    "top_risk_reducing": [
+      {
+        "feature": "medical_specialty",
+        "value": "Cardiology",
+        "shap_value": -0.2172,
+        "explanation": "Admitting medical specialty 'Cardiology' lowers risk"
+      },
+      {
+        "feature": "number_inpatient",
+        "value": 0,
+        "shap_value": -0.159,
+        "explanation": "No prior inpatient hospitalizations in the past year lowers risk"
+      },
+      {
+        "feature": "discharge_disposition_group",
+        "value": "home",
+        "shap_value": -0.1498,
+        "explanation": "Routine discharge directly to home lowers risk"
+      }
+    ]
+  }
+]
