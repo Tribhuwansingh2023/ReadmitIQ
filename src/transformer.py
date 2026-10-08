@@ -68,9 +68,11 @@ def train_distilbert_classifier(
     train_df = pd.read_parquet(train_parquet)
     val_df = pd.read_parquet(val_parquet)
 
-    # Stratified CPU subsample to ensure fast, responsive training
-    if device == "cpu" and sample_size_cpu and len(train_df) > sample_size_cpu:
-        print(f"CPU fallback: subsampling to {sample_size_cpu} train and {val_sample_size_cpu} val notes...", flush=True)
+    if device == "cpu":
+        print("WARNING: Running DistilBERT on CPU without GPU acceleration.", flush=True)
+        print("CPU runs are restricted to smoke testing only. For full benchmark results, run notebooks/colab_transformer_training.ipynb on Colab GPU.", flush=True)
+        if sample_size_cpu and len(train_df) > sample_size_cpu:
+            print(f"CPU smoke-test mode: capping to {sample_size_cpu} train notes...", flush=True)
         # Stratified sample
         pos_train = train_df[train_df["readmitted_30d"] == 1]
         neg_train = train_df[train_df["readmitted_30d"] == 0]

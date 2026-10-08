@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
 from sklearn.metrics import (
+    brier_score_loss,
     f1_score,
     precision_recall_curve,
     precision_score,
@@ -44,6 +45,67 @@ def compute_bootstrap_auc_ci(
     return round(lower, 4), round(upper, 4)
 
 
+def compute_paired_bootstrap_auc_diff(
+    y_true: np.ndarray,
+    y_prob_base: np.ndarray,
+    y_prob_rag: np.ndarray,
+    n_bootstraps: int = 1000,
+    alpha: float = 0.05,
+    seed: int = RANDOM_SEED,
+) -> Dict:
+    """Compute paired bootstrap difference (AUC_RAG - AUC_Base) and 95% CI."""
+    rng = np.random.RandomState(seed)
+    diffs = []
+    n_samples = len(y_true)
+
+    base_auc = roc_auc_score(y_true, y_prob_base)
+    rag_auc = roc_auc_score(y_true, y_prob_rag)
+    observed_diff = float(rag_auc - base_auc)
+
+    for _ in range(n_bootstraps):
+        indices = rng.randint(0, n_samples, n_samples)
+        if len(np.unique(y_true[indices])) < 2:
+            continue
+        auc_base_boot = roc_auc_score(y_true[indices], y_prob_base[indices])
+        auc_rag_boot = roc_auc_score(y_true[indices], y_prob_rag[indices])
+        diffs.append(auc_rag_boot - auc_base_boot)
+
+    if not diffs:
+        return {
+            "observed_diff": round(observed_diff, 4),
+            "ci_95": [round(observed_diff, 4), round(observed_diff, 4)],
+            "crosses_zero": True,
+        }
+
+    lower = float(np.percentile(diffs, 100 * (alpha / 2)))
+    upper = float(np.percentile(diffs, 100 * (1 - alpha / 2)))
+    crosses_zero = bool(lower <= 0 <= upper)
+
+    return {
+        "observed_diff": round(observed_diff, 4),
+        "ci_95": [round(lower, 4), round(upper, 4)],
+        "crosses_zero": crosses_zero,
+    }
+
+
+def compute_ece(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
+    """Compute Expected Calibration Error (ECE) across equal-width bins."""
+    bin_limits = np.linspace(0.0, 1.0, n_bins + 1)
+    ece = 0.0
+    n_total = len(y_true)
+
+    for i in range(n_bins):
+        low, high = bin_limits[i], bin_limits[i + 1]
+        mask = (y_prob >= low) & (y_prob <= high) if i == n_bins - 1 else (y_prob >= low) & (y_prob < high)
+        n_in_bin = np.sum(mask)
+        if n_in_bin > 0:
+            bin_acc = np.mean(y_true[mask])
+            bin_conf = np.mean(y_prob[mask])
+            ece += (n_in_bin / n_total) * np.abs(bin_acc - bin_conf)
+
+    return round(float(ece), 4)
+
+
 def compute_precision_at_k(
     y_true: np.ndarray,
     y_prob: np.ndarray,
@@ -75,7 +137,7 @@ def evaluate_predictions(
     top_k_ratio: float = 0.10,
     seed: int = RANDOM_SEED,
 ) -> Dict:
-    """Comprehensive evaluation computing AUC-ROC, 95% bootstrap CI, F1, Precision@top-10% and Lift."""
+    """Comprehensive evaluation computing AUC-ROC, 95% bootstrap CI, F1, Precision@top-10%, Lift, and Brier."""
     y_true_arr = np.asarray(y_true).astype(int)
     y_prob_arr = np.asarray(y_prob).astype(float)
 
@@ -87,6 +149,9 @@ def evaluate_predictions(
     prec_k, lift_k, recall_k = compute_precision_at_k(
         y_true_arr, y_prob_arr, top_k_ratio=top_k_ratio
     )
+
+    brier = float(brier_score_loss(y_true_arr, y_prob_arr))
+    ece = compute_ece(y_true_arr, y_prob_arr)
 
     # Threshold optimization for maximum F1
     precisions, recalls, thresholds = precision_recall_curve(y_true_arr, y_prob_arr)
@@ -115,4 +180,6 @@ def evaluate_predictions(
         "precision_top_10pct": prec_k,
         "lift_top_10pct": lift_k,
         "recall_top_10pct": recall_k,
+        "brier_score": round(brier, 4),
+        "ece": round(ece, 4),
     }

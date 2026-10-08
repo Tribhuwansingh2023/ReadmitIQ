@@ -1,114 +1,182 @@
-[
-  {
-    "auc_roc": 0.6715,
-    "auc_ci_95": [
-      0.6405,
-      0.7067
-    ],
-    "optimal_threshold": 0.6025,
-    "f1": 0.2904,
-    "precision": 0.2371,
-    "recall": 0.3746,
-    "precision_top_10pct": 0.2339,
-    "lift_top_10pct": 2.05,
-    "recall_top_10pct": 0.2049,
-    "model": "Logistic Regression",
-    "rag_feature": false
+{
+  "ablation_results": [
+    {
+      "auc_roc": 0.6619,
+      "auc_ci_95": [
+        0.6484,
+        0.6757
+      ],
+      "optimal_threshold": 0.5275,
+      "f1": 0.277,
+      "precision": 0.1914,
+      "recall": 0.5015,
+      "precision_top_10pct": 0.2376,
+      "lift_top_10pct": 2.09,
+      "recall_top_10pct": 0.2086,
+      "brier_score": 0.2291,
+      "ece": 0.3557,
+      "model": "Logistic Regression",
+      "rag_feature": false,
+      "paired_delta_auc": 0.0,
+      "paired_ci_95": [
+        0.0,
+        0.0
+      ],
+      "ci_crosses_zero": true
+    },
+    {
+      "auc_roc": 0.6632,
+      "auc_ci_95": [
+        0.6501,
+        0.6772
+      ],
+      "optimal_threshold": 0.5146,
+      "f1": 0.2766,
+      "precision": 0.1866,
+      "recall": 0.5345,
+      "precision_top_10pct": 0.243,
+      "lift_top_10pct": 2.13,
+      "recall_top_10pct": 0.2133,
+      "brier_score": 0.2287,
+      "ece": 0.3554,
+      "model": "Logistic Regression",
+      "rag_feature": true,
+      "paired_delta_auc": 0.0013,
+      "paired_ci_95": [
+        -0.0003,
+        0.003
+      ],
+      "ci_crosses_zero": true
+    },
+    {
+      "auc_roc": 0.6671,
+      "auc_ci_95": [
+        0.6547,
+        0.6804
+      ],
+      "optimal_threshold": 0.502,
+      "f1": 0.2795,
+      "precision": 0.1904,
+      "recall": 0.525,
+      "precision_top_10pct": 0.2403,
+      "lift_top_10pct": 2.11,
+      "recall_top_10pct": 0.211,
+      "brier_score": 0.2112,
+      "ece": 0.3348,
+      "model": "Random Forest",
+      "rag_feature": false,
+      "paired_delta_auc": 0.0,
+      "paired_ci_95": [
+        0.0,
+        0.0
+      ],
+      "ci_crosses_zero": true
+    },
+    {
+      "auc_roc": 0.6674,
+      "auc_ci_95": [
+        0.6548,
+        0.6806
+      ],
+      "optimal_threshold": 0.4948,
+      "f1": 0.2778,
+      "precision": 0.1877,
+      "recall": 0.5345,
+      "precision_top_10pct": 0.251,
+      "lift_top_10pct": 2.2,
+      "recall_top_10pct": 0.2204,
+      "brier_score": 0.2096,
+      "ece": 0.3325,
+      "model": "Random Forest",
+      "rag_feature": true,
+      "paired_delta_auc": 0.0003,
+      "paired_ci_95": [
+        -0.0022,
+        0.003
+      ],
+      "ci_crosses_zero": true
+    },
+    {
+      "auc_roc": 0.6722,
+      "auc_ci_95": [
+        0.6593,
+        0.6854
+      ],
+      "optimal_threshold": 0.5379,
+      "f1": 0.2819,
+      "precision": 0.197,
+      "recall": 0.495,
+      "precision_top_10pct": 0.2557,
+      "lift_top_10pct": 2.25,
+      "recall_top_10pct": 0.2245,
+      "brier_score": 0.2196,
+      "ece": 0.3425,
+      "model": "LightGBM",
+      "rag_feature": false,
+      "paired_delta_auc": 0.0,
+      "paired_ci_95": [
+        0.0,
+        0.0
+      ],
+      "ci_crosses_zero": true
+    },
+    {
+      "auc_roc": 0.6731,
+      "auc_ci_95": [
+        0.6602,
+        0.6863
+      ],
+      "optimal_threshold": 0.5097,
+      "f1": 0.2822,
+      "precision": 0.1866,
+      "recall": 0.5787,
+      "precision_top_10pct": 0.253,
+      "lift_top_10pct": 2.22,
+      "recall_top_10pct": 0.2222,
+      "brier_score": 0.2194,
+      "ece": 0.342,
+      "model": "LightGBM",
+      "rag_feature": true,
+      "paired_delta_auc": 0.0009,
+      "paired_ci_95": [
+        -0.0016,
+        0.0036
+      ],
+      "ci_crosses_zero": true
+    }
+  ],
+  "paired_bootstrap_differences": {
+    "Logistic Regression": {
+      "observed_diff": 0.0013,
+      "ci_95": [
+        -0.0003,
+        0.003
+      ],
+      "crosses_zero": true
+    },
+    "Random Forest": {
+      "observed_diff": 0.0003,
+      "ci_95": [
+        -0.0022,
+        0.003
+      ],
+      "crosses_zero": true
+    },
+    "LightGBM": {
+      "observed_diff": 0.0009,
+      "ci_95": [
+        -0.0016,
+        0.0036
+      ],
+      "crosses_zero": true
+    }
   },
-  {
-    "auc_roc": 0.6718,
-    "auc_ci_95": [
-      0.641,
-      0.7068
-    ],
-    "optimal_threshold": 0.5651,
-    "f1": 0.2902,
-    "precision": 0.2137,
-    "recall": 0.4523,
-    "precision_top_10pct": 0.2419,
-    "lift_top_10pct": 2.12,
-    "recall_top_10pct": 0.212,
-    "model": "Logistic Regression",
-    "rag_feature": true
-  },
-  {
-    "auc_roc": 0.68,
-    "auc_ci_95": [
-      0.6488,
-      0.7114
-    ],
-    "optimal_threshold": 0.492,
-    "f1": 0.2965,
-    "precision": 0.2064,
-    "recall": 0.5265,
-    "precision_top_10pct": 0.2137,
-    "lift_top_10pct": 1.88,
-    "recall_top_10pct": 0.1873,
-    "model": "Random Forest",
-    "rag_feature": false
-  },
-  {
-    "auc_roc": 0.6782,
-    "auc_ci_95": [
-      0.6456,
-      0.7095
-    ],
-    "optimal_threshold": 0.4904,
-    "f1": 0.2967,
-    "precision": 0.2083,
-    "recall": 0.5159,
-    "precision_top_10pct": 0.2137,
-    "lift_top_10pct": 1.88,
-    "recall_top_10pct": 0.1873,
-    "model": "Random Forest",
-    "rag_feature": true
-  },
-  {
-    "auc_roc": 0.6622,
-    "auc_ci_95": [
-      0.6274,
-      0.6979
-    ],
-    "optimal_threshold": 0.5284,
-    "f1": 0.2913,
-    "precision": 0.2165,
-    "recall": 0.4452,
-    "precision_top_10pct": 0.2298,
-    "lift_top_10pct": 2.02,
-    "recall_top_10pct": 0.2014,
-    "model": "LightGBM",
-    "rag_feature": false
-  },
-  {
-    "auc_roc": 0.6562,
-    "auc_ci_95": [
-      0.6214,
-      0.692
-    ],
-    "optimal_threshold": 0.5166,
-    "f1": 0.28,
-    "precision": 0.2042,
-    "recall": 0.4452,
-    "precision_top_10pct": 0.246,
-    "lift_top_10pct": 2.16,
-    "recall_top_10pct": 0.2155,
-    "model": "LightGBM",
-    "rag_feature": true
-  },
-  {
-    "auc_roc": 0.6771,
-    "auc_ci_95": [
-      0.5586,
-      0.7879
-    ],
-    "optimal_threshold": 0.4492,
-    "f1": 0.3385,
-    "precision": 0.2292,
-    "recall": 0.6471,
-    "precision_top_10pct": 0.1333,
-    "lift_top_10pct": 1.18,
-    "recall_top_10pct": 0.1176,
-    "model": "DistilBERT (Clinical Notes)",
-    "rag_feature": "N/A (Text Model)"
+  "calibration_report": {
+    "model": "LightGBM + Structured RAG",
+    "brier_uncalibrated": 0.2194,
+    "brier_calibrated": 0.0966,
+    "ece_uncalibrated": 0.342,
+    "ece_calibrated": 0.0024,
+    "auc_roc": 0.6724
   }
-]
+}
