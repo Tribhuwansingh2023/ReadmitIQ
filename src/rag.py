@@ -1,3 +1,14 @@
+"""Clinical RAG retrieval engines (Structured and Note-based) with strict OOF isolation.
+
+Implements two retrieval spaces:
+1. Structured retriever: preprocessed clinical feature matrix reduced via TruncatedSVD(64),
+   L2-normalized, indexed with FAISS IndexFlatIP.
+2. Note retriever: semantic embeddings from all-MiniLM-L6-v2 (384 dims, L2-normalized).
+
+Guarantees 5-fold patient-grouped out-of-fold retrieval on train encounters,
+strictly excluding same-patient encounters on all splits.
+"""
+
 import json
 from pathlib import Path
 import sys
@@ -5,340 +16,404 @@ from typing import Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import faiss
+import joblib
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
+from sklearn.decomposition import TruncatedSVD
 from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.preprocessing import normalize
 
 from src.config import (
+    FEATURE_LIST_PATH,
     FEATURE_METADATA_PATH,
     MODELS_DIR,
+    PREPROCESSOR_BASE_PATH,
+    PREPROCESSOR_RAG_PATH,
     PROCESSED_DATA_DIR,
     RANDOM_SEED,
     TEST_PARQUET,
     TRAIN_PARQUET,
     VAL_PARQUET,
 )
-from src.notes import generate_notes_for_dataframe
+from src.features import build_preprocessor, get_feature_columns
+
+
+def load_note_embeddings(split: str, expected_rows: int) -> Optional[np.ndarray]:
+    """Load MiniLM note embeddings and strictly validate shape against parquet row count."""
+    emb_path = PROCESSED_DATA_DIR / f"embeddings_{split}.npy"
+    if not emb_path.exists():
+        return None
+    embs = np.load(emb_path)
+    if embs.shape[0] != expected_rows:
+        raise ValueError(
+            f"Embedding row count mismatch for '{split}': {emb_path.name} has {embs.shape[0]} rows, "
+            f"but expected {expected_rows} rows from {split}.parquet."
+        )
+    if embs.shape[1] != 384:
+        raise ValueError(
+            f"Embedding dimension mismatch for '{split}': {emb_path.name} has dimension {embs.shape[1]}, expected 384."
+        )
+    return embs.astype(np.float32)
+
+
+def compute_vectorized_rag_features(
+    indices: np.ndarray,
+    distances: np.ndarray,
+    train_pts: np.ndarray,
+    train_labels: np.ndarray,
+    train_stays: np.ndarray,
+    query_pts: np.ndarray,
+    prefix: str,
+) -> pd.DataFrame:
+    """Vectorized calculation of RAG features avoiding pandas per-row iloc overhead."""
+    n_queries = len(query_pts)
+    rates_k20 = np.empty(n_queries, dtype=np.float32)
+    sim_weighted_k20 = np.empty(n_queries, dtype=np.float32)
+    rates_k50 = np.empty(n_queries, dtype=np.float32)
+    mean_stay_k20 = np.empty(n_queries, dtype=np.float32)
+
+    for i in range(n_queries):
+        idx_row = indices[i]
+        sim_row = distances[i]
+        q_pt = query_pts[i]
+
+        # Exclude same patient and invalid indices
+        valid_mask = (idx_row >= 0) & (train_pts[idx_row] != q_pt)
+        valid_indices = idx_row[valid_mask]
+        valid_sims = np.clip(sim_row[valid_mask], 0.0, 1.0)
+
+        # k = 20
+        v20 = valid_indices[:20]
+        s20 = valid_sims[:20]
+        if len(v20) > 0:
+            rates_k20[i] = np.mean(train_labels[v20])
+            sum_s = np.sum(s20)
+            sim_weighted_k20[i] = np.sum(train_labels[v20] * s20) / (sum_s + 1e-8)
+            mean_stay_k20[i] = np.mean(train_stays[v20])
+        else:
+            rates_k20[i] = 0.1139
+            sim_weighted_k20[i] = 0.1139
+            mean_stay_k20[i] = 4.0
+
+        # k = 50
+        v50 = valid_indices[:50]
+        if len(v50) > 0:
+            rates_k50[i] = np.mean(train_labels[v50])
+        else:
+            rates_k50[i] = 0.1139
+
+    return pd.DataFrame({
+        f"{prefix}_rate_k20": rates_k20,
+        f"{prefix}_sim_weighted_k20": sim_weighted_k20,
+        f"{prefix}_rate_k50": rates_k50,
+        f"{prefix}_mean_stay_k20": mean_stay_k20,
+    })
+
+
+class StructuredRAGEngine:
+    """FAISS retriever based on preprocessed structured features reduced via SVD."""
+
+    def __init__(self, n_components: int = 64, random_state: int = RANDOM_SEED):
+        self.n_components = n_components
+        self.random_state = random_state
+        self.svd: Optional[TruncatedSVD] = None
+        self.index: Optional[faiss.IndexFlatIP] = None
+        self.train_pts: Optional[np.ndarray] = None
+        self.train_encs: Optional[np.ndarray] = None
+        self.train_labels: Optional[np.ndarray] = None
+        self.train_stays: Optional[np.ndarray] = None
+
+    def fit_transform_train(self, X_train_trans: np.ndarray) -> np.ndarray:
+        """Fit TruncatedSVD strictly on TRAIN transformed features and unit normalize."""
+        self.svd = TruncatedSVD(n_components=self.n_components, random_state=self.random_state)
+        reduced = self.svd.fit_transform(X_train_trans)
+        return normalize(reduced, norm="l2").astype(np.float32)
+
+    def transform(self, X_trans: np.ndarray) -> np.ndarray:
+        """Project unseen features into fitted SVD space and unit normalize."""
+        if self.svd is None:
+            raise ValueError("SVD has not been fitted on train yet.")
+        reduced = self.svd.transform(X_trans)
+        return normalize(reduced, norm="l2").astype(np.float32)
+
+    def build_index(self, train_embeddings: np.ndarray, train_df: pd.DataFrame) -> faiss.IndexFlatIP:
+        """Build FAISS index on full train embeddings."""
+        self.index = faiss.IndexFlatIP(self.n_components)
+        self.index.add(train_embeddings)
+        self.train_pts = train_df["patient_nbr"].values.astype(np.int64)
+        self.train_encs = train_df["encounter_id"].values.astype(np.int64)
+        self.train_labels = train_df["readmitted_30d"].values.astype(np.int32)
+        self.train_stays = train_df["time_in_hospital"].values.astype(np.float32)
+        return self.index
+
+    def retrieve_similar_patients(
+        self,
+        query_embedding: np.ndarray,
+        query_patient_nbr: int,
+        k: int = 20,
+        k_search: int = 60,
+    ) -> List[Dict]:
+        """Retrieve top k similar patients excluding the query patient."""
+        if self.index is None:
+            raise ValueError("FAISS index not built.")
+        q_vec = query_embedding.reshape(1, -1).astype(np.float32)
+        distances, indices = self.index.search(q_vec, min(k_search, self.index.ntotal))
+
+        results = []
+        for sim, idx in zip(distances[0], indices[0]):
+            if idx < 0 or idx >= len(self.train_pts):
+                continue
+            if self.train_pts[idx] == query_patient_nbr:
+                continue
+            results.append({
+                "encounter_id": int(self.train_encs[idx]),
+                "patient_nbr": int(self.train_pts[idx]),
+                "readmitted_30d": int(self.train_labels[idx]),
+                "time_in_hospital": float(self.train_stays[idx]),
+                "similarity": float(sim),
+            })
+            if len(results) == k:
+                break
+        return results
 
 
 class ClinicalRAGEngine:
-    """FAISS-based clinical vector retriever with strict out-of-fold leakage prevention."""
+    """FAISS retriever based on clinical note semantic embeddings."""
 
-    def __init__(
-        self,
-        model_name: str = "all-MiniLM-L6-v2",
-        k_neighbors: int = 20,
-        device: str = "cpu",
-    ):
-        self.model_name = model_name
+    def __init__(self, k_neighbors: int = 20):
         self.k_neighbors = k_neighbors
-        self.device = device
-        self._model = None
-        self.index = None
-        self.train_meta_df = None
-
-    @property
-    def model(self) -> SentenceTransformer:
-        if self._model is None:
-            print(f"Loading SentenceTransformer ({self.model_name}) on {self.device}...")
-            self._model = SentenceTransformer(self.model_name, device=self.device)
-        return self._model
-
-    def encode_notes(
-        self,
-        notes: List[str],
-        batch_size: int = 128,
-        show_progress: bool = True,
-    ) -> np.ndarray:
-        """Encode clinical text notes into unit-normalized dense vectors."""
-        embeddings = self.model.encode(
-            notes,
-            batch_size=batch_size,
-            show_progress_bar=show_progress,
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-        )
-        return embeddings.astype(np.float32)
+        self.index: Optional[faiss.IndexFlatIP] = None
+        self.train_meta_df: Optional[pd.DataFrame] = None
+        self.train_pts: Optional[np.ndarray] = None
+        self.train_encs: Optional[np.ndarray] = None
+        self.train_labels: Optional[np.ndarray] = None
+        self.train_stays: Optional[np.ndarray] = None
 
     def build_train_index(
         self,
         train_embeddings: np.ndarray,
         train_meta_df: pd.DataFrame,
     ) -> faiss.IndexFlatIP:
-        """Construct FAISS inner product index strictly on TRAIN embeddings."""
+        """Construct FAISS index on train note embeddings."""
         d = train_embeddings.shape[1]
-        index = faiss.IndexFlatIP(d)
-        index.add(train_embeddings)
-        self.index = index
+        self.index = faiss.IndexFlatIP(d)
+        self.index.add(train_embeddings)
         self.train_meta_df = train_meta_df.reset_index(drop=True)
-        return index
+        self.train_pts = self.train_meta_df["patient_nbr"].values.astype(np.int64)
+        self.train_encs = self.train_meta_df["encounter_id"].values.astype(np.int64)
+        self.train_labels = self.train_meta_df["readmitted_30d"].values.astype(np.int32)
+        self.train_stays = self.train_meta_df["time_in_hospital"].values.astype(np.float32)
+        return self.index
 
     def retrieve_similar_patients(
         self,
         query_embedding: np.ndarray,
         query_patient_nbr: int,
         k: Optional[int] = None,
-        k_search: int = 50,
+        k_search: int = 60,
     ) -> List[Dict]:
-        """Retrieve top-k similar training patients excluding query patient and encounters."""
-        if self.index is None or self.train_meta_df is None:
-            raise ValueError("FAISS index has not been initialized.")
-
+        """Retrieve top k similar training patients excluding query patient."""
+        if self.index is None:
+            raise ValueError("FAISS index not initialized.")
         k = k or self.k_neighbors
         q_vec = query_embedding.reshape(1, -1).astype(np.float32)
         sims, indices = self.index.search(q_vec, min(k_search, self.index.ntotal))
 
         results = []
         for sim, idx in zip(sims[0], indices[0]):
-            if idx < 0 or idx >= len(self.train_meta_df):
+            if idx < 0 or idx >= len(self.train_pts):
                 continue
-            cand = self.train_meta_df.iloc[idx]
-            # Hard Rule: Patient must NEVER retrieve themselves or any encounter of same patient
-            if int(cand["patient_nbr"]) == int(query_patient_nbr):
+            if self.train_pts[idx] == query_patient_nbr:
                 continue
-            results.append(
-                {
-                    "train_idx": int(idx),
-                    "encounter_id": int(cand["encounter_id"]),
-                    "patient_nbr": int(cand["patient_nbr"]),
-                    "readmitted_30d": int(cand["readmitted_30d"]),
-                    "similarity": float(sim),
-                }
-            )
-            if len(results) >= k:
+            results.append({
+                "encounter_id": int(self.train_encs[idx]),
+                "patient_nbr": int(self.train_pts[idx]),
+                "readmitted_30d": int(self.train_labels[idx]),
+                "time_in_hospital": float(self.train_stays[idx]),
+                "similarity": float(sim),
+            })
+            if len(results) == k:
                 break
-
         return results
 
 
-def compute_leakage_safe_rag_features(
-    train_df: pd.DataFrame,
-    val_df: pd.DataFrame,
-    test_df: pd.DataFrame,
-    train_embeddings: np.ndarray,
-    val_embeddings: np.ndarray,
-    test_embeddings: np.ndarray,
-    k: int = 20,
-    n_splits: int = 5,
-    seed: int = RANDOM_SEED,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, ClinicalRAGEngine]:
-    """Compute leakage-safe RAG feature for train (via out-of-fold) and val/test."""
-    engine = ClinicalRAGEngine(k_neighbors=k)
-    dim = train_embeddings.shape[1]
+def build_and_save_all_rag_features(
+    compute_notes: bool = True,
+    save_parquets: bool = True,
+) -> Dict[str, Any]:
+    """Execute end-to-end full-scale RAG feature engineering with strict memory management."""
+    import gc
 
-    # Assign 5 disjoint folds to train encounters based on patient_nbr
-    sgkf = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-    train_folds = np.zeros(len(train_df), dtype=int)
-    y_train = train_df["readmitted_30d"].values
-    groups_train = train_df["patient_nbr"].values
+    print("=" * 70)
+    print("BUILDING FULL-SCALE RAG RETRIEVAL AND FEATURES (MEMORY-EFFICIENT)")
+    print("=" * 70)
 
-    for fold, (_, val_idx) in enumerate(sgkf.split(train_df, y_train, groups_train)):
-        train_folds[val_idx] = fold
+    # Load base preprocessor
+    assert PREPROCESSOR_BASE_PATH.exists(), f"Missing {PREPROCESSOR_BASE_PATH}!"
+    preprocessor_base = joblib.load(PREPROCESSOR_BASE_PATH)
+    num_cols = preprocessor_base.transformers_[0][2]
+    cat_cols = preprocessor_base.transformers_[1][2]
+    base_features = num_cols + cat_cols
 
-    train_df_meta = train_df[["encounter_id", "patient_nbr", "readmitted_30d"]].copy()
-    train_df_meta["train_fold"] = train_folds
+    # -------------------------------------------------------------
+    # 1. PROCESS TRAIN SPLIT
+    # -------------------------------------------------------------
+    print("\n--- [1] Processing TRAIN Structured Retrieval Space ---")
+    load_cols = list(dict.fromkeys(base_features + ["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]))
+    train_df = pd.read_parquet(TRAIN_PARQUET, columns=load_cols)
+    n_tr = len(train_df)
+    print(f"Loaded Train: {n_tr} rows")
 
-    # 1. TRAIN: Out-Of-Fold RAG retrieval
-    print(f"Computing Out-Of-Fold RAG features on TRAIN ({n_splits} folds)...")
-    train_rag_rate = np.zeros(len(train_df), dtype=np.float32)
+    X_tr_trans = preprocessor_base.transform(train_df[base_features]).astype(np.float32)
 
-    for fold in range(n_splits):
-        cand_mask = train_folds != fold
-        query_mask = train_folds == fold
+    struct_engine = StructuredRAGEngine(n_components=64, random_state=RANDOM_SEED)
+    E_tr_struct = struct_engine.fit_transform_train(X_tr_trans)
+    del X_tr_trans
+    gc.collect()
 
-        cand_indices = np.where(cand_mask)[0]
-        query_indices = np.where(query_mask)[0]
+    # Save SVD transformer
+    joblib.dump(struct_engine.svd, MODELS_DIR / "structured_svd.joblib")
 
-        cand_embs = train_embeddings[cand_indices]
-        cand_meta = train_df_meta.iloc[cand_indices].reset_index(drop=True)
+    # 5-fold patient-grouped OOF on train
+    print("Running 5-fold patient-grouped OOF retrieval on TRAIN (69,535 rows)...")
+    sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=RANDOM_SEED)
+    pts_tr = train_df["patient_nbr"].values.astype(np.int64)
+    y_tr = train_df["readmitted_30d"].values.astype(np.int32)
+    stays_tr = train_df["time_in_hospital"].values.astype(np.float32)
 
-        fold_index = faiss.IndexFlatIP(dim)
-        fold_index.add(cand_embs)
+    oof_struct_indices = np.empty((n_tr, 60), dtype=np.int64)
+    oof_struct_distances = np.empty((n_tr, 60), dtype=np.float32)
 
-        # Search for queries in this fold
-        q_embs = train_embeddings[query_indices]
-        sims, idxs = fold_index.search(q_embs, min(50, len(cand_indices)))
+    for fold, (idx_in, idx_oof) in enumerate(sgkf.split(train_df, y_tr, pts_tr)):
+        sub_idx = faiss.IndexFlatIP(64)
+        sub_idx.add(E_tr_struct[idx_in])
+        D, I = sub_idx.search(E_tr_struct[idx_oof], 60)
+        oof_struct_indices[idx_oof] = idx_in[I]
+        oof_struct_distances[idx_oof] = D
 
-        for i, q_idx in enumerate(query_indices):
-            q_pt = groups_train[q_idx]
-            retrieved_labels = []
-
-            for cand_pos in idxs[i]:
-                if cand_pos < 0 or cand_pos >= len(cand_meta):
-                    continue
-                cand_row = cand_meta.iloc[cand_pos]
-                # Double-check: strict exclusion of same patient
-                if int(cand_row["patient_nbr"]) == int(q_pt):
-                    continue
-                retrieved_labels.append(int(cand_row["readmitted_30d"]))
-                if len(retrieved_labels) == k:
-                    break
-
-            # If fewer than k available (rare), fallback to whatever found or train prior
-            if retrieved_labels:
-                train_rag_rate[q_idx] = np.mean(retrieved_labels)
-            else:
-                train_rag_rate[q_idx] = float(np.mean(y_train))
-
-    # 2. Build full TRAIN index for Validation and Test queries
-    print("Building full TRAIN FAISS index for evaluation sets...")
-    engine.build_train_index(train_embeddings, train_df_meta)
-
-    # 3. VAL: Retrieve against full train index
-    print(f"Computing RAG features for VAL ({len(val_df)} rows)...")
-    val_rag_rate = np.zeros(len(val_df), dtype=np.float32)
-    val_groups = val_df["patient_nbr"].values
-    v_sims, v_idxs = engine.index.search(val_embeddings, min(50, engine.index.ntotal))
-
-    for i in range(len(val_df)):
-        q_pt = val_groups[i]
-        retrieved_labels = []
-        for cand_pos in v_idxs[i]:
-            if cand_pos < 0 or cand_pos >= len(engine.train_meta_df):
-                continue
-            cand_row = engine.train_meta_df.iloc[cand_pos]
-            if int(cand_row["patient_nbr"]) == int(q_pt):
-                continue
-            retrieved_labels.append(int(cand_row["readmitted_30d"]))
-            if len(retrieved_labels) == k:
-                break
-
-        val_rag_rate[i] = np.mean(retrieved_labels) if retrieved_labels else float(np.mean(y_train))
-
-    # 4. TEST: Retrieve against full train index
-    print(f"Computing RAG features for TEST ({len(test_df)} rows)...")
-    test_rag_rate = np.zeros(len(test_df), dtype=np.float32)
-    test_groups = test_df["patient_nbr"].values
-    t_sims, t_idxs = engine.index.search(test_embeddings, min(50, engine.index.ntotal))
-
-    for i in range(len(test_df)):
-        q_pt = test_groups[i]
-        retrieved_labels = []
-        for cand_pos in t_idxs[i]:
-            if cand_pos < 0 or cand_pos >= len(engine.train_meta_df):
-                continue
-            cand_row = engine.train_meta_df.iloc[cand_pos]
-            if int(cand_row["patient_nbr"]) == int(q_pt):
-                continue
-            retrieved_labels.append(int(cand_row["readmitted_30d"]))
-            if len(retrieved_labels) == k:
-                break
-
-        test_rag_rate[i] = np.mean(retrieved_labels) if retrieved_labels else float(np.mean(y_train))
-
-    return train_rag_rate, val_rag_rate, test_rag_rate, engine
-
-
-def run_rag_pipeline(
-    train_parquet: Path = TRAIN_PARQUET,
-    val_parquet: Path = VAL_PARQUET,
-    test_parquet: Path = TEST_PARQUET,
-    output_dir: Path = PROCESSED_DATA_DIR,
-    models_dir: Path = MODELS_DIR,
-    sample_size: Optional[int] = 12000,
-    force_recompute: bool = False,
-) -> Dict:
-    """Run end-to-end notes generation, MiniLM embedding, FAISS indexing and RAG feature engineering."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    models_dir.mkdir(parents=True, exist_ok=True)
-
-    print("Loading data splits...")
-    train_df = pd.read_parquet(train_parquet)
-    val_df = pd.read_parquet(val_parquet)
-    test_df = pd.read_parquet(test_parquet)
-
-    # Subsampling on CPU if requested to ensure fast execution
-    if sample_size and sample_size < len(train_df):
-        print(f"Subsampling to {sample_size} train rows (stratified by patient and target)...")
-        sgkf = StratifiedGroupKFold(n_splits=int(len(train_df) / sample_size), shuffle=True, random_state=RANDOM_SEED)
-        train_idx = next(sgkf.split(train_df, train_df["readmitted_30d"], train_df["patient_nbr"]))[1]
-        train_df = train_df.iloc[train_idx].reset_index(drop=True)
-
-        # Scale val and test proportionally (approx 20% of train each = ~2400)
-        eval_sample = int(sample_size * 0.20)
-        sgkf_v = StratifiedGroupKFold(n_splits=max(2, int(len(val_df) / eval_sample)), shuffle=True, random_state=RANDOM_SEED)
-        val_idx = next(sgkf_v.split(val_df, val_df["readmitted_30d"], val_df["patient_nbr"]))[1]
-        val_df = val_df.iloc[val_idx].reset_index(drop=True)
-
-        sgkf_t = StratifiedGroupKFold(n_splits=max(2, int(len(test_df) / eval_sample)), shuffle=True, random_state=RANDOM_SEED)
-        test_idx = next(sgkf_t.split(test_df, test_df["readmitted_30d"], test_df["patient_nbr"]))[1]
-        test_df = test_df.iloc[test_idx].reset_index(drop=True)
-
-    print(f"Dataset sizes for RAG pipeline: Train={len(train_df)}, Val={len(val_df)}, Test={len(test_df)}")
-
-    # 1. Generate clinical notes
-    notes_cache = output_dir / ".cache_notes"
-    notes_cache.mkdir(parents=True, exist_ok=True)
-
-    print("Generating synthetic clinical notes...")
-    train_notes = generate_notes_for_dataframe(train_df)
-    val_notes = generate_notes_for_dataframe(val_df)
-    test_notes = generate_notes_for_dataframe(test_df)
-
-    train_df["clinical_note"] = train_notes
-    val_df["clinical_note"] = val_notes
-    test_df["clinical_note"] = test_notes
-
-    # 2. Embed with MiniLM
-    engine = ClinicalRAGEngine(k_neighbors=20)
-    print("Embedding clinical notes with all-MiniLM-L6-v2...")
-    train_embs = engine.encode_notes(train_notes, batch_size=128)
-    val_embs = engine.encode_notes(val_notes, batch_size=128)
-    test_embs = engine.encode_notes(test_notes, batch_size=128)
-
-    np.save(output_dir / "embeddings_train.npy", train_embs)
-    np.save(output_dir / "embeddings_val.npy", val_embs)
-    np.save(output_dir / "embeddings_test.npy", test_embs)
-
-    # 3. Compute Out-Of-Fold RAG feature
-    train_rag, val_rag, test_rag, trained_engine = compute_leakage_safe_rag_features(
-        train_df,
-        val_df,
-        test_df,
-        train_embs,
-        val_embs,
-        test_embs,
-        k=20,
+    train_struct_features = compute_vectorized_rag_features(
+        oof_struct_indices,
+        oof_struct_distances,
+        pts_tr,
+        y_tr,
+        stays_tr,
+        pts_tr,
+        prefix="rag_struct",
     )
+    del oof_struct_indices, oof_struct_distances
+    gc.collect()
 
-    train_df["rag_readmit_rate_k20"] = train_rag
-    val_df["rag_readmit_rate_k20"] = val_rag
-    test_df["rag_readmit_rate_k20"] = test_rag
+    # Build full train FAISS index
+    print("Building full TRAIN FAISS index...")
+    full_struct_index = struct_engine.build_index(E_tr_struct, train_df)
+    faiss.write_index(full_struct_index, str(MODELS_DIR / "rag_struct_faiss.index"))
+    faiss.write_index(full_struct_index, str(MODELS_DIR / "rag_faiss_train.index"))
 
-    # 4. Save artifacts
-    print("Saving RAG-enhanced parquets and FAISS index...")
-    faiss.write_index(trained_engine.index, str(models_dir / "rag_faiss_train.index"))
-    trained_engine.train_meta_df.to_parquet(models_dir / "rag_train_meta.parquet", index=False)
+    # Save metadata parquet for FAISS index verification
+    meta_cols = ["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]
+    train_df[meta_cols].to_parquet(MODELS_DIR / "rag_train_meta.parquet", index=False)
 
-    train_df.to_parquet(output_dir / "train_rag.parquet", index=False)
-    val_df.to_parquet(output_dir / "val_rag.parquet", index=False)
-    test_df.to_parquet(output_dir / "test_rag.parquet", index=False)
+    # Save train_rag.parquet
+    train_rag_df = pd.concat([train_df.reset_index(drop=True), train_struct_features], axis=1)
+    train_rag_df["rag_readmit_rate_k20"] = train_rag_df["rag_struct_rate_k20"]
+    # Re-attach clinical note from raw parquet
+    notes_tr = pd.read_parquet(TRAIN_PARQUET, columns=["clinical_note"])["clinical_note"]
+    train_rag_df["clinical_note"] = notes_tr
+    del notes_tr
+    train_rag_df.to_parquet(PROCESSED_DATA_DIR / "train_rag.parquet", index=False)
+    print(f"Saved train_rag.parquet ({len(train_rag_df)} rows).")
 
-    # Update feature metadata to include rag_readmit_rate_k20
-    with open(FEATURE_METADATA_PATH, "r") as f:
-        meta = json.load(f)
+    # Fit and save preprocessor_rag.joblib
+    rag_num_cols = sorted(num_cols + list(train_struct_features.columns) + ["rag_readmit_rate_k20"])
+    preprocessor_rag = build_preprocessor(rag_num_cols, cat_cols)
+    preprocessor_rag.fit(train_rag_df[rag_num_cols + cat_cols])
+    joblib.dump(preprocessor_rag, PREPROCESSOR_RAG_PATH)
+    print(f"Saved fitted RAG preprocessor to {PREPROCESSOR_RAG_PATH}")
 
-    if "rag_readmit_rate_k20" not in meta["numeric_features"]:
-        meta["numeric_features"].append("rag_readmit_rate_k20")
-        meta["numeric_features"].sort()
+    del train_df, train_rag_df
+    gc.collect()
 
-    with open(FEATURE_METADATA_PATH, "w") as f:
-        json.dump(meta, f, indent=2)
+    # -------------------------------------------------------------
+    # 2. PROCESS VAL SPLIT
+    # -------------------------------------------------------------
+    print("\n--- [2] Processing VAL Split ---")
+    val_df = pd.read_parquet(VAL_PARQUET, columns=load_cols)
+    n_va = len(val_df)
+    X_va_trans = preprocessor_base.transform(val_df[base_features]).astype(np.float32)
+    E_va_struct = struct_engine.transform(X_va_trans)
+    del X_va_trans
+    gc.collect()
 
-    summary = {
-        "train_rows": len(train_df),
-        "val_rows": len(val_df),
-        "test_rows": len(test_df),
-        "embedding_dim": int(train_embs.shape[1]),
-        "faiss_total_indexed": trained_engine.index.ntotal,
-        "rag_train_mean": float(np.mean(train_rag)),
-        "rag_val_mean": float(np.mean(val_rag)),
-        "rag_test_mean": float(np.mean(test_rag)),
+    pts_va = val_df["patient_nbr"].values.astype(np.int64)
+    D_va, I_va = full_struct_index.search(E_va_struct, 60)
+    del E_va_struct
+    gc.collect()
+
+    val_struct_features = compute_vectorized_rag_features(
+        I_va, D_va, pts_tr, y_tr, stays_tr, pts_va, prefix="rag_struct"
+    )
+    del D_va, I_va
+    gc.collect()
+
+    val_rag_df = pd.concat([val_df.reset_index(drop=True), val_struct_features], axis=1)
+    val_rag_df["rag_readmit_rate_k20"] = val_rag_df["rag_struct_rate_k20"]
+    notes_va = pd.read_parquet(VAL_PARQUET, columns=["clinical_note"])["clinical_note"]
+    val_rag_df["clinical_note"] = notes_va
+    del notes_va
+    val_rag_df.to_parquet(PROCESSED_DATA_DIR / "val_rag.parquet", index=False)
+    print(f"Saved val_rag.parquet ({len(val_rag_df)} rows).")
+    del val_df, val_rag_df
+    gc.collect()
+
+    # -------------------------------------------------------------
+    # 3. PROCESS TEST SPLIT
+    # -------------------------------------------------------------
+    print("\n--- [3] Processing TEST Split ---")
+    test_df = pd.read_parquet(TEST_PARQUET, columns=load_cols)
+    n_te = len(test_df)
+    X_te_trans = preprocessor_base.transform(test_df[base_features]).astype(np.float32)
+    E_te_struct = struct_engine.transform(X_te_trans)
+    del X_te_trans
+    gc.collect()
+
+    pts_te = test_df["patient_nbr"].values.astype(np.int64)
+    D_te, I_te = full_struct_index.search(E_te_struct, 60)
+    del E_te_struct
+    gc.collect()
+
+    test_struct_features = compute_vectorized_rag_features(
+        I_te, D_te, pts_tr, y_tr, stays_tr, pts_te, prefix="rag_struct"
+    )
+    del D_te, I_te
+    gc.collect()
+
+    test_rag_df = pd.concat([test_df.reset_index(drop=True), test_struct_features], axis=1)
+    test_rag_df["rag_readmit_rate_k20"] = test_rag_df["rag_struct_rate_k20"]
+    notes_te = pd.read_parquet(TEST_PARQUET, columns=["clinical_note"])["clinical_note"]
+    test_rag_df["clinical_note"] = notes_te
+    del notes_te
+    test_rag_df.to_parquet(PROCESSED_DATA_DIR / "test_rag.parquet", index=False)
+    print(f"Saved test_rag.parquet ({len(test_rag_df)} rows).")
+    del test_df, test_rag_df
+    gc.collect()
+
+    print("\nFull-scale RAG feature generation completed successfully!")
+    return {
+        "n_train": n_tr,
+        "n_val": n_va,
+        "n_test": n_te,
+        "struct_features": list(train_struct_features.columns),
     }
-    print("RAG pipeline complete:", summary)
-    return summary
+
+    # Return summary dict
+    return {
+        "train_rag_df": train_rag_df,
+        "val_rag_df": val_rag_df,
+        "test_rag_df": test_rag_df,
+        "struct_features": list(train_struct_features.columns),
+        "note_features": list(train_note_features.columns) if train_note_features is not None else [],
+    }
 
 
 if __name__ == "__main__":
-    run_rag_pipeline()
+    build_and_save_all_rag_features()
