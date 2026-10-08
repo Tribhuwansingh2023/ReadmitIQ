@@ -1,0 +1,16 @@
+{
+  "model": "Baseline Logistic Regression (Balanced)",
+  "eval_split": "validation",
+  "auc_roc": 0.6633,
+  "threshold_0.5": {
+    "f1": 0.2711,
+    "precision": 0.1778,
+    "recall": 0.5704
+  },
+  "optimal_threshold": {
+    "threshold": 0.5193,
+    "f1": 0.2769,
+    "precision": 0.1876,
+    "recall": 0.5286
+  }
+}

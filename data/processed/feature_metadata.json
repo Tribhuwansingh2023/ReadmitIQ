@@ -1,0 +1,93 @@
+{
+  "num_total_records": 99340,
+  "splits": {
+    "train": {
+      "rows": 69535,
+      "unique_patients": 48988,
+      "positive_count": 7919,
+      "positive_rate": 0.11388509383763572
+    },
+    "val": {
+      "rows": 14902,
+      "unique_patients": 10520,
+      "positive_count": 1697,
+      "positive_rate": 0.11387733190175815
+    },
+    "test": {
+      "rows": 14903,
+      "unique_patients": 10479,
+      "positive_count": 1698,
+      "positive_rate": 0.11393679125008388
+    }
+  },
+  "numeric_features": [
+    "a1c_tested",
+    "age_num",
+    "labs_per_day",
+    "meds_per_day",
+    "n_active_drugs",
+    "n_dose_changes",
+    "num_lab_procedures",
+    "num_medications",
+    "num_procedures",
+    "number_diagnoses",
+    "number_emergency",
+    "number_inpatient",
+    "number_outpatient",
+    "polypharmacy",
+    "rag_readmit_rate_k20",
+    "time_in_hospital",
+    "total_prior_visits"
+  ],
+  "categorical_features": [
+    "A1Cresult",
+    "acarbose",
+    "admission_source_group",
+    "admission_type_group",
+    "change",
+    "diabetesMed",
+    "diag_1_group",
+    "diag_2_group",
+    "diag_3_group",
+    "discharge_disposition_group",
+    "gender",
+    "glimepiride",
+    "glipizide",
+    "glyburide",
+    "glyburide-metformin",
+    "insulin",
+    "max_glu_serum",
+    "medical_specialty",
+    "metformin",
+    "nateglinide",
+    "payer_code",
+    "pioglitazone",
+    "race",
+    "repaglinide",
+    "rosiglitazone"
+  ],
+  "retained_drugs": [
+    "metformin",
+    "repaglinide",
+    "nateglinide",
+    "glimepiride",
+    "glipizide",
+    "glyburide",
+    "pioglitazone",
+    "rosiglitazone",
+    "acarbose",
+    "insulin",
+    "glyburide-metformin"
+  ],
+  "capping_thresholds_99th": {
+    "number_outpatient": 5.0,
+    "number_emergency": 3.0,
+    "number_inpatient": 6.0,
+    "total_prior_visits": 11.0,
+    "num_lab_procedures": 84.0,
+    "num_medications": 43.0,
+    "number_diagnoses": 9.0,
+    "meds_per_day": 20.0,
+    "labs_per_day": 58.0
+  }
+}
