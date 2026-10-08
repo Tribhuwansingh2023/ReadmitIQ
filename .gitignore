@@ -31,6 +31,10 @@ diabetic_data.csv
 models/*.joblib
 models/*.pt
 models/*.index
+models/final/*.joblib
+models/final/*.pt
+models/final/*.index
+models/final/*.parquet
 models/transformer/
 models/faiss_index/
 

@@ -10,4 +10,6 @@ Running log of automated remediation, model freeze, evaluation, API, and web dev
 | 2026-10-08 22:24 | Block 4: Transformer Colab & Import | DONE | Colab notebook configured for fp16 GPU on >=25,000 train notes, full validation. transformer_import.py written. | Kept DistilBERT pending Colab execution to respect CPU overnight limits. Added CPU smoke-test guard to src/transformer.py. App and pipeline decoupled from transformer. |
 | 2026-10-08 22:24 | Block 5: Notebook 01 Corrections | DONE | All static literals replaced with dynamic variables. Assertion cell added. Top-to-bottom re-execution passed with 0 errors. HTML exported. | Transformed columns strictly <150 (141). Re-executed via nbconvert and verified all 64 cells. |
 | 2026-10-08 22:24 | Block 6: Repo Hygiene | DONE | Pinned requirements.txt with httpx, matplotlib, seaborn, etc. 12/12 pytest passing. | Working tree clean, zero leakage, no orphaned files. Ready for Model Freeze. |
+| 2026-10-08 22:25 | Stage 1: Model Freeze | DONE | Winning model: LightGBM + Structured RAG (Val AUC: 0.6731, Calibrated Brier: 0.0966, ECE: 0.0024). F1 threshold: 0.1495. Top-5%: 0.2472, Top-10%: 0.1940, Top-20%: 0.1551. | Frozen selection saved to models/FROZEN_SELECTION.json. Final model, preprocessor, calibrator, FAISS index and metadata saved to models/final/. Tuning is strictly locked. |
+
 

@@ -1,0 +1,52 @@
+{
+  "frozen_timestamp": "2026-10-08T22:24:20.136718+00:00",
+  "git_commit_hash": "efa44003ae6ea2bc4243532def61ef50cf13630b",
+  "model_name": "LightGBM + Structured RAG",
+  "model_family": "LightGBMClassifier",
+  "feature_set": "rag_features",
+  "num_features": 42,
+  "primary_rag_feature": "rag_struct_rate_k20",
+  "hyperparameters": {
+    "n_estimators": 150,
+    "max_depth": 4,
+    "learning_rate": 0.05,
+    "scale_pos_weight": 7.7,
+    "random_state": 42
+  },
+  "retriever": {
+    "type": "StructuredRAGEngine",
+    "index_type": "IndexFlatIP",
+    "projection": "TruncatedSVD (64 components)",
+    "normalization": "L2",
+    "similarity_metric": "Cosine Similarity (Inner Product)",
+    "k_neighbors": 20,
+    "k_search": 50,
+    "train_encounters_indexed": 69535
+  },
+  "calibrator": {
+    "method": "IsotonicRegression",
+    "fit_split": "TRAIN_5_FOLD_OOF",
+    "out_of_bounds": "clip",
+    "val_brier_score": 0.0966,
+    "val_ece": 0.0024
+  },
+  "thresholds": {
+    "optimal_f1_decision_threshold": 0.1495,
+    "capacity_top_5pct_threshold": 0.2472,
+    "capacity_top_10pct_threshold": 0.194,
+    "capacity_top_20pct_threshold": 0.1551
+  },
+  "validation_performance": {
+    "auc_roc": 0.6731,
+    "auc_ci_95": [
+      0.6602,
+      0.6863
+    ],
+    "precision_top_10pct": 0.253,
+    "lift_top_10pct": 2.22,
+    "f1": 0.2822
+  },
+  "random_seed": 42,
+  "status": "FROZEN",
+  "tuning_prohibited": true
+}
