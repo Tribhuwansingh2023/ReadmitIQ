@@ -1,0 +1,114 @@
+[
+  {
+    "auc_roc": 0.6715,
+    "auc_ci_95": [
+      0.6405,
+      0.7067
+    ],
+    "optimal_threshold": 0.6025,
+    "f1": 0.2904,
+    "precision": 0.2371,
+    "recall": 0.3746,
+    "precision_top_10pct": 0.2339,
+    "lift_top_10pct": 2.05,
+    "recall_top_10pct": 0.2049,
+    "model": "Logistic Regression",
+    "rag_feature": false
+  },
+  {
+    "auc_roc": 0.6718,
+    "auc_ci_95": [
+      0.641,
+      0.7068
+    ],
+    "optimal_threshold": 0.5651,
+    "f1": 0.2902,
+    "precision": 0.2137,
+    "recall": 0.4523,
+    "precision_top_10pct": 0.2419,
+    "lift_top_10pct": 2.12,
+    "recall_top_10pct": 0.212,
+    "model": "Logistic Regression",
+    "rag_feature": true
+  },
+  {
+    "auc_roc": 0.68,
+    "auc_ci_95": [
+      0.6488,
+      0.7114
+    ],
+    "optimal_threshold": 0.492,
+    "f1": 0.2965,
+    "precision": 0.2064,
+    "recall": 0.5265,
+    "precision_top_10pct": 0.2137,
+    "lift_top_10pct": 1.88,
+    "recall_top_10pct": 0.1873,
+    "model": "Random Forest",
+    "rag_feature": false
+  },
+  {
+    "auc_roc": 0.6782,
+    "auc_ci_95": [
+      0.6456,
+      0.7095
+    ],
+    "optimal_threshold": 0.4904,
+    "f1": 0.2967,
+    "precision": 0.2083,
+    "recall": 0.5159,
+    "precision_top_10pct": 0.2137,
+    "lift_top_10pct": 1.88,
+    "recall_top_10pct": 0.1873,
+    "model": "Random Forest",
+    "rag_feature": true
+  },
+  {
+    "auc_roc": 0.6622,
+    "auc_ci_95": [
+      0.6274,
+      0.6979
+    ],
+    "optimal_threshold": 0.5284,
+    "f1": 0.2913,
+    "precision": 0.2165,
+    "recall": 0.4452,
+    "precision_top_10pct": 0.2298,
+    "lift_top_10pct": 2.02,
+    "recall_top_10pct": 0.2014,
+    "model": "LightGBM",
+    "rag_feature": false
+  },
+  {
+    "auc_roc": 0.6562,
+    "auc_ci_95": [
+      0.6214,
+      0.692
+    ],
+    "optimal_threshold": 0.5166,
+    "f1": 0.28,
+    "precision": 0.2042,
+    "recall": 0.4452,
+    "precision_top_10pct": 0.246,
+    "lift_top_10pct": 2.16,
+    "recall_top_10pct": 0.2155,
+    "model": "LightGBM",
+    "rag_feature": true
+  },
+  {
+    "auc_roc": 0.6771,
+    "auc_ci_95": [
+      0.5586,
+      0.7879
+    ],
+    "optimal_threshold": 0.4492,
+    "f1": 0.3385,
+    "precision": 0.2292,
+    "recall": 0.6471,
+    "precision_top_10pct": 0.1333,
+    "lift_top_10pct": 1.18,
+    "recall_top_10pct": 0.1176,
+    "model": "DistilBERT (Clinical Notes)",
+    "rag_feature": "N/A (Text Model)"
+  }
+]

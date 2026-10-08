@@ -1,0 +1,44 @@
+# Environment and secrets
+.env
+.env.local
+*.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Data artifacts
+data/raw/diabetic_data.csv
+data/interim/
+data/processed/*.parquet
+data/processed/.cache_*
+diabetic_data.csv
+
+# Large binaries & documents
+*.pptx
+*.pdf
+*.xlsx
+*.zip
+*.npy
+
+# Model artifacts
+models/*.joblib
+models/*.pt
+models/*.index
+models/transformer/
+models/faiss_index/
+
+# Node / Web artifacts
+web/node_modules/
+web/dist/
+web/.vite/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
