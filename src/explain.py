@@ -137,6 +137,13 @@ class ModelExplainer:
         elif "rag_struct_rate_k20" in df.columns and "rag_readmit_rate_k20" not in df.columns:
             df["rag_readmit_rate_k20"] = df["rag_struct_rate_k20"]
 
+        for c in self.cat_cols:
+            if c not in df.columns:
+                df[c] = "Missing"
+        for c in self.num_cols:
+            if c not in df.columns:
+                df[c] = 0.0
+
         df_out = df[self.all_cols].copy()
         for col in self.cat_cols:
             df_out[col] = df_out[col].astype("category")
