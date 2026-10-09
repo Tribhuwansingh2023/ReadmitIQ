@@ -1,0 +1,58 @@
+name: ReadmitIQ CI Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  python-test-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff black
+
+      - name: Code Formatting & Lint Check
+        run: |
+          black --check src/ api/ tests/
+          ruff check src/ api/ tests/
+
+      - name: Run Test Suite
+        run: |
+          pytest tests/ -v
+
+  frontend-build-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Lint Frontend
+        working-directory: ./web
+        run: npm run lint
+
+      - name: Build Frontend
+        working-directory: ./web
+        run: npm run build
