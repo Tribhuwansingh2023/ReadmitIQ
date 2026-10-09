@@ -221,7 +221,167 @@ Reads and serves verified offline evaluation artifacts without calculating or ha
 
 ---
 
-## 3. Error Contract
+## 3. v1 Clinical Workflow & Live Monitoring Endpoints
+
+All `v1` responses include the mandatory header:
+```http
+X-Model-Version: 1.0.0 (LightGBM + Structured RAG)
+```
+
+### 3.1 `POST /v1/discharges`
+Live clinical ingestion for single discharges or vectorized batches (up to 5,000 encounters). Scored in < 2.0s per 1,000 rows.
+
+#### Request (Single Encounter)
+```json
+{
+  "external_ref": "ENC-2026-9021",
+  "age": "[65-75)",
+  "gender": "Female",
+  "race": "Caucasian",
+  "time_in_hospital": 5,
+  "number_inpatient": 2,
+  "num_medications": 18,
+  "num_lab_procedures": 52,
+  "diag_1_group": "Circulatory",
+  "A1Cresult": ">8",
+  "diabetesMed": "Yes",
+  "change": "Ch",
+  "insulin": "Up"
+}
+```
+
+#### Response `201 Created`
+```json
+{
+  "id": 142,
+  "received_at": "2026-10-10T01:30:00Z",
+  "source": "api",
+  "external_ref": "ENC-2026-9021",
+  "raw_score": 0.694218,
+  "calibrated_prob": 0.2814,
+  "tier": "Critical",
+  "status": "new",
+  "model_version": "LightGBM + Structured RAG",
+  "neighbor_summary": {
+    "k_neighbors": 20,
+    "neighbor_readmission_rate": 0.3500
+  }
+}
+```
+
+---
+
+### 3.2 `POST /v1/discharges/upload` & `GET /v1/templates/discharge.csv`
+- `GET /v1/templates/discharge.csv`: Downloads standard CSV template with headers and 3 clinical example encounters.
+- `POST /v1/discharges/upload`: Uploads CSV file (multipart/form-data). Returns validation summary report with row-level error breakdown.
+
+#### Upload Response `200 OK`
+```json
+{
+  "filename": "shift_handoff_20261010.csv",
+  "total_rows_received": 120,
+  "accepted_count": 118,
+  "rejected_count": 2,
+  "accepted_rows": [ ... ],
+  "rejected_rows": [
+    {
+      "row_index": 14,
+      "error": "time_in_hospital: Input should be greater than or equal to 1",
+      "external_ref": "ROW_14"
+    }
+  ]
+}
+```
+
+---
+
+### 3.3 `GET /v1/worklist`
+Care-team worklist sorted strictly by RAW model score (tie-break by ID).
+
+#### Query Parameters
+- `status`: Filter by status (`new`, `assigned`, `contacted`, `followup_scheduled`, `closed`, or `open`)
+- `tier`: Filter by risk tier (`Critical`, `High`, `Medium`, `Low`)
+- `search`: Full text search matching external ref, ID, or clinical features
+- `capacity`: Integer N (e.g. `capacity=50`). Returns the top N open items by raw score for constrained intervention teams.
+- `page`: Page index (1-based)
+- `page_size`: Encounters per page (default 50)
+
+#### Response `200 OK`
+```json
+{
+  "mode": "standard",
+  "page": 1,
+  "page_size": 50,
+  "total_count": 340,
+  "tier_counts": {
+    "Critical": 22,
+    "High": 31,
+    "Medium": 58,
+    "Low": 229
+  },
+  "items": [
+    {
+      "id": 142,
+      "received_at": "2026-10-10T01:30:00Z",
+      "source": "api",
+      "external_ref": "ENC-2026-9021",
+      "raw_score": 0.694218,
+      "calibrated_prob": 0.2814,
+      "tier": "Critical",
+      "status": "new",
+      "assignee": null,
+      "updated_at": "2026-10-10T01:30:00Z",
+      "outcome_readmitted_30d": null,
+      "patient_summary": {
+        "age": "[65-75)",
+        "gender": "Female",
+        "time_in_hospital": 5,
+        "primary_diagnosis": "Circulatory",
+        "number_inpatient": 2
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 3.4 `GET /v1/discharges/{id}`
+Returns clinical features, raw & calibrated scores, tier, TreeSHAP attributions computed on demand and cached, nearest historical train neighbors, deterministic intervention recommendations, action history, and audit trail.
+
+---
+
+### 3.5 Clinical Workflow Mutations
+- `PATCH /v1/discharges/{id}`: Update status, assignee, or clinician tier override. If `clinician_override_tier` is provided, `override_reason` is strictly required. Writes an audit entry.
+- `POST /v1/discharges/{id}/actions`: Records clinical touchpoint (`type`, `note`, `actor`). Stored free-text carries a "do not enter PHI" warning. Writes an audit entry.
+- `POST /v1/discharges/{id}/outcome`: Records verified 30-day readmission outcome (`0` or `1`). Writes an audit entry.
+
+---
+
+### 3.6 Simulated Feed & Time Machine
+- `POST /v1/feed/start`: `{ "rate_per_minute": 60.0, "seed": 42 }`. Replays held-out test encounters with labels stripped. Ground truth sealed in `feed_truth`.
+- `POST /v1/feed/stop`: Halts simulated feed loop.
+- `GET /v1/feed/status`: Telemetry including simulated clock, emission rate, and total emitted.
+- `POST /v1/feed/time-machine`: `{ "days": 30 }`. Advances simulated clock by N days and releases outcomes from `feed_truth` for discharges older than 30 days. Sealed truth is never accessible prior to release.
+
+---
+
+### 3.7 `GET /v1/monitoring`
+Live operational monitoring dashboard:
+- Tier mix vs. validation baseline (Critical 5%, High 5%, Medium 10%, Low 80%) with mix shift alerts.
+- Score-drift PSI comparing live raw scores to training deciles from `serving_thresholds.json`.
+- Input-feature PSI using `src/drift.py`.
+- Data quality validation rates.
+- Outcomes evaluation: Guarded under small sample size (<200 resolved outcomes or <20 positives displays explicit `"insufficient_outcomes"` state). When sufficient, computes live AUC with 95% bootstrap CI, precision at capacity, and calibration decile curve.
+
+---
+
+### 3.8 `GET /v1/model/info`
+Model provenance metadata, Git commit hash, serving raw-score cutoffs, training/validation/test split summary, and link to model card.
+
+---
+
+## 4. Error Contract
 Standardized RFC-7807 compliant error format:
 ```json
 {
@@ -235,3 +395,4 @@ Standardized RFC-7807 compliant error format:
   "status_code": 422
 }
 ```
+

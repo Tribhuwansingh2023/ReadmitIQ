@@ -6,5 +6,13 @@
   "p95_ms": 386.0,
   "p99_ms": 454.99,
   "max_ms": 454.99,
-  "under_500ms_target": true
+  "under_500ms_target": true,
+  "batch_vectorized_benchmark": {
+    "batch_size": 1000,
+    "total_seconds": 1.8927,
+    "ms_per_row": 1.893,
+    "throughput_rows_per_second": 528.4,
+    "under_2s_target": true,
+    "measured_at_step": "Step 2.1 vectorized scoring benchmark"
+  }
 }

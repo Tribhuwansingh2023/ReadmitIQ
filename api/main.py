@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.database import init_db
 from api.schemas import (
     CohortResponse,
     ExplainResponse,
@@ -16,6 +17,7 @@ from api.schemas import (
     SimilarResponse,
 )
 from api.service import get_service
+from api.v1 import router as v1_router
 from src.config import METRICS_DIR, MODELS_DIR
 
 app = FastAPI(
@@ -23,6 +25,11 @@ app = FastAPI(
     description="Clinical-grade 30-day hospital readmission risk prediction with Structured RAG retrieval and SHAP explainability.",
     version="1.0.0",
 )
+
+# Startup event to initialize SQLite database in WAL mode
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 # CORS configuration
 origins_env = os.getenv(
@@ -38,6 +45,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_model_version_header(request, call_next):
+    """Attach mandatory X-Model-Version header to all responses."""
+    response = await call_next(request)
+    response.headers["X-Model-Version"] = "1.0.0 (LightGBM + Structured RAG)"
+    return response
+
+
+# Include v1 clinical workflow router
+app.include_router(v1_router)
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
