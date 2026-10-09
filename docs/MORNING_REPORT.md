@@ -16,7 +16,7 @@
    - Label permutation sanity check yields Val AUC **0.5002 [0.485, 0.515]** (pure chance).
 2. **Failed Tests:** **0 FAILED (PASS)**. All **34/34 unit and integration tests passing** in `tests/`.
 3. **Skipped or Partial Steps:**
-   - **DistilBERT Local CPU Training:** Skipped training on CPU overnight (would exceed 12 hours and risk machine freeze). Decoupled and marked as `[Pending Google Colab T4 GPU Run]`. Complete standalone notebook ready at `notebooks/03_rag_embeddings_faiss.ipynb` and `notebooks/02_synthetic_clinical_notes.ipynb`.
+   - **DistilBERT Local CPU Training:** Skipped training on CPU overnight (would exceed 12 hours and risk machine freeze). Decoupled and marked as `[Pending Google Colab T4 GPU Run]`. Complete standalone notebooks ready at `notebooks/colab_embed_notes.ipynb` and `notebooks/colab_transformer_training.ipynb`.
    - **Local Docker Daemon:** Docker CLI was not active on host machine; container build files, multi-stage Dockerfiles, compose specs, and CI jobs were fully verified via uvicorn and Vite smoke tests.
 4. **Subsampling Verification:** **NO SILENT SUBSAMPLING**.
    - Model development, evaluation, and calibration executed on **100% of all data**: Train ($69,535$), Val ($14,902$), Test ($14,903$). Total eligible cohort = $99,340$.
@@ -116,20 +116,23 @@ Because all local autonomous stages are 100% complete and verified, only externa
 
 ### 5.1 Google Colab Transformer Run (Optional / Supplementary)
 To run the heavy deep learning models on a free T4 GPU (~15 minutes total):
-1. **Files to Upload to Google Drive / Colab:**
-   - Upload `notebooks/02_synthetic_clinical_notes.ipynb`
-   - Upload `notebooks/03_rag_embeddings_faiss.ipynb`
-   - Upload `data/processed/train.parquet` and `data/processed/val.parquet` (or run note generation cell directly in Colab)
+1. **Files to Upload to Google Colab:**
+   - Open `notebooks/colab_transformer_training.ipynb` in Google Colab.
+   - Upload from `data/processed/colab_upload/`: `colab_train.parquet` (5.6 MB), `colab_val.parquet` (1.2 MB), and `MANIFEST.json`.
 2. **Execute in Colab:** Select Runtime $\rightarrow$ Change runtime type $\rightarrow$ T4 GPU $\rightarrow$ Run all cells.
 3. **Exact Outputs to Copy Back to Local Machine:**
-   - Copy `distilbert_val_probs.npy` to `readmitt-iq/models/transformer/distilbert_val_probs.npy`
-   - Copy `transformer_metrics.json` to `readmitt-iq/reports/metrics/transformer_metrics.json`
-   - Copy `embeddings_train.npy`, `embeddings_val.npy`, `embeddings_test.npy` to `readmitt-iq/data/processed/`
-4. **Run Local Import Helper:**
+   - Download `colab_outputs.zip` from Colab.
+   - Unzip into `reports/colab/` (contains `distilbert_val_predictions_notes.csv`, `distilbert_val_predictions_notes_rag.csv`, `run_notes.json`, and `run_notes_rag.json`).
+4. **Run Local Import & Docs Sync:**
    ```bash
-   python src/transformer_import.py
+   python -m src.transformer_import
+   python scripts/sync_transformer_docs.py
    ```
-   *Note:* The production serving pipeline is decoupled and already operating at full capability using the frozen LightGBM + Structured RAG bundle.
+   *Note:* The production serving pipeline is decoupled and already operating at full capability using the frozen LightGBM + Structured RAG bundle. The production model was frozen before the transformer results existed.
+
+<!-- TRANSFORMER:START -->
+*Transformer Benchmark Status:* Pending Google Colab T4 GPU execution (`notebooks/colab_transformer_training.ipynb`). The production model was frozen before the transformer results existed.
+<!-- TRANSFORMER:END -->
 
 ### 5.2 Cloud Hosting Deployment (Optional - When Ready to Host Live)
 Follow the step-by-step copy-paste checklist in `docs/DEPLOY_MANUAL_STEPS.md`:
@@ -264,7 +267,7 @@ All views captured at high resolution using Playwright headless Edge:
 
 ### 7.4 Anything Not Done & Intentional Boundaries
 
-1. **Google Colab Heavy GPU Jobs:** DistilBERT fine-tuning on $\ge 25,000$ notes and heavy clinical note embedding extraction are maintained in `notebooks/02_clinical_note_embedding_colab.ipynb` and `notebooks/03_transformer_finetune_colab.ipynb` for GPU execution, adhering to local CPU safety constraints.
+1. **Google Colab Heavy GPU Jobs:** DistilBERT fine-tuning on $\ge 25,000$ notes and heavy clinical note embedding extraction are maintained in `notebooks/colab_embed_notes.ipynb` and `notebooks/colab_transformer_training.ipynb` for GPU execution, adhering to local CPU safety constraints.
 2. **Frozen Model Invariance:** As mandated, zero changes were made to `models/FROZEN_SELECTION.json`, `reports/metrics/test_results.json`, or `reports/metrics/test_eval.lock`. The test evaluation was never re-run.
 3. **Local Git Hygiene:** In strict compliance with autonomous overnight guidelines, all commits are committed strictly to local branch `master` with zero remote push.
 

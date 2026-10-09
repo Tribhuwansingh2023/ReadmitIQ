@@ -167,8 +167,8 @@ The full pipeline execution order was verified on clean environment state:
 
 ### 5.2 Compute Hardware Requirements
 - **Standard Pipeline (LightGBM + Structured RAG + Serving):** 100% CPU-compatible. Runs on standard laptop or CI container (minimum 8 GB RAM recommended).
-- **Clinical Note Embedding (`all-MiniLM-L6-v2` across 99,340 notes):** CPU execution takes ~1.5 hours. GPU notebook provided (`notebooks/02_clinical_note_embedding_colab.ipynb`) executes in ~4 minutes on Google Colab T4.
-- **DistilBERT Fine-Tuning (`src/transformer.py`):** Requires GPU for training (>25,000 notes, ~15m on T4). A CPU smoke-test safeguard is implemented in `src/transformer.py` to prevent hanging during local CI.
+- **Clinical Note Embedding (`all-MiniLM-L6-v2` across 99,340 notes):** CPU execution takes ~1.5 hours. GPU notebook provided (`notebooks/colab_embed_notes.ipynb`) executes in ~4 minutes on Google Colab T4.
+- **DistilBERT Fine-Tuning (`notebooks/colab_transformer_training.ipynb`):** Requires GPU for training (>25,000 notes, ~15m on T4). A CPU smoke-test safeguard is implemented in `src/transformer.py` to prevent hanging during local CI.
 
 ---
 
@@ -192,9 +192,8 @@ Automated code quality tools were executed across the entire repository:
 - **Repository Size & Largest Files:**
   - Total repository size on disk: ~643 MB (including untracked model checkpoints and `node_modules`).
   - Largest untracked files (safely ignored by `.gitignore`):
-    1. `models/transformer/model.safetensors`: 255.4 MB
-    2. `models/rf_rag.joblib`: 24.5 MB
-    3. `models/rf_base.joblib`: 24.0 MB
+    1. `models/rf_rag.joblib`: 24.5 MB
+    2. `models/rf_base.joblib`: 24.0 MB
     4. `data/processed/embeddings_train.npy`: 20.4 MB
     5. `data/raw/diabetic_data.csv`: 18.3 MB
     6. `models/final/retriever_faiss.index`: 17.0 MB

@@ -253,19 +253,33 @@ export const ModelLabPage: React.FC = () => {
 
       {/* Model Ablation Table */}
       {ablation?.validation_models && (
-        <div className="rounded-2xl bg-slate-900/70 border border-slate-800 overflow-hidden shadow-xl">
-          <div className="p-4 border-b border-slate-800 flex justify-between items-center">
+        <div className="rounded-2xl bg-slate-900/70 border border-slate-800 overflow-hidden shadow-xl space-y-4 p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                Validation Set Model Ablation Table (Full 14,902 Validation
-                Rows)
+                Validation Set Model Ablation Table (Full 14,902 Validation Rows)
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Comparing Logistic Regression, Random Forest, and LightGBM with
-                5-fold CV hyperparameter tuning
+                Comparing Logistic Regression, Random Forest, LightGBM, and DistilBERT (N=69,535 train, N=14,902 validation)
               </p>
             </div>
+            {ablation.transformer_status === "pending" ? (
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                Transformer: Pending Colab GPU Run
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                Transformer: Colab Results Imported
+              </span>
+            )}
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+            <Info className="w-4 h-4 text-sky-400 flex-shrink-0" />
+            <span>
+              <strong>Methodology Note:</strong> The production model was frozen before the transformer results existed. Transformer fine-tuning is an offline validation-only comparison.
+            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -287,18 +301,29 @@ export const ModelLabPage: React.FC = () => {
                   const isWinning =
                     row.model.includes("LightGBM") &&
                     row.feature_set.includes("RAG");
+                  const isTransformer = row.model.includes("DistilBERT");
                   return (
                     <tr
                       key={idx}
                       className={`hover:bg-slate-800/40 transition-colors ${
                         isWinning ? "bg-sky-500/5 font-medium" : ""
-                      }`}
+                      } ${isTransformer ? "bg-purple-500/5" : ""}`}
                     >
                       <td className="py-3 px-4 text-white flex items-center gap-1.5">
                         {isWinning && (
                           <span className="w-2 h-2 rounded-full bg-sky-400 inline-block" />
                         )}
-                        {row.model}
+                        {isTransformer && (
+                          <span className="w-2 h-2 rounded-full bg-purple-400 inline-block" />
+                        )}
+                        <div>
+                          <div>{row.model}</div>
+                          {row.paired_delta_auc !== undefined && row.paired_delta_auc !== 0 && (
+                            <span className="text-[10px] text-slate-400">
+                              Paired ΔAUC: {row.paired_delta_auc > 0 ? "+" : ""}{row.paired_delta_auc.toFixed(4)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-slate-300 font-mono">
                         {row.feature_set}
@@ -323,10 +348,14 @@ export const ModelLabPage: React.FC = () => {
                           : "—"}
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-300">
-                        {row.brier_score ? row.brier_score.toFixed(4) : "—"}
+                        {row.brier_score !== null && row.brier_score !== undefined
+                          ? row.brier_score.toFixed(4)
+                          : "N/A"}
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-300">
-                        {row.ece ? row.ece.toFixed(4) : "—"}
+                        {row.ece !== null && row.ece !== undefined
+                          ? row.ece.toFixed(4)
+                          : "N/A"}
                       </td>
                       <td className="py-3 px-4 font-mono text-amber-400">
                         {row.f1_at_optimal_threshold
@@ -336,6 +365,20 @@ export const ModelLabPage: React.FC = () => {
                     </tr>
                   );
                 })}
+                {ablation.transformer_status === "pending" && (
+                  <tr className="bg-amber-500/5 hover:bg-slate-800/40 text-slate-400 border-t border-slate-800">
+                    <td className="py-3 px-4 text-slate-300 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 inline-block animate-pulse" />
+                      DistilBERT (Notes)
+                    </td>
+                    <td className="py-3 px-4 text-slate-400 font-mono">
+                      Clinical Notes (Variants A & B)
+                    </td>
+                    <td className="py-3 px-4 font-mono text-amber-300 italic" colSpan={6}>
+                      Pending Colab GPU execution (notebooks/colab_transformer_training.ipynb)
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

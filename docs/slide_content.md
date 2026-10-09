@@ -52,6 +52,11 @@ Each section below corresponds to one presentation slide for the hackathon pitch
   - Paired Bootstrap Delta AUC on TEST: **+0.0004** (95% CI: **[-0.0025, +0.0031]**).
   - *The confidence interval crosses zero.* RAG does not offer statistically significant predictive AUC gain over 41 tabular features alone.
   - **Takeaway:** We report this honestly rather than exaggerating. RAG's true value is clinical trust, not marginal ranking lift.
+- **Clinical Notes Transformer Benchmark (Validation-Only):**
+<!-- TRANSFORMER:START -->
+  - DistilBERT fine-tuning: *pending Colab run* (`notebooks/colab_transformer_training.ipynb`).
+  - Production model was frozen before transformer results existed; validation-only comparison on N=14,902 encounters.
+<!-- TRANSFORMER:END -->
 
 ---
 

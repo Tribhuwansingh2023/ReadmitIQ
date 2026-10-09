@@ -32,3 +32,12 @@
 | **Venue Wi-Fi fails** | Browser cannot reach hosted Vercel/Render URL | Open local browser tab: `http://localhost:5173`. The backend is already running locally on port 8000 with sub-50ms latency. |
 | **Local backend crashes** | Frontend displays red *'API Offline'* banner | Run terminal command: `python -m uvicorn api.main:app --port 8000`. Reconnects within 3 seconds. |
 | **Complete laptop / projector freeze** | Presenter screen freezes | Switch to backup laptop or open [docs/demo_fallback.md](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/demo_fallback.md) containing static screenshots `docs/screenshots/cohort_triage_desktop.png` and `patient_risk_desktop.png`. |
+
+---
+
+## Part 4: Clinical Notes Transformer Talking Points
+
+<!-- TRANSFORMER:START -->
+- **Transformer Benchmark Status:** Pending Google Colab T4 GPU execution (`notebooks/colab_transformer_training.ipynb`).
+- **Talking Point:** *"The production model was frozen before the transformer results existed. We evaluated DistilBERT on clinical notes purely as an offline validation-only comparison across the full 14,902 validation encounters."*
+<!-- TRANSFORMER:END -->

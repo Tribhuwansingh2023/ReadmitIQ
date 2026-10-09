@@ -184,7 +184,56 @@ def get_model_evaluation_metrics():
     ablation_p = METRICS_DIR / "ablation_table.json"
     if ablation_p.exists():
         with open(ablation_p, "r", encoding="utf-8") as f:
-            artifacts["ablation_table"] = json.load(f)
+            ablation_data = json.load(f)
+
+        results = ablation_data.get("ablation_results", [])
+        transformer_rows = [r for r in results if "DistilBERT" in r.get("model", "")]
+        has_transformer = len(transformer_rows) > 0
+
+        ablation_data["transformer_status"] = "completed" if has_transformer else "pending"
+        ablation_data["transformer_models"] = transformer_rows
+        if not has_transformer:
+            ablation_data["transformer_pending_message"] = (
+                "Pending Google Colab T4 GPU execution (notebooks/colab_transformer_training.ipynb). "
+                "The production model was frozen before the transformer results existed."
+            )
+
+        validation_models = []
+        for r in results:
+            feature_str = (
+                "With RAG (k=20)" if r.get("rag_feature") else "Tabular Features (No RAG)"
+            )
+            if "DistilBERT" in r.get("model", ""):
+                feature_str = (
+                    "Clinical Notes + RAG" if r.get("rag_feature") else "Clinical Notes Only"
+                )
+
+            ci_low = r.get("auc_ci_95", [None, None])[0]
+            ci_high = r.get("auc_ci_95", [None, None])[1]
+
+            validation_models.append(
+                {
+                    "model": r.get("model", ""),
+                    "feature_set": feature_str,
+                    "auc": r.get("auc_roc", 0.0),
+                    "auc_ci_lower": ci_low,
+                    "auc_ci_upper": ci_high,
+                    "brier_score": r.get("brier_score"),
+                    "ece": r.get("ece"),
+                    "precision_at_top10": r.get("precision_top_10pct"),
+                    "lift_at_top10": r.get("lift_top_10pct"),
+                    "optimal_threshold": r.get("optimal_threshold"),
+                    "f1_at_optimal_threshold": r.get("f1"),
+                    "paired_delta_auc": r.get("paired_delta_auc"),
+                    "paired_ci_95": r.get("paired_ci_95"),
+                    "ci_crosses_zero": r.get("ci_crosses_zero"),
+                    "train_samples": r.get("train_samples_used", 69535),
+                    "val_samples": r.get("val_samples_used", 14902),
+                }
+            )
+
+        ablation_data["validation_models"] = validation_models
+        artifacts["ablation_table"] = ablation_data
 
     test_p = METRICS_DIR / "test_results.json"
     if test_p.exists():
