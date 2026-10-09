@@ -22,7 +22,6 @@
   "executionEnvironments": [
     {
       "root": "notebooks",
-      "typeCheckingMode": "off",
       "extraPaths": ["."]
     }
   ]
