@@ -26,10 +26,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Startup event to initialize SQLite database in WAL mode
+# Startup event to initialize SQLite database in WAL mode and seed if empty
 @app.on_event("startup")
 def on_startup():
     init_db()
+    if os.getenv("READMITIQ_AUTO_SEED", "true").lower() in ("true", "1", "yes"):
+        from scripts.seed_demo import seed_if_empty
+        seed_if_empty()
 
 # CORS configuration
 origins_env = os.getenv(
