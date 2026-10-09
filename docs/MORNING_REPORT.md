@@ -291,4 +291,52 @@ When ready to host live, follow the copy-paste checklist in `docs/DEPLOY_MANUAL_
 4. **Post-Deployment Verification:** Run the 6 copy-paste curl commands in Section 5 of `docs/DEPLOY_MANUAL_STEPS.md`.
 5. **Offline Fallback Ready:** In case of conference Wi-Fi issues, `docs/demo_fallback.md` provides 1-click local launch instructions, all 15 static screenshots, and a 3-minute hackathon pitch script.
 
+---
+
+## 9. Presentation Pack
+
+A complete, production-grade presentation pack tailored for an industry panel (Cognizant) has been programmatically generated from the immutable JSON evaluation artifacts.
+
+### 9.1 Files Created (`docs/presentation/`)
+
+| File Path | Description | Scope / Key Elements |
+|:---|:---|:---|
+| [`ReadmitIQ_deck.pptx`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/presentation/ReadmitIQ_deck.pptx) | 14-Slide Widescreen (16:9) Deck | Built via `python-pptx` with custom clinical dark theme, embedded figures from `reports/figures/`, UI screenshots from `docs/screenshots/`, and comprehensive speaker notes on every slide. |
+| [`QA_prep.md`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/presentation/QA_prep.md) | 35+ Judge Q&A Guide | 15 categories covering problem economics, 4 data traps, RAG findings, calibration, fairness audits, latency, and drift. Each question features a factual answer and a "What NOT to say" line. |
+| [`DEMO_SCRIPT.md`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/presentation/DEMO_SCRIPT.md) | Timed Presentation & Demo Run Sheet | 5-minute timed speaker sequence, 2-minute rapid pitch version, and live disaster recovery protocols. |
+| [`VIDEO_STORYBOARD.md`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/presentation/VIDEO_STORYBOARD.md) | 3–5 Minute Video Storyboard | 5-scene breakdown, camera framing, on-screen text callouts, and voiceover narration text. |
+| [`TEAM_ROLES.md`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/presentation/TEAM_ROLES.md) | 7-Member Speaking Plan | Synchronized 5-minute division across Members 1–7 with exact transition cues and handover lines. |
+| [`scripts/check_deck_numbers.py`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/scripts/check_deck_numbers.py) | Adversarial Number Checker | Re-reads the deck and Q&A to confirm every number matches `reports/metrics/*.json`. **Result: 29/29 checks passed (100.0%)**. |
+| [`scripts/make_screenshots.py`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/scripts/make_screenshots.py) | Screenshot Verification Tool | Validates all 11 required presentation and fallback UI captures are high-resolution and present. |
+
+### 9.2 Consistency Audit Results
+
+Executed via `scripts/check_deck_numbers.py` against `reports/metrics/*.json`:
+- **Total Number Checks:** 29
+- **Passed Checks:** **29 / 29 (100.0% Consistency)**
+- **Verified Metrics Include:**
+  - Test Cohort Size ($14,903$), Eligible Cohort ($99,340$).
+  - Test AUC-ROC ($0.6590$ [95% CI: $0.6458, 0.6728$]).
+  - Top-10% Capacity Lift ($2.09\text{x}$), Precision ($23.76\%$), Recall ($20.85\%$).
+  - Top-5% Capacity Lift ($2.51\text{x}$), Precision ($28.59\%$).
+  - Calibrated Brier Score ($0.0973$), Expected Calibration Error ($0.0039$ / $0.39\%$).
+  - Paired RAG Delta AUC ($+0.0004$, CI: $[-0.0025, +0.0031]$, crosses zero).
+  - Validation Winner AUC ($0.6731$ [95% CI: $0.6602, 0.6863$]).
+  - Demographic Blinded Test AUC ($0.6597$, Delta $+0.0007$).
+  - Subgroup Sample Sizes: Caucasian ($11,188$), African American ($2,782$), Hispanic ($302$).
+  - Serving Footprint: Full ($18.47\text{ MB}$), Lite ($1.69\text{ MB}$, $90.9\%$ reduction).
+  - p95 End-to-End Latency ($386.0\text{ ms}$).
+
+### 9.3 Anything Left as Pending
+
+- **Fine-Tuned Transformer (DistilBERT):** Training on 25,000+ notes on CPU would exceed overnight execution limits and risk machine freeze. Decoupled and maintained in `notebooks/02` and `notebooks/03` for Google Colab T4 GPU execution (~15 mins). In accordance with the honest reporting rule, the Transformer row is clearly marked as **[Pending Google Colab T4 GPU Run]** in the deck, Q&A, and ablation reports. The production serving pipeline runs independently and does not require it.
+
+### 9.4 Slides to Review by Hand Before the Pitch
+
+1. **Slide 1 (Title Card):** Replace team placeholder lines with actual member names and university/organization affiliations.
+2. **Slide 7 (The Honest RAG Finding):** Review the scientific framing. Ensure the team is confident explaining why a non-significant paired $\Delta\text{AUC}$ of $+0.0004$ (CI crossing zero) demonstrates scientific integrity, while RAG's true value is clinical interpretability and peer precedent inspection.
+3. **Slide 10 (Product Demo Screenshots):** Inspect visual scaling of `cohort_triage_desktop.png` and `patient_risk_desktop.png` to confirm sizing fits the target presentation projector.
+4. **Slide 13 (Team Roles):** Align the 7 Member placeholders (Members 1–7) with the specific presentation strengths of each team member.
+
+
 

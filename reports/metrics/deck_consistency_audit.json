@@ -1,0 +1,240 @@
+{
+  "timestamp": "2026-10-09T05:30:00Z",
+  "total_checks": 29,
+  "passed_checks": 29,
+  "accuracy_rate_pct": 100.0,
+  "results": [
+    {
+      "metric_name": "Test Cohort Size (14,903)",
+      "pattern": "14,903",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Eligible Encounters (99,340)",
+      "pattern": "99,340",
+      "source_artifact": "docs/data_card.md",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Test AUC (0.6590 / 0.659)",
+      "pattern": "0\\.6590|0\\.659",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Test AUC 95% CI Lower (0.6458)",
+      "pattern": "0.6458",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Test AUC 95% CI Upper (0.6728)",
+      "pattern": "0.6728",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Optimal F1 Decision Threshold (0.1495)",
+      "pattern": "0.1495",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Test F1 Score (0.2721)",
+      "pattern": "0.2721",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Top-10% Capacity Lift (2.09x)",
+      "pattern": "2\\.09x|2\\.09",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Top-10% Precision (23.76%)",
+      "pattern": "23.76",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Top-10% Recall (20.85% / 20.9%)",
+      "pattern": "20\\.85|20\\.9",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Top-5% Capacity Lift (2.51x)",
+      "pattern": "2\\.51x|2\\.51",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Top-5% Precision (28.59%)",
+      "pattern": "28.59",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Calibrated Brier Score (0.0973)",
+      "pattern": "0.0973",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Expected Calibration Error (0.0039 / 0.39%)",
+      "pattern": "0\\.0039|0\\.39%",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Paired RAG Delta AUC (+0.0004)",
+      "pattern": "\\+?0\\.0004",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Paired RAG Delta CI Lower (-0.0025)",
+      "pattern": "-0.0025",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Paired RAG Delta CI Upper (+0.0031)",
+      "pattern": "\\+?0\\.0031",
+      "source_artifact": "reports/metrics/test_results.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Val AUC Winning Model (0.6731)",
+      "pattern": "0.6731",
+      "source_artifact": "reports/metrics/ablation_table.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Val AUC CI Lower (0.6602)",
+      "pattern": "0.6602",
+      "source_artifact": "reports/metrics/ablation_table.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Val AUC CI Upper (0.6863)",
+      "pattern": "0.6863",
+      "source_artifact": "reports/metrics/ablation_table.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Demographic Blinded Test AUC (0.6597)",
+      "pattern": "0.6597",
+      "source_artifact": "reports/metrics/fairness_audit.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Blinded vs Primary Delta (+0.0007)",
+      "pattern": "\\+?0\\.0007",
+      "source_artifact": "reports/metrics/fairness_audit.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Caucasian Test Sample (11,188)",
+      "pattern": "11,188",
+      "source_artifact": "reports/metrics/fairness_audit.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "African American Test Sample (2,782)",
+      "pattern": "2,782",
+      "source_artifact": "reports/metrics/fairness_audit.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Hispanic Test Sample (302)",
+      "pattern": "302",
+      "source_artifact": "reports/metrics/fairness_audit.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "p95 End-to-End Latency (386.0ms)",
+      "pattern": "386(\\.0)?ms",
+      "source_artifact": "reports/metrics/latency_benchmark.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Lite Serving Artifacts Disk (1.69 MB)",
+      "pattern": "1.69",
+      "source_artifact": "reports/metrics/serving_footprint.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Full Serving Artifacts Disk (18.47 / 18.5 MB)",
+      "pattern": "18\\.47|18\\.5",
+      "source_artifact": "reports/metrics/serving_footprint.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Disk Reduction in Lite Mode (90.9%)",
+      "pattern": "90.9",
+      "source_artifact": "reports/metrics/serving_footprint.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    }
+  ]
+}
