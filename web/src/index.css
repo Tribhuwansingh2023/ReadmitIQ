@@ -3,8 +3,24 @@
 @import "tailwindcss/utilities";
 
 @layer base {
+  :root {
+    color-scheme: dark light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+
   body {
-    @apply bg-slate-950 text-slate-100 antialiased font-sans selection:bg-brand-500 selection:text-white min-h-screen;
+    @apply antialiased font-sans transition-colors duration-200 min-h-screen;
+  }
+
+  .dark body {
+    @apply bg-slate-950 text-slate-100 selection:bg-sky-500 selection:text-slate-950;
     background-image:
       radial-gradient(
         at 15% 15%,
@@ -14,6 +30,50 @@
       radial-gradient(at 85% 85%, rgba(99, 102, 241, 0.06) 0px, transparent 50%);
     background-attachment: fixed;
   }
+
+  .light body {
+    @apply bg-slate-50 text-slate-900 selection:bg-sky-500 selection:text-white;
+    background-image:
+      radial-gradient(
+        at 15% 15%,
+        rgba(14, 165, 233, 0.05) 0px,
+        transparent 50%
+      ),
+      radial-gradient(at 85% 85%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Skeleton Pulse Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 37%,
+    rgba(255, 255, 255, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.light .skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.08) 37%,
+    rgba(0, 0, 0, 0.04) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
 }
 
 /* Custom scrollbars */
@@ -21,13 +81,31 @@
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: transparent;
 }
-::-webkit-scrollbar-thumb {
+
+.dark ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+.dark ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Accessibility Focus Ring */
+*:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
 }

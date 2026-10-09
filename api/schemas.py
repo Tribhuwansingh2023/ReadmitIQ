@@ -125,6 +125,23 @@ class FactorExplanation(BaseModel):
     explanation: str
 
 
+class SuggestedIntervention(BaseModel):
+    id: str
+    action: str
+    category: str
+    priority: str
+    trigger_driver: str
+    rationale: str
+    target_timeline: str
+
+
+class SuggestedInterventionsSummary(BaseModel):
+    disclaimer: str
+    risk_tier: str
+    suggestions_count: int
+    suggestions: List[SuggestedIntervention]
+
+
 class PredictResponse(BaseModel):
     calibrated_risk_probability: float
     risk_tier: str
@@ -134,6 +151,7 @@ class PredictResponse(BaseModel):
     top_risk_increasing_factors: List[FactorExplanation]
     top_risk_reducing_factors: List[FactorExplanation]
     similar_patients_summary: Dict[str, Any]
+    suggested_interventions: Optional[SuggestedInterventionsSummary] = None
 
 
 class SimilarEncounter(BaseModel):

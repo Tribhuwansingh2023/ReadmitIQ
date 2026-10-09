@@ -14,6 +14,7 @@ from src.config import (
     MODELS_DIR,
     REPORTS_DIR,
 )
+from api.interventions import generate_suggested_interventions
 from src.explain import ModelExplainer
 from src.train import prepare_lgbm_data
 
@@ -162,7 +163,14 @@ class ModelService:
         # 4. SHAP Explanation
         explanation = self.explain(patient_dict, top_k=3)
 
-        # 5. Log prediction
+        # 5. Deterministic Decision Support Interventions
+        interventions = generate_suggested_interventions(
+            patient_dict,
+            risk_tier=tier,
+            top_risk_drivers=explanation.get("top_risk_increasing"),
+        )
+
+        # 6. Log prediction
         self.log_prediction(patient_dict, cal_prob, tier)
 
         return {
@@ -182,6 +190,7 @@ class ModelService:
                 "neighbor_readmission_rate": round(rag_rate, 4),
                 "top_neighbors": similar_list[:5],
             },
+            "suggested_interventions": interventions,
         }
 
     def log_prediction(self, patient_dict: Dict[str, Any], prob: float, tier: str):

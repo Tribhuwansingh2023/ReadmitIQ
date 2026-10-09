@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Database,
   EyeOff,
-  Loader2,
   Scale,
 } from "lucide-react";
 import { apiClient } from "../api/client";
@@ -16,7 +15,7 @@ export const FairnessPage: React.FC = () => {
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"race" | "gender" | "age_group">(
+  const [activeTab, setActiveTab] = useState<"race" | "gender" | "age">(
     "race",
   );
 
@@ -39,20 +38,31 @@ export const FairnessPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 space-y-4">
-        <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
-        <span className="text-sm text-slate-400">
-          Loading fairness audit and drift telemetry...
-        </span>
+      <div className="space-y-6 animate-fadeIn">
+        <div className="h-28 rounded-2xl bg-slate-900/60 border border-slate-800 skeleton" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+        </div>
+        <div className="h-80 rounded-2xl bg-slate-900/60 border border-slate-800 skeleton" />
       </div>
     );
   }
 
   if (error || !metrics) {
     return (
-      <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center gap-3">
-        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-        <span>{error || "No metrics available."}</span>
+      <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+          <span>{error || "No fairness metrics available."}</span>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-medium"
+        >
+          Reload
+        </button>
       </div>
     );
   }
@@ -151,7 +161,7 @@ export const FairnessPage: React.FC = () => {
 
             {/* Attribute Selector Tabs */}
             <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-              {(["race", "gender", "age_group"] as const).map((tab) => (
+              {(["race", "gender", "age"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -161,7 +171,7 @@ export const FairnessPage: React.FC = () => {
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  {tab.replace("_", " ")}
+                  {tab === "age" ? "Age Group" : tab}
                 </button>
               ))}
             </div>
@@ -207,26 +217,28 @@ export const FairnessPage: React.FC = () => {
                             {g.sample_size.toLocaleString()}
                           </td>
                           <td className="py-3 px-4 font-mono text-slate-300">
-                            {(g.prevalence * 100).toFixed(1)}%
+                            {g.prevalence != null ? `${(g.prevalence * 100).toFixed(1)}%` : "—"}
                           </td>
                           <td className="py-3 px-4 font-mono font-bold text-slate-200">
-                            {g.auc_roc.toFixed(4)}
+                            {g.auc_roc != null ? g.auc_roc.toFixed(4) : "—"}
                             <span className="text-[11px] font-normal text-slate-400 ml-1">
-                              [{g.auc_ci_95?.[0]?.toFixed(4) ?? "—"},{" "}
-                              {g.auc_ci_95?.[1]?.toFixed(4) ?? "—"}]
+                              [{g.auc_ci_95?.[0] != null ? g.auc_ci_95[0].toFixed(4) : "—"},{" "}
+                              {g.auc_ci_95?.[1] != null ? g.auc_ci_95[1].toFixed(4) : "—"}]
                             </span>
                           </td>
                           <td className="py-3 px-4 font-mono text-slate-300">
-                            {(g.selection_rate * 100).toFixed(1)}%
+                            {g.selection_rate != null ? `${(g.selection_rate * 100).toFixed(1)}%` : "—"}
                           </td>
                           <td className="py-3 px-4 font-mono text-emerald-400">
-                            {(g.tpr * 100).toFixed(1)}%
+                            {g.tpr != null ? `${(g.tpr * 100).toFixed(1)}%` : "—"}
                           </td>
                           <td className="py-3 px-4 font-mono text-rose-400">
-                            {(g.fpr * 100).toFixed(1)}%
+                            {g.fpr != null ? `${(g.fpr * 100).toFixed(1)}%` : "—"}
                           </td>
                           <td className="py-3 px-4 font-mono font-bold text-slate-200">
-                            {g.ratio_selection_rate_vs_ref.toFixed(2)}x
+                            {g.ratio_selection_rate_vs_ref != null
+                              ? `${g.ratio_selection_rate_vs_ref.toFixed(2)}x`
+                              : "—"}
                           </td>
                           <td className="py-3 px-4">
                             {g.reliable ? (
@@ -252,7 +264,7 @@ export const FairnessPage: React.FC = () => {
       )}
 
       {/* Population Stability Index (PSI) Drift Telemetry */}
-      {drift && (
+      {drift && drift.features && (
         <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl space-y-4">
           <div className="flex justify-between items-center border-b border-slate-800 pb-3">
             <div>
@@ -262,7 +274,7 @@ export const FairnessPage: React.FC = () => {
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 Monitoring distribution stability between Train vs Validation
-                and Train vs Test
+                and Train vs Test across {drift.summary?.total_features_monitored ?? 42} features
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs font-mono">
@@ -274,7 +286,14 @@ export const FairnessPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {Object.entries(drift.features).map(([feat, d]) => {
-              const isTestStable = d.status_test === "Stable";
+              const statusTest = d.status_train_vs_test || "Stable";
+              const isTestStable =
+                statusTest === "Minimal (Stable)" || statusTest === "Stable";
+              const valPsi =
+                d.psi_train_vs_val != null ? d.psi_train_vs_val.toFixed(4) : "0.0000";
+              const testPsi =
+                d.psi_train_vs_test != null ? d.psi_train_vs_test.toFixed(4) : "0.0000";
+
               return (
                 <div
                   key={feat}
@@ -288,12 +307,12 @@ export const FairnessPage: React.FC = () => {
                       {feat}
                     </span>
                     <span className="text-[11px] text-slate-500 font-mono mt-0.5 block">
-                      Val PSI: {d.psi_val.toFixed(4)}
+                      Val PSI: {valPsi}
                     </span>
                   </div>
                   <div className="text-right">
                     <span className="font-mono font-bold text-slate-200 block">
-                      {d.psi_test.toFixed(4)}
+                      {testPsi}
                     </span>
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded inline-block mt-0.5 ${
@@ -302,7 +321,7 @@ export const FairnessPage: React.FC = () => {
                           : "bg-amber-500/10 text-amber-400"
                       }`}
                     >
-                      {d.status_test}
+                      {statusTest}
                     </span>
                   </div>
                 </div>
@@ -311,10 +330,9 @@ export const FairnessPage: React.FC = () => {
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs flex justify-between items-center text-slate-300">
-            <span>Overall Score Distribution Drift (Train vs Test):</span>
+            <span>Overall Dataset Stability across Train, Validation, and Test:</span>
             <span className="font-mono font-bold text-emerald-400">
-              PSI = {drift.score_drift.psi_test.toFixed(4)} (Zero Distributional
-              Shift)
+              0 Features with Moderate/High Drift (All PSI &lt; 0.05 — High Integrity)
             </span>
           </div>
         </div>

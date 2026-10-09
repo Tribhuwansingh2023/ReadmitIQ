@@ -23,12 +23,19 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
   const [error, setError] = useState<string | null>(null);
   const [cohortData, setCohortData] = useState<CohortResponse | null>(null);
 
+  // Impact Estimate Simulation State (User-entered assumptions)
+  const [outreachVolume, setOutreachVolume] = useState<number>(1490);
+  const [costPerReadmission, setCostPerReadmission] = useState<number>(15200);
+  const [reductionRate, setReductionRate] = useState<number>(18);
+  const [costPerIntervention, setCostPerIntervention] = useState<number>(120);
+
   const fetchCohort = async (cap: number) => {
     try {
       setLoading(true);
       setError(null);
       const data = await apiClient.getCohort(cap);
       setCohortData(data);
+      setOutreachVolume(data.flagged_encounters_count);
     } catch (err: any) {
       setError(err?.message || "Failed to load cohort replay");
     } finally {
@@ -216,6 +223,243 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
               100% ({cohortData.total_true_readmissions_in_cohort} total
               readmissions)
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Impact Estimate Simulation Box (What-If Analysis) */}
+      {cohortData && (
+        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                  Illustrative What-If Scenario
+                </span>
+                <span className="text-xs text-slate-400">
+                  Leadership Capacity & Financial Modeling
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-white mt-1 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                Projected Clinical & Economic Impact Estimate
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Simulate transition-of-care program outcomes under
+                user-specified assumptions.
+              </p>
+            </div>
+            <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 max-w-sm">
+              <strong>Notice:</strong> Illustrative simulation based on entered
+              assumptions, not an observed randomized trial result.
+            </div>
+          </div>
+
+          {/* User-Configurable Assumptions Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            {/* Outreach Volume */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-300 block uppercase tracking-wider">
+                Outreach Cohort (Patients)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="10"
+                  max="14903"
+                  value={outreachVolume}
+                  onChange={(e) =>
+                    setOutreachVolume(
+                      Math.max(1, parseInt(e.target.value) || 1),
+                    )
+                  }
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-sky-500"
+                />
+                <button
+                  onClick={() =>
+                    setOutreachVolume(cohortData.flagged_encounters_count)
+                  }
+                  title="Sync with Capacity Slider"
+                  className="px-2 py-1.5 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 whitespace-nowrap"
+                >
+                  Sync
+                </button>
+              </div>
+              <span className="text-[10px] text-slate-500 block">
+                Default: {cohortData.flagged_encounters_count.toLocaleString()}{" "}
+                (at {(capacity * 100).toFixed(0)}% capacity)
+              </span>
+            </div>
+
+            {/* Cost per Readmission */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-300 block uppercase tracking-wider">
+                Cost per Readmission ($)
+              </label>
+              <input
+                type="number"
+                step="500"
+                min="5000"
+                max="50000"
+                value={costPerReadmission}
+                onChange={(e) =>
+                  setCostPerReadmission(
+                    Math.max(1000, parseInt(e.target.value) || 15200),
+                  )
+                }
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-sky-500"
+              />
+              <span className="text-[10px] text-slate-500 block">
+                Default assumption: $15,200 (CMS national average)
+              </span>
+            </div>
+
+            {/* Relative Risk Reduction Rate */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-[11px] font-semibold text-slate-300 block uppercase tracking-wider">
+                  Outreach Reduction Rate
+                </label>
+                <span className="font-mono text-xs font-bold text-emerald-400">
+                  {reductionRate}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="35"
+                step="1"
+                value={reductionRate}
+                onChange={(e) =>
+                  setReductionRate(parseInt(e.target.value) || 18)
+                }
+                className="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+              />
+              <span className="text-[10px] text-slate-500 block">
+                Default assumption: 18% (Project RED / BOOST range: 12%–24%)
+              </span>
+            </div>
+
+            {/* Cost per Outreach Call */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-300 block uppercase tracking-wider">
+                Cost per Intervention ($)
+              </label>
+              <input
+                type="number"
+                step="10"
+                min="20"
+                max="1000"
+                value={costPerIntervention}
+                onChange={(e) =>
+                  setCostPerIntervention(
+                    Math.max(10, parseInt(e.target.value) || 120),
+                  )
+                }
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:border-sky-500"
+              />
+              <span className="text-[10px] text-slate-500 block">
+                Default assumption: $120 (nurse call + pharmacist recon)
+              </span>
+            </div>
+          </div>
+
+          {/* Simulation Output Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-medium">
+                True Readmissions in Group
+              </span>
+              <span className="text-2xl font-bold font-mono text-white mt-1 block">
+                {Math.round(
+                  outreachVolume * cohortData.precision,
+                ).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Based on {(cohortData.precision * 100).toFixed(1)}% model
+                precision
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/30">
+              <span className="text-[11px] text-emerald-400 uppercase tracking-wider block font-medium">
+                Readmissions Averted
+              </span>
+              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
+                {Math.round(
+                  outreachVolume * cohortData.precision * (reductionRate / 100),
+                ).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                At {reductionRate}% assumed intervention reduction
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
+              <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-medium">
+                Gross Inpatient Savings
+              </span>
+              <span className="text-2xl font-bold font-mono text-sky-400 mt-1 block">
+                $
+                {(
+                  Math.round(
+                    outreachVolume *
+                      cohortData.precision *
+                      (reductionRate / 100),
+                  ) * costPerReadmission
+                ).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-slate-500 mt-1 block">
+                Avoided hospitalization expense
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-950 border border-emerald-500/40 bg-emerald-500/5">
+              <span className="text-[11px] text-emerald-300 uppercase tracking-wider block font-semibold">
+                Estimated Net Financial Value
+              </span>
+              <span className="text-2xl font-extrabold font-mono text-emerald-300 mt-1 block">
+                $
+                {(
+                  Math.round(
+                    outreachVolume *
+                      cohortData.precision *
+                      (reductionRate / 100),
+                  ) *
+                    costPerReadmission -
+                  outreachVolume * costPerIntervention
+                ).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-emerald-400/80 mt-1 block">
+                Net ROI:{" "}
+                {(
+                  (Math.round(
+                    outreachVolume *
+                      cohortData.precision *
+                      (reductionRate / 100),
+                  ) *
+                    costPerReadmission) /
+                  Math.max(1, outreachVolume * costPerIntervention)
+                ).toFixed(1)}
+                x return on intervention
+              </span>
+            </div>
+          </div>
+
+          {/* Formula & Governance Note */}
+          <div className="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800/80 text-xs text-slate-400 space-y-1 font-sans">
+            <div className="text-[11px] font-mono text-slate-300">
+              <strong className="text-sky-400">Transparent Formula:</strong> Net
+              Value = (Outreach Patients × Model Precision × Assumed Reduction
+              Rate × Cost per Readmission) - (Outreach Patients × Cost per
+              Intervention)
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              *Disclaimer: This scenario calculator is an illustrative what-if
+              estimation designed for health-system program budgeting. Actual
+              clinical outcomes vary by health literacy, patient engagement, and
+              intervention adherence.
+            </p>
           </div>
         </div>
       )}

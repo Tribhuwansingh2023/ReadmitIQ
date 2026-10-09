@@ -25,6 +25,23 @@ export interface SimilarEncounter {
   readmitted_30d: number;
 }
 
+export interface SuggestedIntervention {
+  id: string;
+  action: string;
+  category: string;
+  priority: "High" | "Medium" | "Low";
+  trigger_driver: string;
+  rationale: string;
+  target_timeline: string;
+}
+
+export interface SuggestedInterventionsSummary {
+  disclaimer: string;
+  risk_tier: string;
+  suggestions_count: number;
+  suggestions: SuggestedIntervention[];
+}
+
 export interface PredictResponse {
   calibrated_risk_probability: number;
   risk_tier: "Critical" | "High" | "Medium" | "Low";
@@ -42,6 +59,7 @@ export interface PredictResponse {
     neighbor_readmission_rate: number;
     top_neighbors: SimilarEncounter[];
   };
+  suggested_interventions?: SuggestedInterventionsSummary;
 }
 
 export interface CohortPatient {
@@ -183,20 +201,19 @@ export interface MetricsResponse {
     features: Record<
       string,
       {
-        psi_val: number;
-        psi_test: number;
-        status_val: string;
-        status_test: string;
+        psi_train_vs_val: number;
+        status_train_vs_val: string;
+        psi_train_vs_test: number;
+        status_train_vs_test: string;
       }
     >;
-    score_drift: {
-      psi_val: number;
-      psi_test: number;
-    };
-    summary: {
+    scores?: Record<string, any>;
+    summary?: {
       total_features_monitored: number;
-      moderate_drift_count: number;
-      high_drift_count: number;
+      val_moderate_drift_count: number;
+      val_high_drift_count: number;
+      test_moderate_drift_count: number;
+      test_high_drift_count: number;
     };
   };
   frozen_selection?: any;
