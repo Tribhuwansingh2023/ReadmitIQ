@@ -1,0 +1,13 @@
+{
+  "include": [
+    "src",
+    "notebooks",
+    "tests",
+    "api",
+    "scripts"
+  ],
+  "extraPaths": [
+    "."
+  ],
+  "reportMissingImports": "warning"
+}

@@ -7856,6 +7856,8 @@ a.anchor-link {
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">FutureWarning</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span>
+
 <span class="c1"># Ensure project root is in sys.path</span>
 <span class="n">PROJECT_ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span> <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">'notebooks'</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
 <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">PROJECT_ROOT</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
@@ -8457,22 +8459,7 @@ glimepiride-pioglitazone        No         100.00             False
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Categorical Cardinality Audit (Top 10):
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>C:\Users\tribh\AppData\Local\Temp\ipykernel_6372\92798838.py:2: Pandas4Warning: For backward compatibility, 'str' dtypes are included by select_dtypes when 'object' dtype is specified. This behavior is deprecated and will be removed in a future version. Explicitly pass 'str' to `include` to select them, or to `exclude` to remove them and silence this warning.
-See https://pandas.pydata.org/docs/user_guide/migration-3-strings.html#string-migration-select-dtypes for details on how to write code that works with pandas 2 and 3.
-  cat_cols = df_raw.select_dtypes(include=['object', 'category']).columns
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>             Column  Unique Values
+             Column  Unique Values
              diag_3            789
              diag_2            748
              diag_1            716
@@ -8490,6 +8477,15 @@ Encounter Bucket  Patients  Percentage (%)
     2 encounters     10434           14.59
     3 encounters      3328            4.65
    4+ encounters      3011            4.21
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>C:\Users\tribh\AppData\Local\Temp\ipykernel_10660\92798838.py:2: Pandas4Warning: For backward compatibility, 'str' dtypes are included by select_dtypes when 'object' dtype is specified. This behavior is deprecated and will be removed in a future version. Explicitly pass 'str' to `include` to select them, or to `exclude` to remove them and silence this warning.
+See https://pandas.pydata.org/docs/user_guide/migration-3-strings.html#string-migration-select-dtypes for details on how to write code that works with pandas 2 and 3.
+  cat_cols = df_raw.select_dtypes(include=['object', 'category']).columns
 </pre>
 </div>
 </div>
@@ -9668,6 +9664,7 @@ num_lab_procedures 42.94 19.57    44.0    1  129     84.0     -0.25
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Execute feature engineering on Train split</span>
 <span class="n">train_engineered</span><span class="p">,</span> <span class="n">capping_caps</span><span class="p">,</span> <span class="n">retained_drugs</span> <span class="o">=</span> <span class="n">engineer_features</span><span class="p">(</span><span class="n">train_df</span><span class="p">,</span> <span class="n">is_train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">val_engineered</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">engineer_features</span><span class="p">(</span><span class="n">val_df</span><span class="p">,</span> <span class="n">capping_thresholds</span><span class="o">=</span><span class="n">capping_caps</span><span class="p">,</span> <span class="n">retained_drugs</span><span class="o">=</span><span class="n">retained_drugs</span><span class="p">,</span> <span class="n">is_train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">test_engineered</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">engineer_features</span><span class="p">(</span><span class="n">test_df</span><span class="p">,</span> <span class="n">capping_thresholds</span><span class="o">=</span><span class="n">capping_caps</span><span class="p">,</span> <span class="n">retained_drugs</span><span class="o">=</span><span class="n">retained_drugs</span><span class="p">,</span> <span class="n">is_train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">n_before_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
 <span class="n">n_after_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_engineered</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
@@ -10814,6 +10811,7 @@ Next Milestones:
 <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_engineered</span><span class="p">)</span> <span class="o">==</span> <span class="mi">69535</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Train row count mismatch: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_engineered</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
 <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">val_engineered</span><span class="p">)</span> <span class="o">==</span> <span class="mi">14902</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Val row count mismatch: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">val_engineered</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
 <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">14903</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Test row count mismatch: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
+<span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_engineered</span><span class="p">)</span> <span class="o">==</span> <span class="mi">14903</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Test engineered row count mismatch: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_engineered</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span>
 <span class="k">assert</span> <span class="n">X_train_trans</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">150</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Transformed columns exceeded 150: </span><span class="si">{</span><span class="n">X_train_trans</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span>
 <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X_train_trans</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(),</span> <span class="s1">'NaN found in transformed train matrix'</span>
 <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">X_val_trans</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(),</span> <span class="s1">'NaN found in transformed val matrix'</span>
