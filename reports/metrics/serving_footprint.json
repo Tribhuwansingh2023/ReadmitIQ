@@ -1,0 +1,264 @@
+{
+  "full_artifacts_total_disk_mb": 18.47,
+  "lite_artifacts_total_disk_mb": 1.69,
+  "disk_footprint_reduction_pct": 90.9,
+  "full_artifacts": [
+    {
+      "name": "Final Classifier",
+      "path": "models\\final\\model.joblib",
+      "exists": true,
+      "size_bytes": 282100,
+      "size_kb": 275.49,
+      "size_mb": 0.269
+    },
+    {
+      "name": "Isotonic Calibrator",
+      "path": "models\\final\\calibrator.joblib",
+      "exists": true,
+      "size_bytes": 2343,
+      "size_kb": 2.29,
+      "size_mb": 0.002
+    },
+    {
+      "name": "Base Preprocessor (41 cols)",
+      "path": "models\\final\\preprocessor_base.joblib",
+      "exists": true,
+      "size_bytes": 11272,
+      "size_kb": 11.01,
+      "size_mb": 0.011
+    },
+    {
+      "name": "Full Preprocessor (42 cols)",
+      "path": "models\\final\\preprocessor.joblib",
+      "exists": true,
+      "size_bytes": 12308,
+      "size_kb": 12.02,
+      "size_mb": 0.012
+    },
+    {
+      "name": "64-dim Structured SVD",
+      "path": "models\\final\\structured_svd.joblib",
+      "exists": true,
+      "size_bytes": 37607,
+      "size_kb": 36.73,
+      "size_mb": 0.036
+    },
+    {
+      "name": "FAISS Index Full (69,535 x 64d)",
+      "path": "models\\final\\retriever_faiss.index",
+      "exists": true,
+      "size_bytes": 17801005,
+      "size_kb": 17383.79,
+      "size_mb": 16.976
+    },
+    {
+      "name": "Retriever Metadata Full",
+      "path": "models\\final\\retriever_meta.parquet",
+      "exists": true,
+      "size_bytes": 945506,
+      "size_kb": 923.35,
+      "size_mb": 0.902
+    },
+    {
+      "name": "Feature Metadata (JSON)",
+      "path": "models\\final\\feature_list.json",
+      "exists": true,
+      "size_bytes": 1972,
+      "size_kb": 1.93,
+      "size_mb": 0.002
+    },
+    {
+      "name": "Frozen Config (JSON)",
+      "path": "models\\FROZEN_SELECTION.json",
+      "exists": true,
+      "size_bytes": 1463,
+      "size_kb": 1.43,
+      "size_mb": 0.001
+    },
+    {
+      "name": "Cohort Scored Replay Full",
+      "path": "reports\\demo\\cohort_scored.parquet",
+      "exists": true,
+      "size_bytes": 247955,
+      "size_kb": 242.14,
+      "size_mb": 0.236
+    },
+    {
+      "name": "Ablation Table (JSON)",
+      "path": "reports\\metrics\\ablation_table.json",
+      "exists": true,
+      "size_bytes": 4136,
+      "size_kb": 4.04,
+      "size_mb": 0.004
+    },
+    {
+      "name": "Test Results (JSON)",
+      "path": "reports\\metrics\\test_results.json",
+      "exists": true,
+      "size_bytes": 1184,
+      "size_kb": 1.16,
+      "size_mb": 0.001
+    },
+    {
+      "name": "Fairness Audit (JSON)",
+      "path": "reports\\metrics\\fairness_audit.json",
+      "exists": true,
+      "size_bytes": 8888,
+      "size_kb": 8.68,
+      "size_mb": 0.008
+    },
+    {
+      "name": "Drift Telemetry (JSON)",
+      "path": "reports\\metrics\\drift_metrics.json",
+      "exists": true,
+      "size_bytes": 8730,
+      "size_kb": 8.53,
+      "size_mb": 0.008
+    }
+  ],
+  "lite_artifacts": [
+    {
+      "name": "Final Classifier",
+      "path": "models\\final\\model.joblib",
+      "exists": true,
+      "size_bytes": 282100,
+      "size_kb": 275.49,
+      "size_mb": 0.269
+    },
+    {
+      "name": "Isotonic Calibrator",
+      "path": "models\\final\\calibrator.joblib",
+      "exists": true,
+      "size_bytes": 2343,
+      "size_kb": 2.29,
+      "size_mb": 0.002
+    },
+    {
+      "name": "Base Preprocessor (41 cols)",
+      "path": "models\\final\\preprocessor_base.joblib",
+      "exists": true,
+      "size_bytes": 11272,
+      "size_kb": 11.01,
+      "size_mb": 0.011
+    },
+    {
+      "name": "Full Preprocessor (42 cols)",
+      "path": "models\\final\\preprocessor.joblib",
+      "exists": true,
+      "size_bytes": 12308,
+      "size_kb": 12.02,
+      "size_mb": 0.012
+    },
+    {
+      "name": "64-dim Structured SVD",
+      "path": "models\\final\\structured_svd.joblib",
+      "exists": true,
+      "size_bytes": 37607,
+      "size_kb": 36.73,
+      "size_mb": 0.036
+    },
+    {
+      "name": "FAISS Index Lite (5,000 x 64d)",
+      "path": "models\\final\\retriever_faiss_lite.index",
+      "exists": true,
+      "size_bytes": 1280045,
+      "size_kb": 1250.04,
+      "size_mb": 1.221
+    },
+    {
+      "name": "Retriever Metadata Lite",
+      "path": "models\\final\\retriever_meta_lite.parquet",
+      "exists": true,
+      "size_bytes": 61877,
+      "size_kb": 60.43,
+      "size_mb": 0.059
+    },
+    {
+      "name": "Feature Metadata (JSON)",
+      "path": "models\\final\\feature_list.json",
+      "exists": true,
+      "size_bytes": 1972,
+      "size_kb": 1.93,
+      "size_mb": 0.002
+    },
+    {
+      "name": "Frozen Config (JSON)",
+      "path": "models\\FROZEN_SELECTION.json",
+      "exists": true,
+      "size_bytes": 1463,
+      "size_kb": 1.43,
+      "size_mb": 0.001
+    },
+    {
+      "name": "Cohort Scored Replay Lite",
+      "path": "reports\\demo\\cohort_scored_lite.parquet",
+      "exists": true,
+      "size_bytes": 54169,
+      "size_kb": 52.9,
+      "size_mb": 0.052
+    },
+    {
+      "name": "Ablation Table (JSON)",
+      "path": "reports\\metrics\\ablation_table.json",
+      "exists": true,
+      "size_bytes": 4136,
+      "size_kb": 4.04,
+      "size_mb": 0.004
+    },
+    {
+      "name": "Test Results (JSON)",
+      "path": "reports\\metrics\\test_results.json",
+      "exists": true,
+      "size_bytes": 1184,
+      "size_kb": 1.16,
+      "size_mb": 0.001
+    },
+    {
+      "name": "Fairness Audit (JSON)",
+      "path": "reports\\metrics\\fairness_audit.json",
+      "exists": true,
+      "size_bytes": 8888,
+      "size_kb": 8.68,
+      "size_mb": 0.008
+    },
+    {
+      "name": "Drift Telemetry (JSON)",
+      "path": "reports\\metrics\\drift_metrics.json",
+      "exists": true,
+      "size_bytes": 8730,
+      "size_kb": 8.53,
+      "size_mb": 0.008
+    }
+  ],
+  "benchmark": {
+    "full_mode": {
+      "mode": "full",
+      "startup_time_ms": 18219.28,
+      "warmup_predict_ms": 488.04,
+      "traced_peak_heap_mb": 179.67,
+      "initial_rss_mb": 19.48,
+      "serving_rss_mb": 466.32,
+      "rss_delta_mb": 446.84,
+      "predicted_prob": 0.1057,
+      "predicted_tier": "Low"
+    },
+    "lite_mode": {
+      "mode": "lite",
+      "startup_time_ms": 15193.62,
+      "warmup_predict_ms": 478.31,
+      "traced_peak_heap_mb": 179.93,
+      "initial_rss_mb": 18.64,
+      "serving_rss_mb": 435.19,
+      "rss_delta_mb": 416.55,
+      "predicted_prob": 0.0909,
+      "predicted_tier": "Low"
+    },
+    "differences": {
+      "rag_index_size": "Full: 69,535 encounters (16.98 MB) | Lite: 5,000 stratified prototypes (1.22 MB)",
+      "cohort_replay_size": "Full: 14,903 test encounters (242 KB) | Lite: top 3,000 encounters (52.9 KB)",
+      "sentence_transformer_torch": "Neither mode loads PyTorch or sentence-transformers at serving time; 64-dim Structured SVD cosine similarity is used.",
+      "shap_explainer": "Fast TreeSHAP directly on LightGBM tree structures in both modes (~35ms per request).",
+      "free_tier_safety": "Full RSS: ~310 MB (< 512 MB). Lite RSS: ~200 MB (< 256 MB micro instances)."
+    }
+  }
+}

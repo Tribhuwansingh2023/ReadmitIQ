@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict
@@ -41,12 +42,16 @@ TEST_RAG_PARQUET = PROCESSED_DATA_DIR / "test_rag.parquet"
 FEATURE_METADATA_PATH = PROCESSED_DATA_DIR / "feature_metadata.json"
 FEATURE_LIST_PATH = PROCESSED_DATA_DIR / "feature_list.json"
 
-MODELS_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("models_dir", "models")
+MODELS_DIR = Path(
+    os.getenv("READMITIQ_MODELS_DIR", str(BASE_DIR / YAML_CFG.get("paths", {}).get("models_dir", "models")))
+)
 PREPROCESSOR_BASE_PATH = MODELS_DIR / "preprocessor_base.joblib"
 PREPROCESSOR_RAG_PATH = MODELS_DIR / "preprocessor_rag.joblib"
-REPORTS_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("reports_dir", "reports")
-METRICS_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("metrics_dir", "reports/metrics")
-FIGURES_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("figures_dir", "reports/figures")
+REPORTS_DIR = Path(
+    os.getenv("READMITIQ_REPORTS_DIR", str(BASE_DIR / YAML_CFG.get("paths", {}).get("reports_dir", "reports")))
+)
+METRICS_DIR = Path(os.getenv("READMITIQ_METRICS_DIR", str(REPORTS_DIR / "metrics")))
+FIGURES_DIR = Path(os.getenv("READMITIQ_FIGURES_DIR", str(REPORTS_DIR / "figures")))
 DOCS_DIR = BASE_DIR / "docs"
 
 # Split & Seed

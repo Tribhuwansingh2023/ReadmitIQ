@@ -17,6 +17,8 @@ from src.features import build_preprocessor
 
 def test_patient_disjoint_across_all_parquets():
     """Verify zero patient overlap between Train, Val, and Test parquets."""
+    if not (TRAIN_PARQUET.exists() and VAL_PARQUET.exists()):
+        pytest.skip("Processed dataset parquets not found in CI environment; skipping patient disjoint test.")
     tr = pd.read_parquet(PROCESSED_DATA_DIR / "train.parquet", columns=["patient_nbr"])
     va = pd.read_parquet(PROCESSED_DATA_DIR / "val.parquet", columns=["patient_nbr"])
     te = pd.read_parquet(PROCESSED_DATA_DIR / "test.parquet", columns=["patient_nbr"])
@@ -32,6 +34,8 @@ def test_patient_disjoint_across_all_parquets():
 
 def test_retriever_metadata_contains_only_train_patients():
     """Verify FAISS retriever metadata has zero overlap with Val or Test splits."""
+    if not (VAL_PARQUET.exists() and (MODELS_DIR / "final" / "retriever_meta.parquet").exists()):
+        pytest.skip("Retriever metadata or validation parquet not found; skipping leakage check.")
     meta = pd.read_parquet(MODELS_DIR / "final" / "retriever_meta.parquet")
     va = pd.read_parquet(PROCESSED_DATA_DIR / "val.parquet", columns=["patient_nbr"])
     te = pd.read_parquet(PROCESSED_DATA_DIR / "test.parquet", columns=["patient_nbr"])
@@ -50,6 +54,8 @@ def test_train_fitting_invariance_under_perturbed_validation():
     If validation data has 100 new unseen categories and extreme outlier numbers,
     the fitted pipeline parameters on train do not change.
     """
+    if not (TRAIN_PARQUET.exists() and VAL_PARQUET.exists()):
+        pytest.skip("Train and Val parquets not found; skipping fitting invariance test.")
     with open(MODELS_DIR / "final" / "feature_list.json", "r") as f:
         meta = json.load(f)
     num_cols = [c for c in meta["numeric_features"] if c != "rag_struct_rate_k20"]
@@ -88,6 +94,8 @@ def test_train_fitting_invariance_under_perturbed_validation():
 
 def test_label_permutation_produces_chance_auc():
     """Verify that LightGBM trained on randomly shuffled labels achieves AUC ~ 0.50 (no leakage)."""
+    if not (TRAIN_RAG_PARQUET.exists() and (PROCESSED_DATA_DIR / "val_rag.parquet").exists()):
+        pytest.skip("RAG parquets not found; skipping permutation test.")
     import lightgbm as lgb
     from sklearn.metrics import roc_auc_score
 

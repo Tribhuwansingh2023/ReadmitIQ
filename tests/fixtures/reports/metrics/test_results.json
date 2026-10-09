@@ -1,0 +1,54 @@
+{
+  "model_name": "LightGBM + Structured RAG",
+  "eval_timestamp": "2026-10-08T22:29:23.081635+00:00",
+  "git_commit_hash": "efa44003ae6ea2bc4243532def61ef50cf13630b",
+  "test_cohort_size": 14903,
+  "test_positive_prevalence": 0.1139,
+  "auc_roc": 0.659,
+  "auc_ci_95": [
+    0.6458,
+    0.6728
+  ],
+  "frozen_decision_threshold": 0.1495,
+  "f1": 0.2721,
+  "precision": 0.2025,
+  "recall": 0.4146,
+  "brier_score": 0.0973,
+  "ece": 0.0039,
+  "capacity_metrics": {
+    "top_5pct": {
+      "threshold": 0.2472,
+      "precision": 0.2859,
+      "lift": 2.51,
+      "recall": 0.1254
+    },
+    "top_10pct": {
+      "threshold": 0.194,
+      "precision": 0.2376,
+      "lift": 2.09,
+      "recall": 0.2085
+    },
+    "top_20pct": {
+      "threshold": 0.1551,
+      "precision": 0.207,
+      "lift": 1.82,
+      "recall": 0.3634
+    }
+  },
+  "paired_rag_difference_test": {
+    "observed_delta_auc": 0.0004,
+    "ci_95": [
+      -0.0025,
+      0.0031
+    ],
+    "crosses_zero": true
+  },
+  "validation_comparison": {
+    "val_auc": 0.6731,
+    "val_auc_ci": [
+      0.6602,
+      0.6863
+    ],
+    "auc_generalization_gap": -0.0141
+  }
+}

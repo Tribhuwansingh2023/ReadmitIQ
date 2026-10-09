@@ -48,6 +48,7 @@ def health_check():
     return {
         "status": "healthy",
         "version": "1.0.0",
+        "serve_mode": svc.serve_mode,
         "git_commit_hash": frozen.get("git_commit_hash", "unknown"),
         "frozen_timestamp": frozen.get("frozen_timestamp"),
         "model_name": frozen.get("model_name"),

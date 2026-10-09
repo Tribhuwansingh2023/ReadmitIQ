@@ -9,14 +9,17 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - READMITIQ_SERVE_MODE=full
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
       - PORT=8000
+      - WORKERS=2
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
+      start_period: 15s
 
   web:
     build:
@@ -28,5 +31,6 @@ services:
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,7 +19,7 @@ from api.interventions import generate_suggested_interventions
 from src.explain import ModelExplainer
 from src.train import prepare_lgbm_data
 
-LOGS_DIR = Path(__file__).resolve().parent / "logs"
+LOGS_DIR = Path(os.getenv("READMITIQ_LOG_DIR", str(Path(__file__).resolve().parent / "logs")))
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 PRED_LOG_PATH = LOGS_DIR / "predictions.jsonl"
 
@@ -30,20 +31,28 @@ class ModelService:
         self.final_dir = MODELS_DIR / "final"
         self.frozen_meta_path = MODELS_DIR / "FROZEN_SELECTION.json"
 
+        # Serving mode: "full" (default) or "lite" for low-memory environments
+        self.serve_mode = os.getenv("READMITIQ_SERVE_MODE", "full").lower().strip()
+        self.is_lite = self.serve_mode in ["lite", "l", "compact"]
+
         # Load frozen configuration
         with open(self.frozen_meta_path, "r", encoding="utf-8") as f:
             self.frozen_config = json.load(f)
 
-        # Load models and preprocessors
+        # Load models and preprocessors (always lightweight, < 350 KB total)
         self.model = joblib.load(self.final_dir / "model.joblib")
         self.preprocessor = joblib.load(self.final_dir / "preprocessor.joblib")
         self.base_preprocessor = joblib.load(self.final_dir / "preprocessor_base.joblib")
         self.calibrator = joblib.load(self.final_dir / "calibrator.joblib")
         self.svd = joblib.load(self.final_dir / "structured_svd.joblib")
 
-        # Load FAISS index & metadata
-        self.faiss_index = faiss.read_index(str(self.final_dir / "retriever_faiss.index"))
-        self.train_meta = pd.read_parquet(self.final_dir / "retriever_meta.parquet")
+        # Load FAISS index & metadata (adaptive to full vs lite mode)
+        if self.is_lite and (self.final_dir / "retriever_faiss_lite.index").exists():
+            self.faiss_index = faiss.read_index(str(self.final_dir / "retriever_faiss_lite.index"))
+            self.train_meta = pd.read_parquet(self.final_dir / "retriever_meta_lite.parquet")
+        else:
+            self.faiss_index = faiss.read_index(str(self.final_dir / "retriever_faiss.index"))
+            self.train_meta = pd.read_parquet(self.final_dir / "retriever_meta.parquet")
 
         with open(self.final_dir / "feature_list.json", "r", encoding="utf-8") as f:
             self.feature_meta = json.load(f)
@@ -61,8 +70,12 @@ class ModelService:
             feature_list_path=self.final_dir / "feature_list.json",
         )
 
-        # Preloaded cohort scored parquet for fast /cohort replay
-        self.cohort_parquet_path = REPORTS_DIR / "demo" / "cohort_scored.parquet"
+        # Preloaded cohort scored parquet for fast /cohort replay (adaptive)
+        if self.is_lite and (REPORTS_DIR / "demo" / "cohort_scored_lite.parquet").exists():
+            self.cohort_parquet_path = REPORTS_DIR / "demo" / "cohort_scored_lite.parquet"
+        else:
+            self.cohort_parquet_path = REPORTS_DIR / "demo" / "cohort_scored.parquet"
+
         if self.cohort_parquet_path.exists():
             self.cohort_df = pd.read_parquet(self.cohort_parquet_path)
         else:
