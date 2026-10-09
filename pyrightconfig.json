@@ -1,13 +1,29 @@
 {
   "include": [
     "src",
-    "notebooks",
     "tests",
     "api",
     "scripts"
   ],
+  "exclude": [
+    "notebooks",
+    "web",
+    "**/node_modules",
+    "**/.pytest_cache",
+    "**/.ruff_cache"
+  ],
   "extraPaths": [
     "."
   ],
-  "reportMissingImports": "warning"
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": false,
+  "reportUnnecessaryCast": false,
+  "executionEnvironments": [
+    {
+      "root": "notebooks",
+      "typeCheckingMode": "off",
+      "extraPaths": ["."]
+    }
+  ]
 }

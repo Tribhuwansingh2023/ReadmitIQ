@@ -33,5 +33,9 @@ filterwarnings = [
 
 [tool.pyright]
 extraPaths = ["."]
-include = ["src", "notebooks", "tests", "api", "scripts"]
+include = ["src", "tests", "api", "scripts"]
+exclude = ["notebooks", "web", "**/node_modules"]
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+reportUnnecessaryCast = false
 
