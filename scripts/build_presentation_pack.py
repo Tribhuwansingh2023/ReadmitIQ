@@ -65,14 +65,14 @@ def load_artifacts():
 
 
 # Color Palette
-BG_DARK = RGBColor(15, 23, 42)       # Slate 900
-CARD_BG = RGBColor(30, 41, 59)       # Slate 800
-CARD_BORDER = RGBColor(51, 65, 85)   # Slate 700
+BG_DARK = RGBColor(15, 23, 42)  # Slate 900
+CARD_BG = RGBColor(30, 41, 59)  # Slate 800
+CARD_BORDER = RGBColor(51, 65, 85)  # Slate 700
 TEXT_MAIN = RGBColor(248, 250, 252)  # Slate 50
-TEXT_MUTED = RGBColor(148, 163, 184) # Slate 400
-ACCENT_BLUE = RGBColor(14, 165, 233) # Sky 500
-ACCENT_GREEN = RGBColor(16, 185, 129)# Emerald 500
-ACCENT_AMBER = RGBColor(245, 158, 11)# Amber 500
+TEXT_MUTED = RGBColor(148, 163, 184)  # Slate 400
+ACCENT_BLUE = RGBColor(14, 165, 233)  # Sky 500
+ACCENT_GREEN = RGBColor(16, 185, 129)  # Emerald 500
+ACCENT_AMBER = RGBColor(245, 158, 11)  # Amber 500
 ACCENT_ROSE = RGBColor(239, 68, 68)  # Rose 500
 
 
@@ -113,14 +113,18 @@ def create_deck(data: dict, out_path: Path):
         return slide
 
     def add_card(slide, left, top, width, height, title="", border_color=CARD_BORDER):
-        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height))
+        card = slide.shapes.add_shape(
+            MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height)
+        )
         card.fill.solid()
         card.fill.fore_color.rgb = CARD_BG
         card.line.color.rgb = border_color
         card.line.width = Pt(1.5)
 
         if title:
-            tbox = slide.shapes.add_textbox(Inches(left + 0.2), Inches(top + 0.15), Inches(width - 0.4), Inches(0.4))
+            tbox = slide.shapes.add_textbox(
+                Inches(left + 0.2), Inches(top + 0.15), Inches(width - 0.4), Inches(0.4)
+            )
             tf = tbox.text_frame
             p = tf.paragraphs[0]
             p.text = title
@@ -178,7 +182,9 @@ def create_deck(data: dict, out_path: Path):
     p3.space_after = Pt(20)
 
     p4 = tf1.add_paragraph()
-    p4.text = "Prepared by: ReadmitIQ Team (Members 1 - 7)  |  Fully Audited & Locally Containerized"
+    p4.text = (
+        "Prepared by: ReadmitIQ Team (Members 1 - 7)  |  Fully Audited & Locally Containerized"
+    )
     p4.font.size = Pt(11)
     p4.font.color.rgb = TEXT_MUTED
 
@@ -191,7 +197,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 2: Problem & Clinical Economics
     # =========================================================================
-    s2 = add_base_slide("The $26B Readmission Bottleneck: Why Discharge Triage Fails", "01. CLINICAL PROBLEM & MOTIVATION")
+    s2 = add_base_slide(
+        "The $26B Readmission Bottleneck: Why Discharge Triage Fails",
+        "01. CLINICAL PROBLEM & MOTIVATION",
+    )
     add_card(s2, 0.8, 1.6, 3.6, 5.2, "1. The Operational Reality")
     tb2_1 = s2.shapes.add_textbox(Inches(0.95), Inches(2.2), Inches(3.3), Inches(4.4))
     tf2_1 = tb2_1.text_frame
@@ -251,7 +260,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 3: Data & Exploratory Discoveries
     # =========================================================================
-    s3 = add_base_slide("Real-World EHR Data: UCI Diabetes 130-US Hospitals Cohort", "02. DATASET & EXPLORATORY FINDINGS")
+    s3 = add_base_slide(
+        "Real-World EHR Data: UCI Diabetes 130-US Hospitals Cohort",
+        "02. DATASET & EXPLORATORY FINDINGS",
+    )
     add_card(s3, 0.8, 1.6, 5.6, 5.2, "Cohort Dimensions & Key Clinical Signal")
     tb3 = s3.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.2), Inches(4.4))
     tf3 = tb3.text_frame
@@ -286,7 +298,9 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 4: Clinical Data Traps & Methodological Rigor
     # =========================================================================
-    s4 = add_base_slide("4 Clinical Data Traps We Audited and Defeated", "03. METHODOLOGICAL RIGOR & DATA HYGIENE")
+    s4 = add_base_slide(
+        "4 Clinical Data Traps We Audited and Defeated", "03. METHODOLOGICAL RIGOR & DATA HYGIENE"
+    )
 
     add_card(s4, 0.8, 1.6, 5.6, 2.4, "Trap 1: The Multi-Encounter Patient Leak")
     tb4_1 = s4.shapes.add_textbox(Inches(0.95), Inches(2.1), Inches(5.3), Inches(1.8))
@@ -345,16 +359,33 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 5: End-to-End System Architecture
     # =========================================================================
-    s5 = add_base_slide("ReadmitIQ Full-Stack Clinical Architecture", "04. SYSTEM ARCHITECTURE & DATA FLOW")
+    s5 = add_base_slide(
+        "ReadmitIQ Full-Stack Clinical Architecture", "04. SYSTEM ARCHITECTURE & DATA FLOW"
+    )
 
     # Flowchart Cards
     stages = [
         ("1. INGESTION", "Raw EHR Encounter (41 Features)\nUCI UCI-130 / FHIR Resource"),
-        ("2. PREPROCESSING", "Group Hash Split (0% Overlap)\nRare Category Collapsing\n141-dim Feature Matrix"),
-        ("3. LATENT PROJECTION", "64-dim TruncatedSVD\nL2-Normalized Embeddings\nFitted strictly on Train"),
-        ("4. STRUCTURED RAG", "FAISS Inner Product (k=20)\nOOF Cross-Validation Masking\nPrecedent Rate Retrieval"),
-        ("5. ENSEMBLE SCORING", "LightGBM Classifier\nIsotonic Calibrator (ECE 0.39%)\nTreeSHAP Attributions"),
-        ("6. COMMAND CENTER", "React + Vite UI\nCapacity Slider & ROI Sim\nDeterministic Care Protocols"),
+        (
+            "2. PREPROCESSING",
+            "Group Hash Split (0% Overlap)\nRare Category Collapsing\n141-dim Feature Matrix",
+        ),
+        (
+            "3. LATENT PROJECTION",
+            "64-dim TruncatedSVD\nL2-Normalized Embeddings\nFitted strictly on Train",
+        ),
+        (
+            "4. STRUCTURED RAG",
+            "FAISS Inner Product (k=20)\nOOF Cross-Validation Masking\nPrecedent Rate Retrieval",
+        ),
+        (
+            "5. ENSEMBLE SCORING",
+            "LightGBM Classifier\nIsotonic Calibrator (ECE 0.39%)\nTreeSHAP Attributions",
+        ),
+        (
+            "6. COMMAND CENTER",
+            "React + Vite UI\nCapacity Slider & ROI Sim\nDeterministic Care Protocols",
+        ),
     ]
 
     for idx, (stitle, sdesc) in enumerate(stages):
@@ -362,7 +393,9 @@ def create_deck(data: dict, out_path: Path):
         row = idx // 3
         cx = 0.8 + col * 4.0
         cy = 1.7 + row * 2.6
-        add_card(s5, cx, cy, 3.7, 2.3, stitle, border_color=ACCENT_BLUE if idx in [3, 4] else CARD_BORDER)
+        add_card(
+            s5, cx, cy, 3.7, 2.3, stitle, border_color=ACCENT_BLUE if idx in [3, 4] else CARD_BORDER
+        )
         tbs = s5.shapes.add_textbox(Inches(cx + 0.15), Inches(cy + 0.6), Inches(3.4), Inches(1.5))
         tfs = tbs.text_frame
         tfs.word_wrap = True
@@ -380,7 +413,9 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 6: Leakage-Safe Structured RAG Design
     # =========================================================================
-    s6 = add_base_slide("Leakage-Safe Structured RAG: Why Precedents Matter", "05. RETRIEVAL-AUGMENTED GENERATION")
+    s6 = add_base_slide(
+        "Leakage-Safe Structured RAG: Why Precedents Matter", "05. RETRIEVAL-AUGMENTED GENERATION"
+    )
     add_card(s6, 0.8, 1.6, 5.8, 5.2, "How Structured RAG Works Clinically")
     tb6 = s6.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.4), Inches(4.4))
     tf6 = tb6.text_frame
@@ -429,7 +464,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 7: Experiments & The Honest RAG Finding
     # =========================================================================
-    s7 = add_base_slide("Ablation Leaderboard & The Honest Scientific Finding", "06. EMPIRICAL BENCHMARKS & ABLATION")
+    s7 = add_base_slide(
+        "Ablation Leaderboard & The Honest Scientific Finding",
+        "06. EMPIRICAL BENCHMARKS & ABLATION",
+    )
 
     # Ablation summary table
     add_card(s7, 0.8, 1.6, 6.6, 5.2, "Ablation Table Across Algorithms (Full Val Split)")
@@ -443,7 +481,10 @@ def create_deck(data: dict, out_path: Path):
     has_transformer = False
     for r in res_list:
         rag_str = "+ RAG" if r.get("rag_feature") else "Base"
-        if "transformer" in r.get("model", "").lower() or "distilbert" in r.get("model", "").lower():
+        if (
+            "transformer" in r.get("model", "").lower()
+            or "distilbert" in r.get("model", "").lower()
+        ):
             has_transformer = True
         tf7.text += f"• {r['model']} ({rag_str}): AUC {r['auc_roc']:.4f} [{r['auc_ci_95'][0]:.4f}, {r['auc_ci_95'][1]:.4f}] | Lift {r.get('lift_top_10pct', 0.0):.2f}x\n"
     if not has_transformer:
@@ -482,15 +523,18 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 8: Calibration & Capacity-Based Triage
     # =========================================================================
-    s8 = add_base_slide("Held-Out Test Results: Calibration & Operational Lift", "07. TEST EVALUATION & OPERATIONAL TRIAGE")
+    s8 = add_base_slide(
+        "Held-Out Test Results: Calibration & Operational Lift",
+        "07. TEST EVALUATION & OPERATIONAL TRIAGE",
+    )
 
     add_card(s8, 0.8, 1.6, 6.2, 5.2, "Locked Test Results (N = 14,903, Lock File)")
     tb8 = s8.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.8), Inches(4.4))
     tf8 = tb8.text_frame
     tf8.word_wrap = True
-    c_top5 = test_res['capacity_metrics']['top_5pct']
-    c_top10 = test_res['capacity_metrics']['top_10pct']
-    c_top20 = test_res['capacity_metrics']['top_20pct']
+    c_top5 = test_res["capacity_metrics"]["top_5pct"]
+    c_top10 = test_res["capacity_metrics"]["top_10pct"]
+    c_top20 = test_res["capacity_metrics"]["top_20pct"]
 
     tf8.text = (
         f"Primary Metrics (Evaluated Once):\n"
@@ -523,7 +567,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 9: Explainability & Algorithmic Fairness
     # =========================================================================
-    s9 = add_base_slide("Explainability & Fairness: Auditing Algorithmic Equity", "08. CLINICAL EXPLAINABILITY & BIAS AUDIT")
+    s9 = add_base_slide(
+        "Explainability & Fairness: Auditing Algorithmic Equity",
+        "08. CLINICAL EXPLAINABILITY & BIAS AUDIT",
+    )
 
     add_card(s9, 0.8, 1.6, 5.8, 5.2, "Clinician-Facing TreeSHAP & Subgroup Audit")
     tb9 = s9.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.4), Inches(4.4))
@@ -564,7 +611,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 10: Product Demo Flow
     # =========================================================================
-    s10 = add_base_slide("ReadmitIQ Command Center: User Experience & Demo Flow", "09. PRODUCT DEMO & CLINICAL WORKFLOW")
+    s10 = add_base_slide(
+        "ReadmitIQ Command Center: User Experience & Demo Flow",
+        "09. PRODUCT DEMO & CLINICAL WORKFLOW",
+    )
 
     add_card(s10, 0.8, 1.6, 5.6, 5.2, "1. Cohort Triage & ROI What-If Simulator")
     img_cohort = ROOT_DIR / "docs" / "screenshots" / "cohort_triage_desktop.png"
@@ -595,7 +645,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 11: Production Readiness
     # =========================================================================
-    s11 = add_base_slide("Enterprise Production Readiness, Latency & Drift Telemetry", "10. PRODUCTION DEPLOYMENT & INTEGRATION")
+    s11 = add_base_slide(
+        "Enterprise Production Readiness, Latency & Drift Telemetry",
+        "10. PRODUCTION DEPLOYMENT & INTEGRATION",
+    )
 
     add_card(s11, 0.8, 1.6, 5.6, 5.2, "Production Engineering Specs")
     tb11_1 = s11.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.2), Inches(4.4))
@@ -620,7 +673,11 @@ def create_deck(data: dict, out_path: Path):
     add_card(s11, 6.7, 1.6, 5.8, 5.2, "Real-Time Population Drift Telemetry (PSI)")
     tb11_2 = s11.shapes.add_textbox(Inches(6.9), Inches(2.2), Inches(5.4), Inches(4.4))
     tf11_2 = tb11_2.text_frame
-    max_psi = max(v.get("psi_train_vs_test", 0.0) for v in drift["features"].values()) if "features" in drift else 0.0049
+    max_psi = (
+        max(v.get("psi_train_vs_test", 0.0) for v in drift["features"].values())
+        if "features" in drift
+        else 0.0049
+    )
     high_drift_cnt = drift.get("summary", {}).get("test_high_drift_count", 0)
     tf11_2.text = (
         f"• Continuous Population Stability Index (PSI) Monitoring:\n"
@@ -645,7 +702,9 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 12: Clinical Limitations & Responsible Use
     # =========================================================================
-    s12 = add_base_slide("Clinical Limitations & Responsible Governance", "11. LIMITATIONS & ETHICAL GOVERNANCE")
+    s12 = add_base_slide(
+        "Clinical Limitations & Responsible Governance", "11. LIMITATIONS & ETHICAL GOVERNANCE"
+    )
 
     add_card(s12, 0.8, 1.6, 5.6, 5.2, "Known Empirical & Data Limitations")
     tb12_1 = s12.shapes.add_textbox(Inches(1.0), Inches(2.2), Inches(5.2), Inches(4.4))
@@ -692,23 +751,55 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 13: Team & Roles
     # =========================================================================
-    s13 = add_base_slide("Interdisciplinary Team Structure & Execution", "12. TEAMWORK & OWNERSHIP DIVISION")
+    s13 = add_base_slide(
+        "Interdisciplinary Team Structure & Execution", "12. TEAMWORK & OWNERSHIP DIVISION"
+    )
 
     roles = [
-        ("Member 1", "Clinical Product & Problem Formulation", "Clinical workflow framing, operational capacity economics, and medical metric alignment."),
-        ("Member 2", "Data Engineering & Leakage Isolation", "Grouped patient hash splitting, UCI data pipeline, and zero-leakage mathematical guarantees."),
-        ("Member 3", "Machine Learning & Probability Calibration", "Algorithm benchmarking, LightGBM tuning, Isotonic calibration, and 95% bootstrap CIs."),
-        ("Member 4", "Structured RAG & Precedent Retrieval", "64-dim clinical latent SVD space, FAISS inner-product indexing, and OOF cross-validation."),
-        ("Member 5", "Explainability, Fairness & Governance", "TreeSHAP local attributions, demographic-blinded model audit, and 42-feature PSI monitoring."),
-        ("Member 6", "Full-Stack Web Command Center", "React 19 + TypeScript + Vite SPA, responsive clinical design tokens, and interactive ROI simulator."),
-        ("Member 7", "Production DevOps & Container Serving", "FastAPI architecture, Lite serving mode (<2MB), Docker multi-stage builds, and CI/CD automation."),
+        (
+            "Member 1",
+            "Clinical Product & Problem Formulation",
+            "Clinical workflow framing, operational capacity economics, and medical metric alignment.",
+        ),
+        (
+            "Member 2",
+            "Data Engineering & Leakage Isolation",
+            "Grouped patient hash splitting, UCI data pipeline, and zero-leakage mathematical guarantees.",
+        ),
+        (
+            "Member 3",
+            "Machine Learning & Probability Calibration",
+            "Algorithm benchmarking, LightGBM tuning, Isotonic calibration, and 95% bootstrap CIs.",
+        ),
+        (
+            "Member 4",
+            "Structured RAG & Precedent Retrieval",
+            "64-dim clinical latent SVD space, FAISS inner-product indexing, and OOF cross-validation.",
+        ),
+        (
+            "Member 5",
+            "Explainability, Fairness & Governance",
+            "TreeSHAP local attributions, demographic-blinded model audit, and 42-feature PSI monitoring.",
+        ),
+        (
+            "Member 6",
+            "Full-Stack Web Command Center",
+            "React 19 + TypeScript + Vite SPA, responsive clinical design tokens, and interactive ROI simulator.",
+        ),
+        (
+            "Member 7",
+            "Production DevOps & Container Serving",
+            "FastAPI architecture, Lite serving mode (<2MB), Docker multi-stage builds, and CI/CD automation.",
+        ),
     ]
 
     for idx, (m_id, m_role, m_desc) in enumerate(roles):
         rx = 0.8 + (idx % 2) * 5.9
         ry = 1.6 + (idx // 2) * 1.35
         add_card(s13, rx, ry, 5.6, 1.25, f"{m_id}: {m_role}")
-        tbr = s13.shapes.add_textbox(Inches(rx + 0.15), Inches(ry + 0.45), Inches(5.3), Inches(0.75))
+        tbr = s13.shapes.add_textbox(
+            Inches(rx + 0.15), Inches(ry + 0.45), Inches(5.3), Inches(0.75)
+        )
         tfr = tbr.text_frame
         tfr.word_wrap = True
         tfr.text = m_desc
@@ -725,7 +816,10 @@ def create_deck(data: dict, out_path: Path):
     # =========================================================================
     # SLIDE 14: Roadmap & Next Steps
     # =========================================================================
-    s14 = add_base_slide("Future Roadmap: Moving from Prototype to Health System", "13. PRODUCTION ROADMAP & NEXT STEPS")
+    s14 = add_base_slide(
+        "Future Roadmap: Moving from Prototype to Health System",
+        "13. PRODUCTION ROADMAP & NEXT STEPS",
+    )
 
     add_card(s14, 0.8, 1.6, 3.6, 5.2, "Phase 1: EHR FHIR Integration")
     tb14_1 = s14.shapes.add_textbox(Inches(0.95), Inches(2.2), Inches(3.3), Inches(4.4))
@@ -799,22 +893,23 @@ def generate_qa_prep(data: dict, out_path: Path):
     sub_cau = fairness["audits"]["race"]["subgroups"]["Caucasian"]
     sub_aa = fairness["audits"]["race"]["subgroups"]["AfricanAmerican"]
     sub_hisp = fairness["audits"]["race"]["subgroups"]["Hispanic"]
-    c_top10 = test_res['capacity_metrics']['top_10pct']
-    max_psi = max(v.get("psi_train_vs_test", 0.0) for v in drift["features"].values()) if "features" in drift else 0.0049
+    c_top10 = test_res["capacity_metrics"]["top_10pct"]
+    max_psi = (
+        max(v.get("psi_train_vs_test", 0.0) for v in drift["features"].values())
+        if "features" in drift
+        else 0.0049
+    )
 
     # Transformer dynamic state for Q14
     t_rows = [
         r
         for r in ablation.get("ablation_results", [])
-        if "transformer" in r.get("model", "").lower()
-        or "distilbert" in r.get("model", "").lower()
+        if "transformer" in r.get("model", "").lower() or "distilbert" in r.get("model", "").lower()
     ]
     if len(t_rows) >= 2:
         t_notes = next((r for r in t_rows if not r.get("rag_feature")), t_rows[0])
         t_rag = next((r for r in t_rows if r.get("rag_feature")), t_rows[1])
-        t_comps = ablation.get("comparisons", {}).get(
-            "transformer_rag_vs_transformer_notes", {}
-        )
+        t_comps = ablation.get("comparisons", {}).get("transformer_rag_vs_transformer_notes", {})
         t_diff = t_comps.get("observed_diff", 0.0)
         t_ci = t_comps.get("ci_95", [0.0, 0.0])
         t_cz = "Yes" if t_comps.get("crosses_zero", True) else "No"
@@ -1057,13 +1152,12 @@ def generate_qa_prep(data: dict, out_path: Path):
 # =============================================================================
 def generate_demo_script(data: dict, out_path: Path):
     test_res = data["test"]
-    c_top10 = test_res['capacity_metrics']['top_10pct']
+    c_top10 = test_res["capacity_metrics"]["top_10pct"]
 
     t_rows = [
         r
         for r in data["ablation"].get("ablation_results", [])
-        if "transformer" in r.get("model", "").lower()
-        or "distilbert" in r.get("model", "").lower()
+        if "transformer" in r.get("model", "").lower() or "distilbert" in r.get("model", "").lower()
     ]
     if len(t_rows) >= 2:
         part4_text = (
@@ -1134,7 +1228,7 @@ def generate_demo_script(data: dict, out_path: Path):
 # =============================================================================
 def generate_video_storyboard(data: dict, out_path: Path):
     test_res = data["test"]
-    c_top10 = test_res['capacity_metrics']['top_10pct']
+    c_top10 = test_res["capacity_metrics"]["top_10pct"]
     fairness = data["fairness"]
     latency = data["latency"]
 

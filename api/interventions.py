@@ -7,7 +7,6 @@ clinical pathways with clear trigger driver attribution.
 
 from typing import Any, Dict, List, Optional
 
-
 DISCLAIMER_TEXT = "Decision-support suggestions, not clinical advice"
 
 
@@ -64,9 +63,7 @@ def generate_suggested_interventions(
     # 1. Inpatient Utilization Rules
     num_inpatient = int(patient_data.get("number_inpatient") or 0)
     total_prior = int(patient_data.get("total_prior_visits") or 0)
-    if num_inpatient >= 2 or (
-        "number_inpatient" in driver_names and num_inpatient >= 1
-    ):
+    if num_inpatient >= 2 or ("number_inpatient" in driver_names and num_inpatient >= 1):
         add_suggestion(
             sugg_id="rapid_telephonic_followup",
             action="Rapid Post-Discharge Telephonic Outreach",
@@ -107,9 +104,7 @@ def generate_suggested_interventions(
         or "insulin" in driver_names
     ):
         insulin_note = (
-            f" (Insulin status: {insulin_status})"
-            if insulin_status in ("Up", "Down")
-            else ""
+            f" (Insulin status: {insulin_status})" if insulin_status in ("Up", "Down") else ""
         )
         add_suggestion(
             sugg_id="pharmacist_med_recon",
@@ -124,11 +119,7 @@ def generate_suggested_interventions(
     # 3. Polypharmacy & Medication Burden
     num_medications = int(patient_data.get("num_medications") or 0)
     polypharmacy_flag = int(patient_data.get("polypharmacy") or 0)
-    if (
-        num_medications >= 16
-        or polypharmacy_flag == 1
-        or "num_medications" in driver_names
-    ):
+    if num_medications >= 16 or polypharmacy_flag == 1 or "num_medications" in driver_names:
         add_suggestion(
             sugg_id="polypharmacy_review",
             action="Comprehensive Medication Regimen Simplification & Pill-Box Education",
@@ -142,11 +133,7 @@ def generate_suggested_interventions(
     # 4. Glycemic Control & High A1C
     a1c_result = patient_data.get("A1Cresult", "None")
     max_glu = patient_data.get("max_glu_serum", "None")
-    if (
-        a1c_result in (">8", ">7")
-        or max_glu in (">300", ">200")
-        or "A1Cresult" in driver_names
-    ):
+    if a1c_result in (">8", ">7") or max_glu in (">300", ">200") or "A1Cresult" in driver_names:
         add_suggestion(
             sugg_id="diabetes_educator_referral",
             action="Outpatient Certified Diabetes Educator (CDCES) Referral",

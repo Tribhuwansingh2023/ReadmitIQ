@@ -587,7 +587,6 @@ def train_and_evaluate_all_models() -> List[Dict]:
 
         md_content += f"| {r['model']} | {rag_str} | {r['auc_roc']:.4f} {ci_str} | {r['f1']:.4f} | {r['precision_top_10pct']:.4f} | {r['lift_top_10pct']:.2f}x | {r['brier_score']:.4f} | {r['ece']:.4f} | {p_diff_str} {p_ci_str} | {cz_str} |\n"
 
-
     md_content += "### Calibration Performance (LightGBM + RAG)\n"
     md_content += f"- **Brier Score**: {calibration_report['brier_uncalibrated']:.4f} (uncalibrated) -> **{calibration_report['brier_calibrated']:.4f}** (calibrated via Train OOF isotonic regression)\n"
     md_content += f"- **Expected Calibration Error (ECE)**: {calibration_report['ece_uncalibrated']:.4f} -> **{calibration_report['ece_calibrated']:.4f}**\n\n"

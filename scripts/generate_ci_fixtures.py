@@ -65,7 +65,12 @@ def generate_ci_fixtures():
     if src_frozen.exists():
         shutil.copy(src_frozen, fixtures_dir / "models" / "FROZEN_SELECTION.json")
 
-    for m_file in ["ablation_table.json", "test_results.json", "fairness_audit.json", "drift_metrics.json"]:
+    for m_file in [
+        "ablation_table.json",
+        "test_results.json",
+        "fairness_audit.json",
+        "drift_metrics.json",
+    ]:
         p = ROOT_DIR / "reports" / "metrics" / m_file
         if p.exists():
             shutil.copy(p, fix_reports_metrics / m_file)
@@ -87,7 +92,9 @@ def generate_ci_fixtures():
         "gender": np.random.choice(["Female", "Male"], size=n_samples),
         "time_in_hospital": np.random.randint(1, 10, size=n_samples, dtype=np.int8),
         "number_inpatient": np.random.randint(0, 4, size=n_samples, dtype=np.int8),
-        "diag_1_group": np.random.choice(["Circulatory", "Diabetes", "Respiratory", "Other"], size=n_samples),
+        "diag_1_group": np.random.choice(
+            ["Circulatory", "Diabetes", "Respiratory", "Other"], size=n_samples
+        ),
     }
 
     for col in base_num_cols:
@@ -117,14 +124,36 @@ def generate_ci_fixtures():
     faiss.write_index(index, str(fix_models_final / "retriever_faiss_lite.index"))
 
     # 5. Save micro retriever metadata
-    retriever_meta = df_synth[["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital", "age", "gender", "number_inpatient", "diag_1_group"]].copy()
+    retriever_meta = df_synth[
+        [
+            "encounter_id",
+            "patient_nbr",
+            "readmitted_30d",
+            "time_in_hospital",
+            "age",
+            "gender",
+            "number_inpatient",
+            "diag_1_group",
+        ]
+    ].copy()
     retriever_meta.to_parquet(fix_models_final / "retriever_meta.parquet", index=False)
     retriever_meta.to_parquet(fix_models_final / "retriever_meta_lite.parquet", index=False)
 
     # 6. Save micro cohort scored dataset
     df_synth["risk_score"] = np.random.uniform(0.05, 0.45, size=n_samples).round(4)
     df_synth["risk_tier"] = np.where(df_synth["risk_score"] > 0.25, "High", "Low")
-    cohort_cols = ["encounter_id", "patient_nbr", "risk_score", "risk_tier", "readmitted_30d", "age", "gender", "time_in_hospital", "number_inpatient", "diag_1_group"]
+    cohort_cols = [
+        "encounter_id",
+        "patient_nbr",
+        "risk_score",
+        "risk_tier",
+        "readmitted_30d",
+        "age",
+        "gender",
+        "time_in_hospital",
+        "number_inpatient",
+        "diag_1_group",
+    ]
     cohort_df = df_synth[cohort_cols].sort_values(by="risk_score", ascending=False)
     cohort_df.to_parquet(fix_reports_demo / "cohort_scored.parquet", index=False)
     cohort_df.to_parquet(fix_reports_demo / "cohort_scored_lite.parquet", index=False)
