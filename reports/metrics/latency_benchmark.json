@@ -1,0 +1,10 @@
+{
+  "n_requests": 100,
+  "mean_ms": 257.87,
+  "median_p50_ms": 243.59,
+  "p90_ms": 337.49,
+  "p95_ms": 386.0,
+  "p99_ms": 454.99,
+  "max_ms": 454.99,
+  "under_500ms_target": true
+}

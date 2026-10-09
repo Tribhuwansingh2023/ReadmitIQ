@@ -5,6 +5,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CheckCircle2,
+  ClipboardCheck,
+  Clock,
   FileText,
   History,
   Loader2,
@@ -46,65 +48,92 @@ const DEFAULT_PATIENT: PatientFormInput = {
   metformin: "Steady",
 };
 
-const PRESETS: { name: string; description: string; data: PatientFormInput }[] =
-  [
-    {
-      name: "High Risk (Multi-Admit Elderly)",
-      description:
-        "75yo, 3 prior inpatient stays, circulatory dx, uncalibrated HbA1c >8, insulin titrated",
-      data: {
-        ...DEFAULT_PATIENT,
-        age: "[70-80)",
-        time_in_hospital: 7,
-        number_inpatient: 3,
-        number_emergency: 2,
-        num_medications: 24,
-        diag_1_group: "Circulatory",
-        A1Cresult: ">8",
-        insulin: "Down",
-        change: "Ch",
-        discharge_disposition_group: "SNF",
-      },
+const PRESETS: {
+  name: string;
+  tag: string;
+  description: string;
+  data: PatientFormInput;
+}[] = [
+  {
+    name: "High Risk (Multi-Admit Elderly)",
+    tag: "Critical",
+    description:
+      "75yo, 3 prior inpatient stays, circulatory dx, uncalibrated HbA1c >8, insulin titrated",
+    data: {
+      ...DEFAULT_PATIENT,
+      age: "[70-80)",
+      time_in_hospital: 7,
+      number_inpatient: 3,
+      number_emergency: 2,
+      num_medications: 24,
+      diag_1_group: "Circulatory",
+      A1Cresult: ">8",
+      insulin: "Down",
+      change: "Ch",
+      discharge_disposition_group: "SNF",
     },
-    {
-      name: "Medium Risk (Emergency Diabetes)",
-      description:
-        "65yo, 1 prior emergency visit, newly diagnosed acute diabetes, untested HbA1c",
-      data: {
-        ...DEFAULT_PATIENT,
-        age: "[60-70)",
-        time_in_hospital: 4,
-        number_inpatient: 0,
-        number_emergency: 1,
-        num_medications: 14,
-        diag_1_group: "Diabetes",
-        A1Cresult: "None",
-        insulin: "Steady",
-        change: "No",
-        discharge_disposition_group: "Home",
-      },
+  },
+  {
+    name: "Medium Risk (Emergency Diabetes)",
+    tag: "Medium",
+    description:
+      "65yo, 1 prior emergency visit, newly diagnosed acute diabetes, untested HbA1c",
+    data: {
+      ...DEFAULT_PATIENT,
+      age: "[60-70)",
+      time_in_hospital: 4,
+      number_inpatient: 0,
+      number_emergency: 1,
+      num_medications: 14,
+      diag_1_group: "Diabetes",
+      A1Cresult: "None",
+      insulin: "Steady",
+      change: "No",
+      discharge_disposition_group: "Home",
     },
-    {
-      name: "Low Risk (Routine Stable)",
-      description:
-        "45yo, 0 prior hospital visits, well-managed diabetes, routine discharge home",
-      data: {
-        ...DEFAULT_PATIENT,
-        age: "[40-50)",
-        time_in_hospital: 2,
-        number_inpatient: 0,
-        number_emergency: 0,
-        number_outpatient: 0,
-        num_medications: 7,
-        diag_1_group: "Other",
-        A1Cresult: "Norm",
-        insulin: "No",
-        metformin: "Steady",
-        change: "No",
-        discharge_disposition_group: "Home",
-      },
+  },
+  {
+    name: "Low Risk (Routine Stable)",
+    tag: "Low",
+    description:
+      "45yo, 0 prior hospital visits, well-managed diabetes, routine discharge home",
+    data: {
+      ...DEFAULT_PATIENT,
+      age: "[40-50)",
+      time_in_hospital: 2,
+      number_inpatient: 0,
+      number_emergency: 0,
+      number_outpatient: 0,
+      num_medications: 7,
+      diag_1_group: "Other",
+      A1Cresult: "Norm",
+      insulin: "No",
+      metformin: "Steady",
+      change: "No",
+      discharge_disposition_group: "Home",
     },
-  ];
+  },
+  {
+    name: "Complex Edge Case (Respiratory & Polypharmacy)",
+    tag: "Borderline",
+    description:
+      "65yo, 5-day stay, respiratory infection, 18 medications, no insulin changes",
+    data: {
+      ...DEFAULT_PATIENT,
+      age: "[60-70)",
+      time_in_hospital: 5,
+      number_inpatient: 1,
+      number_emergency: 0,
+      num_medications: 18,
+      diag_1_group: "Respiratory",
+      A1Cresult: "None",
+      insulin: "No",
+      metformin: "No",
+      change: "No",
+      discharge_disposition_group: "Home",
+    },
+  },
+];
 
 export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
   const [formData, setFormData] = useState<PatientFormInput>(DEFAULT_PATIENT);
@@ -124,17 +153,22 @@ export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
   };
 
-  const handlePredict = async () => {
+  const handlePredict = async (dataToPredict?: PatientFormInput) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.predict(formData);
+      const res = await apiClient.predict(dataToPredict || formData);
       setPredictResult(res);
     } catch (err: any) {
       setError(err?.message || "Inference failed");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyPreset = (presetData: PatientFormInput) => {
+    setFormData(presetData);
+    handlePredict(presetData);
   };
 
   // Run initial prediction on mount
@@ -164,20 +198,33 @@ export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
           </p>
         </div>
 
-        {/* Presets */}
+        {/* Demo Mode Presets */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-slate-400 flex items-center gap-1 mr-1">
-            <Zap className="w-3.5 h-3.5 text-amber-400" /> Presets:
+            <Zap className="w-3.5 h-3.5 text-amber-400" /> Demo Presets:
           </span>
-          {PRESETS.map((preset) => (
+          {PRESETS.map((preset, idx) => (
             <button
               key={preset.name}
-              onClick={() => {
-                setFormData(preset.data);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-xs font-medium text-slate-200 border border-slate-700/60 transition-colors shadow-sm"
+              id={`btn-preset-${idx}`}
+              onClick={() => handleApplyPreset(preset.data)}
+              title={preset.description}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 text-xs font-medium text-slate-200 border border-slate-700/60 transition-colors shadow-sm flex items-center gap-1.5 hover:border-sky-500/50"
             >
-              {preset.name.split(" ")[0]}
+              <span>{preset.name.split(" ")[0]}</span>
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                  preset.tag === "Critical"
+                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                    : preset.tag === "Medium"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : preset.tag === "Borderline"
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                        : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                }`}
+              >
+                {preset.tag}
+              </span>
             </button>
           ))}
         </div>
@@ -423,7 +470,8 @@ export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
           </div>
 
           <button
-            onClick={handlePredict}
+            id="btn-run-prediction"
+            onClick={() => handlePredict()}
             disabled={loading}
             className="w-full py-3 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-sky-500/20 cursor-pointer"
           >
@@ -623,6 +671,88 @@ export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Suggested Follow-Up Actions Panel (Deterministic Decision Support) */}
+              {predictResult.suggested_interventions && (
+                <div
+                  id="suggested-interventions-panel"
+                  className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                        <ClipboardCheck className="w-4 h-4 text-emerald-400" />
+                        Suggested Care-Transition Follow-Up Actions
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Deterministic, rule-based decision support directly
+                        mapped to positive SHAP drivers
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        {predictResult.suggested_interventions.disclaimer}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500">
+                        {
+                          predictResult.suggested_interventions
+                            .suggestions_count
+                        }{" "}
+                        Pathways
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {predictResult.suggested_interventions.suggestions.map(
+                      (item) => (
+                        <div
+                          key={item.id}
+                          className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/90 hover:border-slate-700 transition-all space-y-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                  item.priority === "High"
+                                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                                    : item.priority === "Medium"
+                                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                                      : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                                }`}
+                              >
+                                {item.priority} Priority
+                              </span>
+                              <span className="text-[11px] font-medium text-slate-400 font-mono">
+                                {item.category}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+                              <Clock className="w-3 h-3 text-sky-400" />
+                              {item.target_timeline}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm font-semibold text-white">
+                            {item.action}
+                          </h4>
+
+                          <div className="p-2 rounded-lg bg-sky-500/5 border border-sky-500/15 text-[11px] text-sky-300 font-mono">
+                            <strong className="text-sky-400">
+                              Triggered by:
+                            </strong>{" "}
+                            {item.trigger_driver}
+                          </div>
+
+                          <p className="text-xs text-slate-400 leading-relaxed">
+                            {item.rationale}
+                          </p>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* RAG Precedents Table */}
               <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl space-y-4">

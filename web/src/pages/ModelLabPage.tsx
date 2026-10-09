@@ -5,7 +5,6 @@ import {
   FileSpreadsheet,
   Info,
   Layers,
-  Loader2,
   Sliders,
 } from "lucide-react";
 import { apiClient } from "../api/client";
@@ -33,20 +32,33 @@ export const ModelLabPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-16 space-y-4">
-        <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
-        <span className="text-sm text-slate-400">
-          Loading verified evaluation artifacts...
-        </span>
+      <div className="space-y-6 animate-fadeIn">
+        <div className="h-28 rounded-2xl bg-slate-900/60 border border-slate-800 skeleton" />
+        <div className="h-24 rounded-2xl bg-slate-900/60 border border-slate-800 skeleton" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+          <div className="h-28 rounded-xl bg-slate-900/60 border border-slate-800 skeleton" />
+        </div>
+        <div className="h-80 rounded-2xl bg-slate-900/60 border border-slate-800 skeleton" />
       </div>
     );
   }
 
   if (error || !metrics) {
     return (
-      <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center gap-3">
-        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-        <span>{error || "No metrics available."}</span>
+      <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+          <span>{error || "No metrics available."}</span>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 text-xs font-medium"
+        >
+          Reload
+        </button>
       </div>
     );
   }
