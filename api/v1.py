@@ -343,7 +343,8 @@ async def upload_discharges_csv(file: UploadFile = File(...)):
 
     content = await file.read()
     try:
-        df_csv = pd.read_csv(io.BytesIO(content))
+        df_csv = pd.read_csv(io.BytesIO(content), keep_default_na=False)
+        df_csv = df_csv.fillna("None")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
 
