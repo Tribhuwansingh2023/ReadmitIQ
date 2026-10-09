@@ -1,6 +1,7 @@
 """Automated audit tests for data leakage, patient separation, and train-only fitting invariance."""
 
 import json
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,12 @@ from src.config import (
     VAL_PARQUET,
 )
 from src.features import build_preprocessor
+
+
+def _to_dense_array(arr: Any) -> np.ndarray:
+    if hasattr(arr, "toarray"):
+        return np.asarray(arr.toarray(), dtype=np.float64)
+    return np.asarray(arr, dtype=np.float64)
 
 
 def test_patient_disjoint_across_all_parquets():
@@ -81,18 +88,17 @@ def test_train_fitting_invariance_under_perturbed_validation():
     pipe_perturbed = build_preprocessor(num_cols, cat_cols)
     X_tr_second = pipe_perturbed.fit_transform(train_df[num_cols + cat_cols])
 
-    if hasattr(X_tr_clean, "toarray"):
-        X_tr_clean = X_tr_clean.toarray()
-    if hasattr(X_tr_second, "toarray"):
-        X_tr_second = X_tr_second.toarray()
+    X_clean_dense = _to_dense_array(X_tr_clean)
+    X_second_dense = _to_dense_array(X_tr_second)
 
     # The transformed train vectors must be identical
-    np.testing.assert_allclose(X_tr_clean, X_tr_second, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(X_clean_dense, X_second_dense, rtol=1e-5, atol=1e-5)
 
     # Transform perturbed val: must not throw exception, handles unknown categories cleanly
     X_val_trans = pipe_clean.transform(val_perturbed[num_cols + cat_cols])
-    assert X_val_trans.shape[0] == len(val_perturbed)
-    assert X_val_trans.shape[1] == X_tr_clean.shape[1]
+    val_trans_dense = _to_dense_array(X_val_trans)
+    assert val_trans_dense.shape[0] == len(val_perturbed)
+    assert val_trans_dense.shape[1] == X_clean_dense.shape[1]
 
 
 def test_label_permutation_produces_chance_auc():
@@ -114,10 +120,11 @@ def test_label_permutation_produces_chance_auc():
 
     X_train = prepare_lgbm_data(train_rag, num_cols, cat_cols)
     np.random.seed(42)
-    y_shuffled = np.random.permutation(train_rag["readmitted_30d"].values)
+    y_train_arr = np.asarray(train_rag["readmitted_30d"].to_numpy(), dtype=np.int64)
+    y_shuffled = np.random.permutation(y_train_arr)
 
     X_val = prepare_lgbm_data(val_rag, num_cols, cat_cols)
-    y_val = val_rag["readmitted_30d"].values
+    y_val = np.asarray(val_rag["readmitted_30d"].to_numpy(), dtype=np.int64)
 
     clf = lgb.LGBMClassifier(
         n_estimators=50,
@@ -128,8 +135,9 @@ def test_label_permutation_produces_chance_auc():
         verbose=-1,
     )
     clf.fit(X_train, y_shuffled)
-    probs = clf.predict_proba(X_val)[:, 1]
-    auc = roc_auc_score(y_val, probs)
+    raw_probs = clf.predict_proba(X_val)
+    probs = np.asarray(raw_probs)[:, 1]
+    auc = float(roc_auc_score(y_val, probs))
 
     # Must be around 0.50 (within 0.47 to 0.53)
     assert 0.47 <= auc <= 0.53, f"Unexpected AUC on shuffled labels: {auc}"
