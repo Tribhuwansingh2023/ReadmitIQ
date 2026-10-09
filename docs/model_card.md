@@ -60,20 +60,20 @@ All metrics on the held-out TEST split were evaluated exactly once under `report
 
 Fairness audits were conducted across protected demographic attributes on the held-out TEST split:
 
-| Demographic Subgroup | N | Prevalence | Subgroup AUC (95% CI) | Selection Rate (Top-10%) | TPR | Disparate Impact Ratio |
+| Demographic Subgroup | N | Prevalence | Subgroup AUC (95% CI) | Selection Rate (Capacity Cutoff) | TPR | Disparate Impact Ratio |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Caucasian** (Reference) | 11,102 | 11.4% | 0.6631 [0.648, 0.678] | 10.2% | 21.6% | 1.00x |
-| **African American** | 2,827 | 11.8% | 0.6450 [0.617, 0.674] | 9.4% | 18.9% | 0.92x |
-| **Hispanic** | 303 | 10.2% | 0.6410 [0.552, 0.728] | 8.3% | 19.4% | 0.81x |
-| **Asian** | 98 | 8.2% | 0.7410 [0.584, 0.887] | 5.1% | 12.5% | Small Sample (<100) |
-| **Female** (Reference) | 8,024 | 11.4% | 0.6620 [0.644, 0.680] | 10.1% | 21.3% | 1.00x |
-| **Male** | 6,879 | 11.3% | 0.6554 [0.636, 0.675] | 9.9% | 20.4% | 0.98x |
+| **Caucasian** (Reference) | 11,188 | 11.42% | 0.6572 [0.6427, 0.6742] | 12.73% | 24.65% | 1.00x |
+| **African American** | 2,782 | 12.15% | 0.6476 [0.6174, 0.6773] | 15.31% | 29.59% | 1.20x |
+| **Hispanic** | 302 | 9.60% | 0.6962 [0.6118, 0.7770] | 10.93% | 17.24% | 0.86x |
+| **Asian** | 79 | 6.33% | 0.7095 [0.4176, 0.9385] | 6.33% | 20.00% | Small Sample (<100) |
+| **Female** (Reference) | 8,070 | 11.46% | 0.6644 [0.6460, 0.6813] | 13.40% | 25.62% | 1.00x |
+| **Male** | 6,833 | 11.31% | 0.6520 [0.6317, 0.6738] | 12.48% | 24.84% | 0.93x |
 
 ### Demographic Blinded Model Comparison
 - **Main Model AUC (with race/gender):** 0.6590
-- **Blinded Model AUC (without race/gender):** 0.6583
-- **Delta AUC:** -0.0007
-- **Conclusion:** Omitting demographic variables causes negligible change in predictive performance (-0.07% AUC), indicating that predictions are driven by clinical trajectory features (prior hospitalizations, stay length, medication changes) rather than demographic proxying.
+- **Blinded Model AUC (without race/gender):** 0.6597
+- **Delta AUC:** +0.0007
+- **Conclusion:** Omitting demographic variables causes negligible change in predictive performance (+0.07% AUC), indicating that predictions are driven by clinical trajectory features (prior hospitalizations, stay length, medication changes) rather than demographic proxying.
 
 ---
 

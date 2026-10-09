@@ -1,9 +1,11 @@
 from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel, Field, model_validator
 
 
 class PatientEncounterRequest(BaseModel):
     """Raw clinical encounter features for real-time inference."""
+
     age: str = Field(default="[60-70)")
     gender: str = Field(default="Female")
     race: str = Field(default="Caucasian")
@@ -58,9 +60,16 @@ class PatientEncounterRequest(BaseModel):
         # Age numeric midpoint
         if self.age_num is None:
             age_map = {
-                "[0-10)": 5.0, "[10-20)": 15.0, "[20-30)": 25.0, "[30-40)": 35.0,
-                "[40-50)": 45.0, "[50-60)": 55.0, "[60-70)": 65.0, "[70-80)": 75.0,
-                "[80-90)": 85.0, "[90-100)": 95.0,
+                "[0-10)": 5.0,
+                "[10-20)": 15.0,
+                "[20-30)": 25.0,
+                "[30-40)": 35.0,
+                "[40-50)": 45.0,
+                "[50-60)": 55.0,
+                "[60-70)": 65.0,
+                "[70-80)": 75.0,
+                "[80-90)": 85.0,
+                "[90-100)": 95.0,
             }
             self.age_num = age_map.get(self.age, 65.0)
 
@@ -72,7 +81,9 @@ class PatientEncounterRequest(BaseModel):
 
         # Prior visits
         if self.total_prior_visits is None:
-            self.total_prior_visits = self.number_inpatient + self.number_emergency + self.number_outpatient
+            self.total_prior_visits = (
+                self.number_inpatient + self.number_emergency + self.number_outpatient
+            )
 
         # Clinical flags
         if self.polypharmacy is None:
@@ -82,9 +93,17 @@ class PatientEncounterRequest(BaseModel):
 
         # Medication count
         med_attrs = [
-            self.metformin, self.repaglinide, self.nateglinide, self.glimepiride,
-            self.glipizide, self.glyburide, self.pioglitazone, self.rosiglitazone,
-            self.acarbose, self.glyburide_metformin, self.insulin,
+            self.metformin,
+            self.repaglinide,
+            self.nateglinide,
+            self.glimepiride,
+            self.glipizide,
+            self.glyburide,
+            self.pioglitazone,
+            self.rosiglitazone,
+            self.acarbose,
+            self.glyburide_metformin,
+            self.insulin,
         ]
         if self.n_active_drugs is None:
             self.n_active_drugs = sum(1 for m in med_attrs if m in ("Steady", "Up", "Down"))

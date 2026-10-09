@@ -1,2 +1,0 @@
-{"timestamp": "2026-10-08T22:38:35.768392+00:00", "calibrated_risk_probability": 0.1237, "risk_tier": "Low", "features_logged": {"time_in_hospital": 5, "number_inpatient": 2, "diag_1_group": "Circulatory", "A1Cresult": ">8", "rag_struct_rate_k20": 0.05}}
-{"timestamp": "2026-10-08T22:38:56.626703+00:00", "calibrated_risk_probability": 0.1237, "risk_tier": "Low", "features_logged": {"time_in_hospital": 5, "number_inpatient": 2, "diag_1_group": "Circulatory", "A1Cresult": ">8", "rag_struct_rate_k20": 0.05}}

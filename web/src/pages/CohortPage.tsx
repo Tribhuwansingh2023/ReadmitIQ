@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -9,16 +9,16 @@ import {
   Loader2,
   TrendingUp,
   Users,
-} from 'lucide-react';
-import { apiClient } from '../api/client';
-import type { CohortPatient, CohortResponse, PatientFormInput } from '../types';
+} from "lucide-react";
+import { apiClient } from "../api/client";
+import type { CohortPatient, CohortResponse, PatientFormInput } from "../types";
 
 interface CohortPageProps {
   onSelectPatient: (patient: Partial<PatientFormInput>) => void;
 }
 
 export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
-  const [capacity, setCapacity] = useState<number>(0.10);
+  const [capacity, setCapacity] = useState<number>(0.1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [cohortData, setCohortData] = useState<CohortResponse | null>(null);
@@ -30,7 +30,7 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
       const data = await apiClient.getCohort(cap);
       setCohortData(data);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load cohort replay');
+      setError(err?.message || "Failed to load cohort replay");
     } finally {
       setLoading(false);
     }
@@ -45,7 +45,9 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
     setCapacity(val);
   };
 
-  const mapRowToPatientInput = (p: CohortPatient): Partial<PatientFormInput> => {
+  const mapRowToPatientInput = (
+    p: CohortPatient,
+  ): Partial<PatientFormInput> => {
     return {
       age: p.age,
       gender: p.gender,
@@ -72,7 +74,8 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
             Cohort Command Center & Intervention Triage
           </h2>
           <p className="text-sm text-slate-400 mt-0.5">
-            Simulate proactive care-team capacity allocation and measure true 30-day readmissions captured.
+            Simulate proactive care-team capacity allocation and measure true
+            30-day readmissions captured.
           </p>
         </div>
 
@@ -123,7 +126,8 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
               {cohortData.flagged_encounters_count.toLocaleString()}
             </div>
             <div className="text-xs text-slate-400 mt-2">
-              of {cohortData.total_test_encounters.toLocaleString()} test encounters
+              of {cohortData.total_test_encounters.toLocaleString()} test
+              encounters
             </div>
           </div>
 
@@ -136,7 +140,9 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
               {cohortData.true_readmissions_caught.toLocaleString()}
             </div>
             <div className="text-xs text-slate-400 mt-2">
-              {(cohortData.recall * 100).toFixed(1)}% sensitivity ({cohortData.true_readmissions_caught} / {cohortData.total_true_readmissions_in_cohort})
+              {(cohortData.recall * 100).toFixed(1)}% sensitivity (
+              {cohortData.true_readmissions_caught} /{" "}
+              {cohortData.total_true_readmissions_in_cohort})
             </div>
           </div>
 
@@ -177,7 +183,15 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
               Cohort Capture Efficiency
             </span>
             <span className="text-slate-400">
-              Intervention effort captures <strong className="text-white">{(cohortData.recall * 100).toFixed(1)}%</strong> of all readmissions at <strong className="text-white">{(capacity * 100).toFixed(0)}%</strong> workload
+              Intervention effort captures{" "}
+              <strong className="text-white">
+                {(cohortData.recall * 100).toFixed(1)}%
+              </strong>{" "}
+              of all readmissions at{" "}
+              <strong className="text-white">
+                {(capacity * 100).toFixed(0)}%
+              </strong>{" "}
+              workload
             </span>
           </div>
           <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
@@ -188,13 +202,20 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
             />
             <div
               className="bg-slate-700/60 transition-all duration-300"
-              style={{ width: `${100 - Math.min(100, cohortData.recall * 100)}%` }}
+              style={{
+                width: `${100 - Math.min(100, cohortData.recall * 100)}%`,
+              }}
             />
           </div>
           <div className="flex justify-between items-center text-[11px] text-slate-500 mt-2">
             <span>0% caught</span>
-            <span className="text-emerald-400 font-medium">Caught: {cohortData.true_readmissions_caught} patients</span>
-            <span>100% ({cohortData.total_true_readmissions_in_cohort} total readmissions)</span>
+            <span className="text-emerald-400 font-medium">
+              Caught: {cohortData.true_readmissions_caught} patients
+            </span>
+            <span>
+              100% ({cohortData.total_true_readmissions_in_cohort} total
+              readmissions)
+            </span>
           </div>
         </div>
       )}
@@ -207,7 +228,8 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
               Highest-Risk Flagged Patients (Top 50 Displayed)
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Ranked in real-time by calibrated 30-day readmission risk probability
+              Ranked in real-time by calibrated 30-day readmission risk
+              probability
             </p>
           </div>
           {loading && (
@@ -241,21 +263,25 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
                     key={p.encounter_id}
                     className="hover:bg-slate-800/40 transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono text-slate-400">#{idx + 1}</td>
-                    <td className="py-3 px-4 font-mono text-slate-300">{p.encounter_id}</td>
+                    <td className="py-3 px-4 font-mono text-slate-400">
+                      #{idx + 1}
+                    </td>
+                    <td className="py-3 px-4 font-mono text-slate-300">
+                      {p.encounter_id}
+                    </td>
                     <td className="py-3 px-4 font-mono font-bold text-white text-sm">
                       {(p.risk_score * 100).toFixed(1)}%
                     </td>
                     <td className="py-3 px-4">
                       <span
                         className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                          p.risk_tier === 'Critical'
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                            : p.risk_tier === 'High'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : p.risk_tier === 'Medium'
-                            ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          p.risk_tier === "Critical"
+                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                            : p.risk_tier === "High"
+                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              : p.risk_tier === "Medium"
+                                ? "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                                : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                         }`}
                       >
                         {p.risk_tier}
@@ -265,9 +291,12 @@ export const CohortPage: React.FC<CohortPageProps> = ({ onSelectPatient }) => {
                       {p.age}, {p.gender}
                     </td>
                     <td className="py-3 px-4 text-slate-300">
-                      {p.time_in_hospital}d stay, {p.number_inpatient} prior inpt
+                      {p.time_in_hospital}d stay, {p.number_inpatient} prior
+                      inpt
                     </td>
-                    <td className="py-3 px-4 text-slate-300">{p.diag_1_group}</td>
+                    <td className="py-3 px-4 text-slate-300">
+                      {p.diag_1_group}
+                    </td>
                     <td className="py-3 px-4">
                       {isReadmit ? (
                         <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">

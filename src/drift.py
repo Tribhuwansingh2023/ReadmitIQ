@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import sys
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
@@ -155,7 +155,9 @@ def run_drift_analysis(output_path: Optional[Path] = None) -> Dict:
         json.dump(drift_report, f, indent=2)
 
     print(f"Drift monitoring analysis complete. Results saved to {output_path}")
-    print(f"Summary: Test Moderate={drift_report['summary']['test_moderate_drift_count']}, Test High={drift_report['summary']['test_high_drift_count']}")
+    print(
+        f"Summary: Test Moderate={drift_report['summary']['test_moderate_drift_count']}, Test High={drift_report['summary']['test_high_drift_count']}"
+    )
     return drift_report
 
 

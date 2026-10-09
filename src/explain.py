@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import sys
-from typing import Dict, List, Optional, Union
+from pathlib import Path
+from typing import Dict, Optional, Union
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import joblib
@@ -173,16 +173,24 @@ class ModelExplainer:
             else:
                 clean_val = str(val) if not pd.isna(val) else "Missing"
 
-            impacts.append({
-                "feature": col,
-                "value": clean_val,
-                "shap_value": float(round(s_val, 4)),
-                "explanation": format_clinical_reason(col, val, s_val),
-            })
+            impacts.append(
+                {
+                    "feature": col,
+                    "value": clean_val,
+                    "shap_value": float(round(s_val, 4)),
+                    "explanation": format_clinical_reason(col, val, s_val),
+                }
+            )
 
         # Separate positive (risk increasing) and negative (risk reducing)
-        pos = sorted([item for item in impacts if item["shap_value"] > 0], key=lambda x: x["shap_value"], reverse=True)
-        neg = sorted([item for item in impacts if item["shap_value"] < 0], key=lambda x: x["shap_value"])
+        pos = sorted(
+            [item for item in impacts if item["shap_value"] > 0],
+            key=lambda x: x["shap_value"],
+            reverse=True,
+        )
+        neg = sorted(
+            [item for item in impacts if item["shap_value"] < 0], key=lambda x: x["shap_value"]
+        )
 
         return {
             "top_risk_increasing": pos[:top_k],
@@ -190,7 +198,9 @@ class ModelExplainer:
             "all_attributions": {item["feature"]: item["shap_value"] for item in impacts},
         }
 
-    def generate_global_summary_plot(self, val_df: pd.DataFrame, output_path: Path, max_display: int = 15):
+    def generate_global_summary_plot(
+        self, val_df: pd.DataFrame, output_path: Path, max_display: int = 15
+    ):
         """Generate and save global SHAP summary beeswarm plot."""
         X_val = self.prepare_row(val_df.head(1000))
         shap_vals = self.explainer.shap_values(X_val)
@@ -237,12 +247,14 @@ def run_explainability_pipeline():
         enc_id = int(pat.get("encounter_id", idx))
         true_label = int(pat.get("readmitted_30d", 0))
         explanation = explainer.explain_patient(pat, top_k=3)
-        sample_patients.append({
-            "encounter_id": enc_id,
-            "actual_readmitted_30d": true_label,
-            "top_risk_increasing": explanation["top_risk_increasing"],
-            "top_risk_reducing": explanation["top_risk_reducing"],
-        })
+        sample_patients.append(
+            {
+                "encounter_id": enc_id,
+                "actual_readmitted_30d": true_label,
+                "top_risk_increasing": explanation["top_risk_increasing"],
+                "top_risk_reducing": explanation["top_risk_reducing"],
+            }
+        )
 
     explanations_path = METRICS_DIR / "sample_explanations.json"
     with open(explanations_path, "w", encoding="utf-8") as f:

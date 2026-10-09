@@ -9,10 +9,9 @@ Guarantees 5-fold patient-grouped out-of-fold retrieval on train encounters,
 strictly excluding same-patient encounters on all splits.
 """
 
-import json
-from pathlib import Path
 import sys
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import faiss
@@ -24,8 +23,6 @@ from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import normalize
 
 from src.config import (
-    FEATURE_LIST_PATH,
-    FEATURE_METADATA_PATH,
     MODELS_DIR,
     PREPROCESSOR_BASE_PATH,
     PREPROCESSOR_RAG_PATH,
@@ -35,7 +32,7 @@ from src.config import (
     TRAIN_PARQUET,
     VAL_PARQUET,
 )
-from src.features import build_preprocessor, get_feature_columns
+from src.features import build_preprocessor
 
 
 def load_note_embeddings(split: str, expected_rows: int) -> Optional[np.ndarray]:
@@ -102,12 +99,14 @@ def compute_vectorized_rag_features(
         else:
             rates_k50[i] = 0.1139
 
-    return pd.DataFrame({
-        f"{prefix}_rate_k20": rates_k20,
-        f"{prefix}_sim_weighted_k20": sim_weighted_k20,
-        f"{prefix}_rate_k50": rates_k50,
-        f"{prefix}_mean_stay_k20": mean_stay_k20,
-    })
+    return pd.DataFrame(
+        {
+            f"{prefix}_rate_k20": rates_k20,
+            f"{prefix}_sim_weighted_k20": sim_weighted_k20,
+            f"{prefix}_rate_k50": rates_k50,
+            f"{prefix}_mean_stay_k20": mean_stay_k20,
+        }
+    )
 
 
 class StructuredRAGEngine:
@@ -136,7 +135,9 @@ class StructuredRAGEngine:
         reduced = self.svd.transform(X_trans)
         return normalize(reduced, norm="l2").astype(np.float32)
 
-    def build_index(self, train_embeddings: np.ndarray, train_df: pd.DataFrame) -> faiss.IndexFlatIP:
+    def build_index(
+        self, train_embeddings: np.ndarray, train_df: pd.DataFrame
+    ) -> faiss.IndexFlatIP:
         """Build FAISS index on full train embeddings."""
         self.index = faiss.IndexFlatIP(self.n_components)
         self.index.add(train_embeddings)
@@ -165,13 +166,15 @@ class StructuredRAGEngine:
                 continue
             if self.train_pts[idx] == query_patient_nbr:
                 continue
-            results.append({
-                "encounter_id": int(self.train_encs[idx]),
-                "patient_nbr": int(self.train_pts[idx]),
-                "readmitted_30d": int(self.train_labels[idx]),
-                "time_in_hospital": float(self.train_stays[idx]),
-                "similarity": float(sim),
-            })
+            results.append(
+                {
+                    "encounter_id": int(self.train_encs[idx]),
+                    "patient_nbr": int(self.train_pts[idx]),
+                    "readmitted_30d": int(self.train_labels[idx]),
+                    "time_in_hospital": float(self.train_stays[idx]),
+                    "similarity": float(sim),
+                }
+            )
             if len(results) == k:
                 break
         return results
@@ -225,13 +228,15 @@ class ClinicalRAGEngine:
                 continue
             if self.train_pts[idx] == query_patient_nbr:
                 continue
-            results.append({
-                "encounter_id": int(self.train_encs[idx]),
-                "patient_nbr": int(self.train_pts[idx]),
-                "readmitted_30d": int(self.train_labels[idx]),
-                "time_in_hospital": float(self.train_stays[idx]),
-                "similarity": float(sim),
-            })
+            results.append(
+                {
+                    "encounter_id": int(self.train_encs[idx]),
+                    "patient_nbr": int(self.train_pts[idx]),
+                    "readmitted_30d": int(self.train_labels[idx]),
+                    "time_in_hospital": float(self.train_stays[idx]),
+                    "similarity": float(sim),
+                }
+            )
             if len(results) == k:
                 break
         return results
@@ -259,7 +264,11 @@ def build_and_save_all_rag_features(
     # 1. PROCESS TRAIN SPLIT
     # -------------------------------------------------------------
     print("\n--- [1] Processing TRAIN Structured Retrieval Space ---")
-    load_cols = list(dict.fromkeys(base_features + ["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]))
+    load_cols = list(
+        dict.fromkeys(
+            base_features + ["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]
+        )
+    )
     train_df = pd.read_parquet(TRAIN_PARQUET, columns=load_cols)
     n_tr = len(train_df)
     print(f"Loaded Train: {n_tr} rows")
@@ -287,8 +296,8 @@ def build_and_save_all_rag_features(
     for fold, (idx_in, idx_oof) in enumerate(sgkf.split(train_df, y_tr, pts_tr)):
         sub_idx = faiss.IndexFlatIP(64)
         sub_idx.add(E_tr_struct[idx_in])
-        D, I = sub_idx.search(E_tr_struct[idx_oof], 60)
-        oof_struct_indices[idx_oof] = idx_in[I]
+        D, matched_indices = sub_idx.search(E_tr_struct[idx_oof], 60)
+        oof_struct_indices[idx_oof] = idx_in[matched_indices]
         oof_struct_distances[idx_oof] = D
 
     train_struct_features = compute_vectorized_rag_features(
@@ -403,15 +412,6 @@ def build_and_save_all_rag_features(
         "n_val": n_va,
         "n_test": n_te,
         "struct_features": list(train_struct_features.columns),
-    }
-
-    # Return summary dict
-    return {
-        "train_rag_df": train_rag_df,
-        "val_rag_df": val_rag_df,
-        "test_rag_df": test_rag_df,
-        "struct_features": list(train_struct_features.columns),
-        "note_features": list(train_note_features.columns) if train_note_features is not None else [],
     }
 
 

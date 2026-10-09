@@ -6,9 +6,8 @@ Saves embeddings_*.npy in exact parquet row order with checksum metadata.
 
 import hashlib
 import json
-from pathlib import Path
-import sys
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -59,7 +58,9 @@ def main():
 
         assert embs.shape == (n_notes, 384), f"Shape mismatch: {embs.shape} vs ({n_notes}, 384)"
         np.save(out_npy, embs)
-        print(f"[{split.upper()}] Saved {out_npy.name} (shape: {embs.shape}) in {elapsed/60:.1f} mins.")
+        print(
+            f"[{split.upper()}] Saved {out_npy.name} (shape: {embs.shape}) in {elapsed/60:.1f} mins."
+        )
 
         checksums[split] = {
             "rows": n_notes,

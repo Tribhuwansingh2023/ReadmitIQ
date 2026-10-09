@@ -1,21 +1,17 @@
 import json
 import os
-from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from api.schemas import (
-    CohortPatient,
     CohortResponse,
     ExplainResponse,
     PatientEncounterRequest,
     PredictResponse,
-    SimilarEncounter,
     SimilarRequest,
     SimilarResponse,
 )
@@ -29,7 +25,10 @@ app = FastAPI(
 )
 
 # CORS configuration
-origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000")
+origins_env = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000",
+)
 allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 
 app.add_middleware(
@@ -92,7 +91,9 @@ def find_similar_patients(req: SimilarRequest):
 
 
 @app.post("/explain", response_model=ExplainResponse, status_code=status.HTTP_200_OK)
-def explain_patient_risk(encounter: PatientEncounterRequest, top_k: int = Query(default=3, ge=1, le=10)):
+def explain_patient_risk(
+    encounter: PatientEncounterRequest, top_k: int = Query(default=3, ge=1, le=10)
+):
     """Generate fine-grained SHAP factor attributions for a single encounter."""
     svc = get_service()
     try:
@@ -109,15 +110,22 @@ def explain_patient_risk(encounter: PatientEncounterRequest, top_k: int = Query(
 
 @app.get("/cohort", response_model=CohortResponse, status_code=status.HTTP_200_OK)
 def retrospective_cohort_replay(
-    capacity: float = Query(default=0.10, ge=0.01, le=0.50, description="Intervention team capacity fraction (1% to 50%)")
+    capacity: float = Query(
+        default=0.10,
+        ge=0.01,
+        le=0.50,
+        description="Intervention team capacity fraction (1% to 50%)",
+    )
 ):
     """Retrospective replay on the held-out TEST split using precomputed scores.
-    
     Clearly labeled as a retrospective replay of held-out historical data, not live predictions.
     """
     svc = get_service()
     if svc.cohort_df is None:
-        raise HTTPException(status_code=404, detail="Cohort scored artifact (reports/demo/cohort_scored.parquet) not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Cohort scored artifact (reports/demo/cohort_scored.parquet) not found.",
+        )
 
     df = svc.cohort_df
     total_encounters = len(df)
@@ -137,18 +145,20 @@ def retrospective_cohort_replay(
     # Return top 50 patients for response payload efficiency
     patients_payload = []
     for _, row in flagged_df.head(50).iterrows():
-        patients_payload.append({
-            "encounter_id": int(row["encounter_id"]),
-            "patient_nbr": int(row["patient_nbr"]),
-            "risk_score": float(row["risk_score"]),
-            "risk_tier": str(row["risk_tier"]),
-            "readmitted_30d": int(row["readmitted_30d"]),
-            "age": str(row["age"]),
-            "gender": str(row["gender"]),
-            "time_in_hospital": int(row["time_in_hospital"]),
-            "number_inpatient": int(row["number_inpatient"]),
-            "diag_1_group": str(row["diag_1_group"]),
-        })
+        patients_payload.append(
+            {
+                "encounter_id": int(row["encounter_id"]),
+                "patient_nbr": int(row["patient_nbr"]),
+                "risk_score": float(row["risk_score"]),
+                "risk_tier": str(row["risk_tier"]),
+                "readmitted_30d": int(row["readmitted_30d"]),
+                "age": str(row["age"]),
+                "gender": str(row["gender"]),
+                "time_in_hospital": int(row["time_in_hospital"]),
+                "number_inpatient": int(row["number_inpatient"]),
+                "diag_1_group": str(row["diag_1_group"]),
+            }
+        )
 
     return {
         "mode": "Retrospective Replay (Held-Out Test Split)",

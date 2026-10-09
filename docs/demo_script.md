@@ -59,7 +59,7 @@
 ## 4:15 - 5:00 | Screen 4: Algorithmic Fairness & Telemetry
 - **Action:** Click the **Fairness & Drift** tab.
 - **Talking Points:**
-  - **Demographic Blinded Model:** "We trained a parallel model stripping race and gender. Delta AUC was -0.0007 (0.6590 vs 0.6583), proving removing demographic attributes retains full discriminative power while preventing direct algorithmic bias."
+  - **Demographic Blinded Model:** "We trained a parallel model stripping race and gender. Delta AUC was +0.0007 (0.6590 primary vs 0.6597 blinded), proving removing demographic attributes retains full discriminative power while preventing direct algorithmic bias."
   - **Subgroup Audit:** Disparity ratios for race, gender, and age groups show consistent TPR and calibration across groups with N >= 100.
   - **Drift Monitoring:** Point to the PSI telemetry showing all features stable (<0.10) between training and test sets.
 - **Closing:** "ReadmitIQ is an honest, production-ready, leak-free clinical decision support tool ready for real-world care-team triage."

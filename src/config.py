@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from typing import Any, Dict
+
 import yaml
 
 # Paths
@@ -25,7 +26,9 @@ YAML_CFG = load_yaml_config()
 DATA_DIR = BASE_DIR / "data"
 RAW_DATA_PATH = BASE_DIR / YAML_CFG.get("paths", {}).get("raw_data", "data/raw/diabetic_data.csv")
 INTERIM_DATA_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("interim_data_dir", "data/interim")
-PROCESSED_DATA_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get("processed_data_dir", "data/processed")
+PROCESSED_DATA_DIR = BASE_DIR / YAML_CFG.get("paths", {}).get(
+    "processed_data_dir", "data/processed"
+)
 
 TRAIN_PARQUET = PROCESSED_DATA_DIR / "train.parquet"
 VAL_PARQUET = PROCESSED_DATA_DIR / "val.parquet"
@@ -58,12 +61,29 @@ EXCLUDE_DISCHARGE_IDS = [11, 13, 14, 19, 20, 21]  # Expired or hospice
 DROP_COLS = ["weight", "examide", "citoglipton"]
 
 ALL_DRUG_COLS = [
-    "metformin", "repaglinide", "nateglinide", "chlorpropamide", "glimepiride",
-    "acetohexamide", "glipizide", "glyburide", "tolbutamide", "pioglitazone",
-    "rosiglitazone", "acarbose", "miglitol", "troglitazone", "tolazamide",
-    "examide", "citoglipton", "insulin", "glyburide-metformin",
-    "glipizide-metformin", "glimepiride-pioglitazone",
-    "metformin-rosiglitazone", "metformin-pioglitazone"
+    "metformin",
+    "repaglinide",
+    "nateglinide",
+    "chlorpropamide",
+    "glimepiride",
+    "acetohexamide",
+    "glipizide",
+    "glyburide",
+    "tolbutamide",
+    "pioglitazone",
+    "rosiglitazone",
+    "acarbose",
+    "miglitol",
+    "troglitazone",
+    "tolazamide",
+    "examide",
+    "citoglipton",
+    "insulin",
+    "glyburide-metformin",
+    "glipizide-metformin",
+    "glimepiride-pioglitazone",
+    "metformin-rosiglitazone",
+    "metformin-pioglitazone",
 ]
 
 COUNT_COLS_TO_CAP = [
@@ -75,7 +95,7 @@ COUNT_COLS_TO_CAP = [
     "num_medications",
     "number_diagnoses",
     "meds_per_day",
-    "labs_per_day"
+    "labs_per_day",
 ]
 
 AGE_MIDPOINTS = {
@@ -88,5 +108,5 @@ AGE_MIDPOINTS = {
     "[60-70)": 65,
     "[70-80)": 75,
     "[80-90)": 85,
-    "[90-100)": 95
+    "[90-100)": 95,
 }

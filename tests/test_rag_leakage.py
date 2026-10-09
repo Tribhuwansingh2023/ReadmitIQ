@@ -1,5 +1,5 @@
 import re
-from pathlib import Path
+
 import faiss
 import joblib
 import numpy as np
@@ -12,9 +12,7 @@ from src.config import (
     PREPROCESSOR_BASE_PATH,
     PROCESSED_DATA_DIR,
     RANDOM_SEED,
-    TEST_PARQUET,
     TRAIN_PARQUET,
-    VAL_PARQUET,
 )
 from src.rag import StructuredRAGEngine
 
@@ -69,9 +67,9 @@ def test_notes_contain_no_label_leakage_full_corpus(rag_artifacts):
         notes = df["clinical_note"].tolist()
         for idx, note in enumerate(notes):
             for pat in forbidden_patterns:
-                assert not pat.search(note), (
-                    f"Label leakage '{pat.pattern}' found in {name} row {idx}: {note}"
-                )
+                assert not pat.search(
+                    note
+                ), f"Label leakage '{pat.pattern}' found in {name} row {idx}: {note}"
 
 
 def test_faiss_index_full_train_size_and_disjoint_patients(rag_artifacts):
@@ -88,8 +86,12 @@ def test_faiss_index_full_train_size_and_disjoint_patients(rag_artifacts):
     val_patients = set(val_df["patient_nbr"])
     test_patients = set(test_df["patient_nbr"])
 
-    assert len(indexed_patients.intersection(val_patients)) == 0, "Val patients leaked into FAISS index!"
-    assert len(indexed_patients.intersection(test_patients)) == 0, "Test patients leaked into FAISS index!"
+    assert (
+        len(indexed_patients.intersection(val_patients)) == 0
+    ), "Val patients leaked into FAISS index!"
+    assert (
+        len(indexed_patients.intersection(test_patients)) == 0
+    ), "Test patients leaked into FAISS index!"
 
 
 def test_oof_folds_are_patient_disjoint():
@@ -144,10 +146,16 @@ def test_retrieval_strictly_excludes_self_and_same_patient_all_splits(rag_artifa
                 k_search=60,
             )
 
-            assert len(neighbors) == 20, f"Expected 20 neighbors for {name} row, got {len(neighbors)}"
+            assert (
+                len(neighbors) == 20
+            ), f"Expected 20 neighbors for {name} row, got {len(neighbors)}"
             for nbr in neighbors:
-                assert nbr["patient_nbr"] != q_pt, f"Retrieved encounter of same patient {q_pt} in {name}!"
-                assert nbr["encounter_id"] != q_enc, f"Retrieved identical encounter {q_enc} in {name}!"
+                assert (
+                    nbr["patient_nbr"] != q_pt
+                ), f"Retrieved encounter of same patient {q_pt} in {name}!"
+                assert (
+                    nbr["encounter_id"] != q_enc
+                ), f"Retrieved identical encounter {q_enc} in {name}!"
 
 
 def test_train_val_rate_distributions_same_k(rag_artifacts):
@@ -164,6 +172,6 @@ def test_train_val_rate_distributions_same_k(rag_artifacts):
         unique_vals = np.round(df[col].unique(), 4)
         for v in unique_vals:
             remainder = round(v * 20.0, 3) % 1.0
-            assert remainder < 1e-3 or remainder > 0.999, (
-                f"Non-k=20 fraction found in {name} {col}: {v}"
-            )
+            assert (
+                remainder < 1e-3 or remainder > 0.999
+            ), f"Non-k=20 fraction found in {name} {col}: {v}"

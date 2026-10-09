@@ -1,8 +1,5 @@
-import json
-from pathlib import Path
-import pytest
 import numpy as np
-import pandas as pd
+import pytest
 
 from src.drift import calculate_psi, classify_drift_severity
 from src.explain import ModelExplainer, format_clinical_reason

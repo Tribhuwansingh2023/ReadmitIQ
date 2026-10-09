@@ -90,8 +90,8 @@ Each section below corresponds to one presentation slide for the hackathon pitch
   - Disparate impact and True Positive Rate ratios remain stable across reliable cohorts (N >= 100).
 - **Fairness by Blindness Comparison:**
   - Retrained parallel model with `race` and `gender` completely excluded.
-  - Blinded Test AUC: **0.6583** vs Main Model **0.6590** (Delta: **-0.0007**).
-  - *Conclusion:* Removing demographic attributes causes zero meaningful loss in predictive performance, proving the model is driven by clinical trajectories rather than demographic bias.
+  - Blinded Test AUC: **0.6597** vs Main Model **0.6590** (Delta: **+0.0007**).
+  - *Conclusion:* Removing demographic attributes causes zero meaningful loss in predictive performance (+0.07% AUC), proving the model is driven by clinical trajectories rather than demographic bias.
 - **Population Stability Index (PSI):**
   - All monitored clinical features exhibit PSI < 0.05 (well below 0.10 stable threshold). Score distribution PSI = 0.0000.
 

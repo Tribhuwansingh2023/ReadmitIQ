@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import faiss
@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 
 from src.config import (
-    METRICS_DIR,
     MODELS_DIR,
     REPORTS_DIR,
 )
@@ -82,7 +81,9 @@ class ModelService:
                 df_single[c] = 0.0
 
         # Transform using fitted base preprocessor (41 features -> 141 dims) and SVD (141 dims -> 64 dims)
-        dense_feats = self.base_preprocessor.transform(df_single[self.base_num_cols + self.cat_cols])
+        dense_feats = self.base_preprocessor.transform(
+            df_single[self.base_num_cols + self.cat_cols]
+        )
         if hasattr(dense_feats, "toarray"):
             dense_feats = dense_feats.toarray()
 
@@ -101,16 +102,18 @@ class ModelService:
 
         similar_list = []
         for _, row in neighbors_meta.iterrows():
-            similar_list.append({
-                "encounter_id": int(row.get("encounter_id", 0)),
-                "similarity_score": round(float(row.get("similarity", 0.0)), 3),
-                "age": str(row.get("age", "[60-70)")),
-                "gender": str(row.get("gender", "Female")),
-                "time_in_hospital": int(row.get("time_in_hospital", 3)),
-                "primary_diagnosis": str(row.get("diag_1_group", "Other")),
-                "prior_inpatient": int(row.get("number_inpatient", 0)),
-                "readmitted_30d": int(row.get("readmitted_30d", 0)),
-            })
+            similar_list.append(
+                {
+                    "encounter_id": int(row.get("encounter_id", 0)),
+                    "similarity_score": round(float(row.get("similarity", 0.0)), 3),
+                    "age": str(row.get("age", "[60-70)")),
+                    "gender": str(row.get("gender", "Female")),
+                    "time_in_hospital": int(row.get("time_in_hospital", 3)),
+                    "primary_diagnosis": str(row.get("diag_1_group", "Other")),
+                    "prior_inpatient": int(row.get("number_inpatient", 0)),
+                    "readmitted_30d": int(row.get("readmitted_30d", 0)),
+                }
+            )
 
         return readmit_rate, similar_list
 
@@ -189,7 +192,13 @@ class ModelService:
             "risk_tier": tier,
             "features_logged": {
                 k: patient_dict[k]
-                for k in ["time_in_hospital", "number_inpatient", "diag_1_group", "A1Cresult", "rag_struct_rate_k20"]
+                for k in [
+                    "time_in_hospital",
+                    "number_inpatient",
+                    "diag_1_group",
+                    "A1Cresult",
+                    "rag_struct_rate_k20",
+                ]
                 if k in patient_dict
             },
         }

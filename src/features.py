@@ -135,9 +135,7 @@ def engineer_features(
     data["n_active_drugs"] = (
         data[present_drugs].isin(["Up", "Down", "Steady"]).sum(axis=1).astype(int)
     )
-    data["n_dose_changes"] = (
-        data[present_drugs].isin(["Up", "Down"]).sum(axis=1).astype(int)
-    )
+    data["n_dose_changes"] = data[present_drugs].isin(["Up", "Down"]).sum(axis=1).astype(int)
 
     # Determine retained drugs (drugs with <= 99.9% 'No')
     if is_train or retained_drugs is None:
@@ -160,9 +158,7 @@ def engineer_features(
     data["discharge_disposition_group"] = data["discharge_disposition_id"].apply(
         group_discharge_disposition
     )
-    data["admission_source_group"] = data["admission_source_id"].apply(
-        group_admission_source
-    )
+    data["admission_source_group"] = data["admission_source_id"].apply(group_admission_source)
 
     # ICD-9 diagnosis grouping
     for diag in ["diag_1", "diag_2", "diag_3"]:
@@ -258,7 +254,9 @@ class RareCategoryGrouper(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         is_df = isinstance(X, pd.DataFrame)
-        cols = list(X.columns) if is_df else (self.cat_cols or [f"col_{i}" for i in range(X.shape[1])])
+        cols = (
+            list(X.columns) if is_df else (self.cat_cols or [f"col_{i}" for i in range(X.shape[1])])
+        )
         X_df = X if is_df else pd.DataFrame(X, columns=cols)
 
         if "medical_specialty" in cols:
@@ -275,7 +273,9 @@ class RareCategoryGrouper(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         is_df = isinstance(X, pd.DataFrame)
-        cols = list(X.columns) if is_df else (self.cat_cols or [f"col_{i}" for i in range(X.shape[1])])
+        cols = (
+            list(X.columns) if is_df else (self.cat_cols or [f"col_{i}" for i in range(X.shape[1])])
+        )
         X_df = X.copy() if is_df else pd.DataFrame(X, columns=cols)
 
         if "medical_specialty" in cols and self.top_specialties_:
@@ -286,9 +286,7 @@ class RareCategoryGrouper(BaseEstimator, TransformerMixin):
 
         if "payer_code" in cols and self.frequent_payers_:
             allowed = set(self.frequent_payers_) | {"Other"}
-            X_df["payer_code"] = X_df["payer_code"].apply(
-                lambda v: v if v in allowed else "Other"
-            )
+            X_df["payer_code"] = X_df["payer_code"].apply(lambda v: v if v in allowed else "Other")
 
         return X_df if is_df else X_df.values
 
@@ -305,9 +303,7 @@ def build_preprocessor(
     categorical_cols: List[str],
 ) -> ColumnTransformer:
     """Build sklearn ColumnTransformer for numeric scaling and categorical encoding with rare level collapsing."""
-    numeric_transformer = Pipeline(
-        steps=[("scaler", StandardScaler())]
-    )
+    numeric_transformer = Pipeline(steps=[("scaler", StandardScaler())])
     categorical_transformer = Pipeline(
         steps=[
             ("grouper", RareCategoryGrouper(cat_cols=categorical_cols)),

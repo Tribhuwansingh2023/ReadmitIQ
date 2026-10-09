@@ -27,7 +27,7 @@ export interface SimilarEncounter {
 
 export interface PredictResponse {
   calibrated_risk_probability: number;
-  risk_tier: 'Critical' | 'High' | 'Medium' | 'Low';
+  risk_tier: "Critical" | "High" | "Medium" | "Low";
   decision_threshold: number;
   predicted_readmission: boolean;
   capacity_thresholds: {
@@ -106,73 +106,89 @@ export interface MetricsResponse {
     };
   };
   test_results?: {
-    split: string;
     model_name: string;
-    total_samples: number;
-    metrics: {
-      auc_roc: number;
-      auc_ci_lower: number;
-      auc_ci_upper: number;
-      f1_score: number;
-      precision: number;
-      recall: number;
-      brier_score: number;
-      ece: number;
-      optimal_decision_threshold: number;
-      capacity_top_10pct: {
+    eval_timestamp?: string;
+    git_commit_hash?: string;
+    test_cohort_size: number;
+    test_positive_prevalence?: number;
+    auc_roc: number;
+    auc_ci_95: [number, number];
+    frozen_decision_threshold: number;
+    f1: number;
+    precision: number;
+    recall: number;
+    brier_score: number;
+    ece: number;
+    capacity_metrics: {
+      top_5pct?: {
+        threshold: number;
         precision: number;
-        recall: number;
         lift: number;
+        recall: number;
       };
-      capacity_top_5pct?: {
+      top_10pct: {
+        threshold: number;
         precision: number;
-        recall: number;
         lift: number;
+        recall: number;
       };
-      capacity_top_20pct?: {
+      top_20pct?: {
+        threshold: number;
         precision: number;
-        recall: number;
         lift: number;
+        recall: number;
       };
     };
-    paired_rag_delta_auc?: {
-      delta_auc: number;
-      ci_lower: number;
-      ci_upper: number;
+    paired_rag_difference_test?: {
+      observed_delta_auc: number;
+      ci_95: [number, number];
       crosses_zero: boolean;
+    };
+    validation_comparison?: {
+      val_auc: number;
+      val_auc_ci: [number, number];
+      auc_generalization_gap: number;
     };
   };
   fairness_audit?: {
-    by_attribute: Record<string, {
-      reference_group: string;
-      groups: Record<string, {
-        group_size: number;
-        prevalence: number;
-        auc: number;
-        auc_ci_lower: number;
-        auc_ci_upper: number;
-        selection_rate: number;
-        tpr: number;
-        fpr: number;
-        disparate_impact_ratio: number;
-        tpr_ratio: number;
-        reliable: boolean;
-      }>;
-    }>;
-    blinded_model_comparison?: {
-      main_model_auc: number;
-      blinded_model_auc: number;
-      delta_auc: number;
-      conclusion: string;
-    };
+    evaluation_split?: string;
+    sample_size?: number;
+    capacity_threshold_evaluated?: number;
+    primary_model_test_auc?: number;
+    blinded_model_test_auc?: number;
+    auc_delta_blinded_vs_primary?: number;
+    audits?: Record<
+      string,
+      {
+        reference_group: string;
+        subgroups: Record<
+          string,
+          {
+            sample_size: number;
+            reliable: boolean;
+            prevalence: number;
+            auc_roc: number;
+            auc_ci_95: [number, number];
+            selection_rate: number;
+            tpr: number;
+            fpr: number;
+            ratio_selection_rate_vs_ref: number;
+            ratio_tpr_vs_ref: number;
+          }
+        >;
+      }
+    >;
   };
   drift_metrics?: {
-    features: Record<string, {
-      psi_val: number;
-      psi_test: number;
-      status_val: string;
-      status_test: string;
-    }>;
+    features: Record<
+      string,
+      {
+        psi_val: number;
+        psi_test: number;
+        status_val: string;
+        status_test: string;
+      }
+    >;
     score_drift: {
       psi_val: number;
       psi_test: number;

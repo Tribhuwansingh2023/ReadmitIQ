@@ -43,6 +43,10 @@ web/node_modules/
 web/dist/
 web/.vite/
 
+# Application logs & runtime telemetry
+api/logs/*.jsonl
+*.log
+
 # OS artifacts
 .DS_Store
 Thumbs.db
