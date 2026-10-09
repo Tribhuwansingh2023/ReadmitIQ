@@ -10,7 +10,6 @@ Cohort: Train=69,535 encounters, Val=14,902 encounters (UCI 130-US Hospitals).
 | Random Forest | Yes (k=20) | 0.6674 [0.6548, 0.6806] | 0.2778 | 0.2510 | 2.20x | 0.2096 | 0.3325 | +0.0003 [-0.0022, +0.0030] | Yes |
 | LightGBM | No | 0.6722 [0.6593, 0.6854] | 0.2819 | 0.2557 | 2.25x | 0.2196 | 0.3425 | Ref - | - |
 | LightGBM | Yes (k=20) | 0.6731 [0.6602, 0.6863] | 0.2822 | 0.2530 | 2.22x | 0.2194 | 0.3420 | +0.0009 [-0.0016, +0.0036] | Yes |
-| DistilBERT (Notes) | None | *Pending Colab run* | - | - | - | - | - | - | - |
 
 ### Calibration Performance (LightGBM + RAG)
 - **Brier Score**: 0.2194 (uncalibrated) -> **0.0966** (calibrated via Train OOF isotonic regression)
