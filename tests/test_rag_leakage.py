@@ -25,11 +25,16 @@ def rag_artifacts():
     index_path = MODELS_DIR / "rag_faiss_train.index"
     meta_path = MODELS_DIR / "rag_train_meta.parquet"
 
-    assert train_rag_path.exists(), "train_rag.parquet not found"
-    assert val_rag_path.exists(), "val_rag.parquet not found"
-    assert test_rag_path.exists(), "test_rag.parquet not found"
-    assert index_path.exists(), "rag_faiss_train.index not found"
-    assert meta_path.exists(), "rag_train_meta.parquet not found"
+    if not (
+        train_rag_path.exists()
+        and val_rag_path.exists()
+        and test_rag_path.exists()
+        and index_path.exists()
+        and meta_path.exists()
+    ):
+        pytest.skip(
+            "Heavy RAG parquets/index not found in CI environment; skipping full RAG corpus leakage tests."
+        )
 
     train_df = pd.read_parquet(train_rag_path)
     val_df = pd.read_parquet(val_rag_path)

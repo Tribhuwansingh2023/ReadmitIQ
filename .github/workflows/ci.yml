@@ -8,6 +8,7 @@ on:
 
 jobs:
   python-test-and-lint:
+    name: Python Lint, Tests & Smoke Validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +27,26 @@ jobs:
 
       - name: Code Formatting & Lint Check
         run: |
-          black --check src/ api/ tests/
-          ruff check src/ api/ tests/
+          black --check src/ api/ tests/ scripts/
+          ruff check src/ api/ tests/ scripts/
 
-      - name: Run Test Suite
+      - name: Verify / Generate CI Fixtures
+        run: |
+          python scripts/generate_ci_fixtures.py
+
+      - name: Run Test Suite (Fixture Fallback & Skip Guards)
         run: |
           pytest tests/ -v
 
+      - name: API Smoke Test (Background Uvicorn in Lite Mode)
+        run: |
+          export READMITIQ_SERVE_MODE=lite
+          python -m uvicorn api.main:app --host 127.0.0.1 --port 8000 &
+          sleep 5
+          python scripts/smoke_test.py --base-url http://127.0.0.1:8000
+
   frontend-build-and-lint:
+    name: Frontend Build & Typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,3 +69,20 @@ jobs:
       - name: Build Frontend
         working-directory: ./web
         run: npm run build
+
+  docker-build-verification:
+    name: Docker Multi-Stage Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API Docker Image
+        run: |
+          docker build -t readmitiq-api:ci .
+
+      - name: Build Web Docker Image
+        run: |
+          docker build -t readmitiq-web:ci ./web

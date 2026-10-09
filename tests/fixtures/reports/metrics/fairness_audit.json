@@ -1,0 +1,337 @@
+{
+  "evaluation_split": "test",
+  "sample_size": 14903,
+  "capacity_threshold_evaluated": 0.194,
+  "primary_model_test_auc": 0.659,
+  "blinded_model_test_auc": 0.6597,
+  "auc_delta_blinded_vs_primary": 0.0007,
+  "audits": {
+    "race": {
+      "reference_group": "Caucasian",
+      "subgroups": {
+        "AfricanAmerican": {
+          "sample_size": 2782,
+          "reliable": true,
+          "prevalence": 0.1215,
+          "auc_roc": 0.6476,
+          "auc_ci_95": [
+            0.6174,
+            0.6773
+          ],
+          "selection_rate": 0.1531,
+          "tpr": 0.2959,
+          "fpr": 0.1334,
+          "ratio_selection_rate_vs_ref": 1.2,
+          "ratio_tpr_vs_ref": 1.2
+        },
+        "Asian": {
+          "sample_size": 79,
+          "reliable": false,
+          "prevalence": 0.0633,
+          "auc_roc": 0.7095,
+          "auc_ci_95": [
+            0.4176,
+            0.9385
+          ],
+          "selection_rate": 0.0633,
+          "tpr": 0.2,
+          "fpr": 0.0541,
+          "ratio_selection_rate_vs_ref": 0.5,
+          "ratio_tpr_vs_ref": 0.81
+        },
+        "Caucasian": {
+          "sample_size": 11188,
+          "reliable": true,
+          "prevalence": 0.1142,
+          "auc_roc": 0.6572,
+          "auc_ci_95": [
+            0.6427,
+            0.6742
+          ],
+          "selection_rate": 0.1273,
+          "tpr": 0.2465,
+          "fpr": 0.1119,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Hispanic": {
+          "sample_size": 302,
+          "reliable": true,
+          "prevalence": 0.096,
+          "auc_roc": 0.6962,
+          "auc_ci_95": [
+            0.6118,
+            0.777
+          ],
+          "selection_rate": 0.1093,
+          "tpr": 0.1724,
+          "fpr": 0.1026,
+          "ratio_selection_rate_vs_ref": 0.86,
+          "ratio_tpr_vs_ref": 0.7
+        },
+        "Missing": {
+          "sample_size": 344,
+          "reliable": true,
+          "prevalence": 0.0872,
+          "auc_roc": 0.7265,
+          "auc_ci_95": [
+            0.6401,
+            0.8048
+          ],
+          "selection_rate": 0.0814,
+          "tpr": 0.1,
+          "fpr": 0.0796,
+          "ratio_selection_rate_vs_ref": 0.64,
+          "ratio_tpr_vs_ref": 0.41
+        },
+        "Other": {
+          "sample_size": 208,
+          "reliable": true,
+          "prevalence": 0.0865,
+          "auc_roc": 0.7108,
+          "auc_ci_95": [
+            0.5636,
+            0.8315
+          ],
+          "selection_rate": 0.0865,
+          "tpr": 0.2778,
+          "fpr": 0.0684,
+          "ratio_selection_rate_vs_ref": 0.68,
+          "ratio_tpr_vs_ref": 1.13
+        }
+      }
+    },
+    "gender": {
+      "reference_group": "Female",
+      "subgroups": {
+        "Female": {
+          "sample_size": 8070,
+          "reliable": true,
+          "prevalence": 0.1146,
+          "auc_roc": 0.6644,
+          "auc_ci_95": [
+            0.646,
+            0.6813
+          ],
+          "selection_rate": 0.134,
+          "tpr": 0.2562,
+          "fpr": 0.1181,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Male": {
+          "sample_size": 6833,
+          "reliable": true,
+          "prevalence": 0.1131,
+          "auc_roc": 0.652,
+          "auc_ci_95": [
+            0.6317,
+            0.6738
+          ],
+          "selection_rate": 0.1248,
+          "tpr": 0.2484,
+          "fpr": 0.1091,
+          "ratio_selection_rate_vs_ref": 0.93,
+          "ratio_tpr_vs_ref": 0.97
+        }
+      }
+    },
+    "age": {
+      "reference_group": "65-79",
+      "subgroups": {
+        "45-64": {
+          "sample_size": 4004,
+          "reliable": true,
+          "prevalence": 0.0982,
+          "auc_roc": 0.702,
+          "auc_ci_95": [
+            0.67,
+            0.7268
+          ],
+          "selection_rate": 0.1111,
+          "tpr": 0.2545,
+          "fpr": 0.0955,
+          "ratio_selection_rate_vs_ref": 0.8,
+          "ratio_tpr_vs_ref": 0.98
+        },
+        "65-79": {
+          "sample_size": 7166,
+          "reliable": true,
+          "prevalence": 0.1133,
+          "auc_roc": 0.6435,
+          "auc_ci_95": [
+            0.6231,
+            0.6616
+          ],
+          "selection_rate": 0.1386,
+          "tpr": 0.2586,
+          "fpr": 0.1232,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "80+": {
+          "sample_size": 2843,
+          "reliable": true,
+          "prevalence": 0.1375,
+          "auc_roc": 0.5984,
+          "auc_ci_95": [
+            0.5702,
+            0.6279
+          ],
+          "selection_rate": 0.1326,
+          "tpr": 0.2225,
+          "fpr": 0.1183,
+          "ratio_selection_rate_vs_ref": 0.96,
+          "ratio_tpr_vs_ref": 0.86
+        },
+        "<45": {
+          "sample_size": 890,
+          "reliable": true,
+          "prevalence": 0.1146,
+          "auc_roc": 0.7316,
+          "auc_ci_95": [
+            0.6774,
+            0.7786
+          ],
+          "selection_rate": 0.1337,
+          "tpr": 0.3137,
+          "fpr": 0.1104,
+          "ratio_selection_rate_vs_ref": 0.96,
+          "ratio_tpr_vs_ref": 1.21
+        }
+      }
+    }
+  },
+  "blinded_audits": {
+    "race": {
+      "reference_group": "Caucasian",
+      "subgroups": {
+        "AfricanAmerican": {
+          "sample_size": 2782,
+          "reliable": true,
+          "prevalence": 0.1215,
+          "auc_roc": 0.6469,
+          "auc_ci_95": [
+            0.6165,
+            0.6764
+          ],
+          "selection_rate": 0.9792,
+          "tpr": 0.997,
+          "fpr": 0.9767,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Asian": {
+          "sample_size": 79,
+          "reliable": false,
+          "prevalence": 0.0633,
+          "auc_roc": 0.7243,
+          "auc_ci_95": [
+            0.426,
+            0.9432
+          ],
+          "selection_rate": 0.9873,
+          "tpr": 1.0,
+          "fpr": 0.9865,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Caucasian": {
+          "sample_size": 11188,
+          "reliable": true,
+          "prevalence": 0.1142,
+          "auc_roc": 0.6586,
+          "auc_ci_95": [
+            0.6441,
+            0.6749
+          ],
+          "selection_rate": 0.9826,
+          "tpr": 0.9984,
+          "fpr": 0.9805,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Hispanic": {
+          "sample_size": 302,
+          "reliable": true,
+          "prevalence": 0.096,
+          "auc_roc": 0.6961,
+          "auc_ci_95": [
+            0.6051,
+            0.7806
+          ],
+          "selection_rate": 0.9702,
+          "tpr": 1.0,
+          "fpr": 0.967,
+          "ratio_selection_rate_vs_ref": 0.99,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Missing": {
+          "sample_size": 344,
+          "reliable": true,
+          "prevalence": 0.0872,
+          "auc_roc": 0.711,
+          "auc_ci_95": [
+            0.6164,
+            0.7988
+          ],
+          "selection_rate": 0.9826,
+          "tpr": 1.0,
+          "fpr": 0.9809,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Other": {
+          "sample_size": 208,
+          "reliable": true,
+          "prevalence": 0.0865,
+          "auc_roc": 0.7167,
+          "auc_ci_95": [
+            0.5693,
+            0.8346
+          ],
+          "selection_rate": 0.9856,
+          "tpr": 1.0,
+          "fpr": 0.9842,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        }
+      }
+    },
+    "gender": {
+      "reference_group": "Female",
+      "subgroups": {
+        "Female": {
+          "sample_size": 8070,
+          "reliable": true,
+          "prevalence": 0.1146,
+          "auc_roc": 0.6627,
+          "auc_ci_95": [
+            0.6444,
+            0.6798
+          ],
+          "selection_rate": 0.9799,
+          "tpr": 0.9989,
+          "fpr": 0.9775,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        },
+        "Male": {
+          "sample_size": 6833,
+          "reliable": true,
+          "prevalence": 0.1131,
+          "auc_roc": 0.6556,
+          "auc_ci_95": [
+            0.6361,
+            0.6764
+          ],
+          "selection_rate": 0.9839,
+          "tpr": 0.9974,
+          "fpr": 0.9822,
+          "ratio_selection_rate_vs_ref": 1.0,
+          "ratio_tpr_vs_ref": 1.0
+        }
+      }
+    }
+  }
+}

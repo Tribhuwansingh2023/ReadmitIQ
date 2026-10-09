@@ -1,0 +1,264 @@
+{
+  "features": {
+    "a1c_tested": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "age_num": {
+      "psi_train_vs_val": 0.0004,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "labs_per_day": {
+      "psi_train_vs_val": 0.0005,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0006,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "meds_per_day": {
+      "psi_train_vs_val": 0.0011,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0005,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "n_active_drugs": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "n_dose_changes": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "num_lab_procedures": {
+      "psi_train_vs_val": 0.001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "num_medications": {
+      "psi_train_vs_val": 0.0005,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0011,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "num_procedures": {
+      "psi_train_vs_val": 0.0002,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "number_diagnoses": {
+      "psi_train_vs_val": 0.0012,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0009,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "number_emergency": {
+      "psi_train_vs_val": 0.0002,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "number_inpatient": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "number_outpatient": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0003,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "polypharmacy": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "rag_struct_rate_k20": {
+      "psi_train_vs_val": 0.0003,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "time_in_hospital": {
+      "psi_train_vs_val": 0.0003,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "total_prior_visits": {
+      "psi_train_vs_val": 0.0003,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "A1Cresult": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "acarbose": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "admission_source_group": {
+      "psi_train_vs_val": 0.0006,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0003,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "admission_type_group": {
+      "psi_train_vs_val": 0.0005,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "change": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "diabetesMed": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "diag_1_group": {
+      "psi_train_vs_val": 0.0018,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "diag_2_group": {
+      "psi_train_vs_val": 0.0009,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0007,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "diag_3_group": {
+      "psi_train_vs_val": 0.0019,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0007,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "discharge_disposition_group": {
+      "psi_train_vs_val": 0.0006,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0005,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "gender": {
+      "psi_train_vs_val": 0.0004,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "glimepiride": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "glipizide": {
+      "psi_train_vs_val": 0.0004,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0004,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "glyburide": {
+      "psi_train_vs_val": 0.0002,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0005,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "glyburide-metformin": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "insulin": {
+      "psi_train_vs_val": 0.0002,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0001,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "max_glu_serum": {
+      "psi_train_vs_val": 0.0012,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0007,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "medical_specialty": {
+      "psi_train_vs_val": 0.0029,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0049,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "metformin": {
+      "psi_train_vs_val": 0.0008,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "nateglinide": {
+      "psi_train_vs_val": 0.0003,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "payer_code": {
+      "psi_train_vs_val": 0.0031,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0023,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "pioglitazone": {
+      "psi_train_vs_val": 0.0001,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "race": {
+      "psi_train_vs_val": 0.0007,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0003,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "repaglinide": {
+      "psi_train_vs_val": 0.0003,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0,
+      "status_train_vs_test": "Minimal (Stable)"
+    },
+    "rosiglitazone": {
+      "psi_train_vs_val": 0.0,
+      "status_train_vs_val": "Minimal (Stable)",
+      "psi_train_vs_test": 0.0002,
+      "status_train_vs_test": "Minimal (Stable)"
+    }
+  },
+  "scores": {},
+  "summary": {
+    "total_features_monitored": 42,
+    "val_moderate_drift_count": 0,
+    "val_high_drift_count": 0,
+    "test_moderate_drift_count": 0,
+    "test_high_drift_count": 0
+  }
+}
