@@ -274,3 +274,17 @@ curl -s https://your-api.onrender.com/metrics | jq '{test_auc: .test_results.auc
   1. Go to **Render Dashboard** $\rightarrow$ `readmitiq-api` $\rightarrow$ **Events**.
   2. Find the previous successful deploy.
   3. Click **Rollback to this deploy**.
+
+### Scenario E: Ephemeral Container Disks on Free Hosting Tiers (Auto-Seeding on Startup)
+- **Background Context:** Free hosting platforms (Render Free Tier, Railway Starter, Hugging Face Spaces free) utilize **ephemeral container disks**. When instances spin down after inactivity or restart after a code redeployment, local SQLite files (`data/readmitiq.db`) are wiped and recreated fresh.
+- **Built-in Self-Healing Behavior:**
+  - ReadmitIQ includes automatic startup self-seeding in `api/main.py` via `scripts/seed_demo.py:seed_if_empty()`.
+  - When a container boots and detects 0 records in SQLite, it automatically runs the live scoring pipeline for 300 simulated encounters and advances the simulated Time Machine to release ~150 verified outcomes.
+  - **Outcome:** Clinical evaluators, judges, and care coordinators arriving at the demo URL will **never see an empty monitoring page or empty worklist**. All seeded data is clearly labeled `source: simulated_feed`.
+- **Production Persistence Option:**
+  - In enterprise production environments, mount a persistent volume (e.g. Render Disk or AWS EBS) and configure the environment variable:
+    ```bash
+    READMITIQ_DB_PATH=/var/data/readmitiq.db
+    READMITIQ_AUTO_SEED=false
+    ```
+
