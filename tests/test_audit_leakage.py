@@ -4,6 +4,7 @@ import json
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from src.config import (
     MODELS_DIR,
@@ -18,7 +19,9 @@ from src.features import build_preprocessor
 def test_patient_disjoint_across_all_parquets():
     """Verify zero patient overlap between Train, Val, and Test parquets."""
     if not (TRAIN_PARQUET.exists() and VAL_PARQUET.exists()):
-        pytest.skip("Processed dataset parquets not found in CI environment; skipping patient disjoint test.")
+        pytest.skip(
+            "Processed dataset parquets not found in CI environment; skipping patient disjoint test."
+        )
     tr = pd.read_parquet(PROCESSED_DATA_DIR / "train.parquet", columns=["patient_nbr"])
     va = pd.read_parquet(PROCESSED_DATA_DIR / "val.parquet", columns=["patient_nbr"])
     te = pd.read_parquet(PROCESSED_DATA_DIR / "test.parquet", columns=["patient_nbr"])

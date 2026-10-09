@@ -9,6 +9,7 @@ import sys
 import time
 import tracemalloc
 from pathlib import Path
+
 import psutil
 
 # Ensure stdout handles UTF-8 on Windows
@@ -122,11 +123,11 @@ def measure_mode_worker(mode: str) -> dict:
     t0 = time.perf_counter()
 
     import api.service as svc_mod
+
     svc_mod._SERVICE_INSTANCE = None
     service = svc_mod.get_service()
 
     startup_ms = (time.perf_counter() - t0) * 1000
-    after_init_rss = process.memory_info().rss
 
     sample_patient = {
         "age": "[60-70)",
@@ -195,7 +196,7 @@ print("JSON_RESULT:" + json.dumps(res))
         return {}
     for line in res.stdout.splitlines():
         if line.startswith("JSON_RESULT:"):
-            return json.loads(line[len("JSON_RESULT:"):])
+            return json.loads(line[len("JSON_RESULT:") :])
     return {}
 
 

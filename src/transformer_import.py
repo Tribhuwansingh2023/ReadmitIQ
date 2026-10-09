@@ -280,7 +280,11 @@ def update_ablation_files(
         brier_str = f"{r['brier_score']:.4f}" if r.get("brier_score") is not None else "N/A"
         ece_str = f"{r['ece']:.4f}" if r.get("ece") is not None else "N/A"
 
-        if r["rag_feature"] and r.get("paired_delta_auc") is not None and r["paired_delta_auc"] != 0.0:
+        if (
+            r["rag_feature"]
+            and r.get("paired_delta_auc") is not None
+            and r["paired_delta_auc"] != 0.0
+        ):
             p_ci_str = f"[{r['paired_ci_95'][0]:+.4f}, {r['paired_ci_95'][1]:+.4f}]"
             cz_str = "Yes" if r["ci_crosses_zero"] else "No"
             p_diff_str = f"{r['paired_delta_auc']:+.4f}"
@@ -308,9 +312,7 @@ def update_ablation_files(
         )
 
     md_content += "### Key Methodological Findings\n"
-    md_content += (
-        "- All models evaluated on the FULL validation set (14,902 encounters) with no subsampling.\n"
-    )
+    md_content += "- All models evaluated on the FULL validation set (14,902 encounters) with no subsampling.\n"
     md_content += "- Paired bootstrap confidence intervals directly test if RAG improvements are statistically significant vs base feature set.\n"
     md_content += "- Note: The production model was frozen before the transformer results existed; this transformer benchmark is validation-only.\n"
 

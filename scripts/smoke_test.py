@@ -21,7 +21,9 @@ if sys.platform == "win32":
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
-def request_json(url: str, method: str = "GET", data: Dict[str, Any] = None) -> Tuple[int, Dict[str, Any], float]:
+def request_json(
+    url: str, method: str = "GET", data: Dict[str, Any] = None
+) -> Tuple[int, Dict[str, Any], float]:
     headers = {"Content-Type": "application/json"}
     body = json.dumps(data).encode("utf-8") if data else None
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
@@ -87,7 +89,9 @@ def run_smoke_test(base_url: str) -> bool:
     print("[1/6] Testing GET /health...")
     status, body, ms = request_json(f"{base_url}/health")
     if status == 200 and body.get("status") == "healthy" and "model_name" in body:
-        print(f"  [PASS] ({ms:.1f}ms): Status={body.get('status')}, Model='{body.get('model_name')}'")
+        print(
+            f"  [PASS] ({ms:.1f}ms): Status={body.get('status')}, Model='{body.get('model_name')}'"
+        )
         passed_tests += 1
     else:
         print(f"  [FAIL] ({status}): {body}")
@@ -98,31 +102,51 @@ def run_smoke_test(base_url: str) -> bool:
     prob = body.get("calibrated_risk_probability")
     tier = body.get("risk_tier")
     interventions = body.get("suggested_interventions")
-    if status == 200 and isinstance(prob, (int, float)) and 0.0 <= prob <= 1.0 and tier in ["Low", "Medium", "High", "Critical"]:
+    if (
+        status == 200
+        and isinstance(prob, (int, float))
+        and 0.0 <= prob <= 1.0
+        and tier in ["Low", "Medium", "High", "Critical"]
+    ):
         sugg_count = interventions.get("suggestions_count", 0) if interventions else 0
-        print(f"  [PASS] ({ms:.1f}ms): Prob={prob*100:.2f}%, Tier={tier}, Interventions={sugg_count}")
+        print(
+            f"  [PASS] ({ms:.1f}ms): Prob={prob*100:.2f}%, Tier={tier}, Interventions={sugg_count}"
+        )
         passed_tests += 1
     else:
         print(f"  [FAIL] ({status}): {body}")
 
     # 3. POST /similar
     print("\n[3/6] Testing POST /similar...")
-    status, body, ms = request_json(f"{base_url}/similar", method="POST", data={"patient_features": SAMPLE_PATIENT, "k": 20})
+    status, body, ms = request_json(
+        f"{base_url}/similar", method="POST", data={"patient_features": SAMPLE_PATIENT, "k": 20}
+    )
     rate = body.get("neighbor_readmission_rate")
     sim_list = body.get("similar_encounters", [])
-    if status == 200 and isinstance(rate, (int, float)) and 0.0 <= rate <= 1.0 and len(sim_list) > 0:
-        print(f"  [PASS] ({ms:.1f}ms): Neighbor Rate={rate*100:.2f}%, Retrieved={len(sim_list)} cases")
+    if (
+        status == 200
+        and isinstance(rate, (int, float))
+        and 0.0 <= rate <= 1.0
+        and len(sim_list) > 0
+    ):
+        print(
+            f"  [PASS] ({ms:.1f}ms): Neighbor Rate={rate*100:.2f}%, Retrieved={len(sim_list)} cases"
+        )
         passed_tests += 1
     else:
         print(f"  [FAIL] ({status}): {body}")
 
     # 4. POST /explain
     print("\n[4/6] Testing POST /explain...")
-    status, body, ms = request_json(f"{base_url}/explain?top_k=3", method="POST", data=SAMPLE_PATIENT)
+    status, body, ms = request_json(
+        f"{base_url}/explain?top_k=3", method="POST", data=SAMPLE_PATIENT
+    )
     increasing = body.get("top_risk_increasing", [])
     reducing = body.get("top_risk_reducing", [])
     if status == 200 and len(increasing) > 0 and len(reducing) > 0:
-        print(f"  [PASS] ({ms:.1f}ms): Increasing Factors={len(increasing)}, Reducing Factors={len(reducing)}")
+        print(
+            f"  [PASS] ({ms:.1f}ms): Increasing Factors={len(increasing)}, Reducing Factors={len(reducing)}"
+        )
         passed_tests += 1
     else:
         print(f"  [FAIL] ({status}): {body}")
@@ -160,7 +184,9 @@ def run_smoke_test(base_url: str) -> bool:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ReadmitIQ API Smoke Test")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8000", help="Base URL of the running API")
+    parser.add_argument(
+        "--base-url", default="http://127.0.0.1:8000", help="Base URL of the running API"
+    )
     args = parser.parse_args()
 
     success = run_smoke_test(args.base_url)

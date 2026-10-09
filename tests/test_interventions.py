@@ -1,7 +1,7 @@
 """Unit tests for deterministic care-transition decision support interventions."""
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from api.interventions import DISCLAIMER_TEXT, generate_suggested_interventions
 from api.main import app

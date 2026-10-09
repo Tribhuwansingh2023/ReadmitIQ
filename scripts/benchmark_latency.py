@@ -17,7 +17,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from fastapi.testclient import TestClient
+
 from api.main import app
+
 
 def run_latency_benchmark(n_requests: int = 100) -> dict:
     print(f"Starting API /predict latency benchmark ({n_requests} sequential requests)...")
@@ -128,6 +130,7 @@ def run_latency_benchmark(n_requests: int = 100) -> dict:
         json.dump(results, f, indent=2)
 
     return results
+
 
 if __name__ == "__main__":
     run_latency_benchmark(100)

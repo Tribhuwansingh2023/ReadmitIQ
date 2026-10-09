@@ -119,8 +119,8 @@ def generate_content_for_file(
             return (
                 f"{START_MARKER}\n"
                 "- **Transformer Benchmark Status:** Pending Google Colab T4 GPU execution (`notebooks/colab_transformer_training.ipynb`).\n"
-                "- **Talking Point:** *\"The production model was frozen before the transformer results existed. "
-                "We evaluated DistilBERT on clinical notes purely as an offline validation-only comparison across the full 14,902 validation encounters.\"*\n"
+                '- **Talking Point:** *"The production model was frozen before the transformer results existed. '
+                'We evaluated DistilBERT on clinical notes purely as an offline validation-only comparison across the full 14,902 validation encounters."*\n'
                 f"{END_MARKER}"
             )
         elif fname == "MORNING_REPORT.md":
@@ -153,9 +153,7 @@ def generate_content_for_file(
         else "N/A"
     )
     frozen_str = (
-        f"{diff_frozen.get('observed_diff', 0.0):+.4f}"
-        if "observed_diff" in diff_frozen
-        else "N/A"
+        f"{diff_frozen.get('observed_diff', 0.0):+.4f}" if "observed_diff" in diff_frozen else "N/A"
     )
 
     if fname == "README.md":
@@ -203,10 +201,10 @@ def generate_content_for_file(
         return (
             f"{START_MARKER}\n"
             f"- **Transformer Benchmark Status:** Evaluated on full N={val_n:,} validation split (Train N={train_n_notes:,}).\n"
-            f"- **Talking Point:** *\"The production model was frozen before the transformer results existed. "
+            f'- **Talking Point:** *"The production model was frozen before the transformer results existed. '
             f"When fine-tuning DistilBERT on clinical notes, Variant A achieved Val AUC {rec_notes['auc_roc']:.4f} and Variant B with RAG achieved {rec_rag['auc_roc']:.4f} "
             f"(paired ΔAUC {diff_rag:+.4f}, 95% CI [{ci_rag[0]:+.4f}, {ci_rag[1]:+.4f}]). "
-            f"Tabular features continue to drive clinical predictive power while tree models provide instant CPU inference.\"*\n"
+            f'Tabular features continue to drive clinical predictive power while tree models provide instant CPU inference."*\n'
             f"{END_MARKER}"
         )
     elif fname == "MORNING_REPORT.md":

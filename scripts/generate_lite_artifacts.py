@@ -8,7 +8,6 @@ Produces:
 """
 
 import io
-import os
 import sys
 from pathlib import Path
 
@@ -76,7 +75,9 @@ def generate_lite_artifacts():
 
     # 5. Save compact metadata with downcasted types
     df_lite_reset = df_lite.reset_index(drop=True)
-    compact_df = df_lite_reset[["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]].copy()
+    compact_df = df_lite_reset[
+        ["encounter_id", "patient_nbr", "readmitted_30d", "time_in_hospital"]
+    ].copy()
 
     # Downcast
     compact_df["encounter_id"] = compact_df["encounter_id"].astype("int32")

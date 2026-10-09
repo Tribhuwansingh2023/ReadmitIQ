@@ -11,11 +11,11 @@ import joblib
 import numpy as np
 import pandas as pd
 
+from api.interventions import generate_suggested_interventions
 from src.config import (
     MODELS_DIR,
     REPORTS_DIR,
 )
-from api.interventions import generate_suggested_interventions
 from src.explain import ModelExplainer
 from src.train import prepare_lgbm_data
 

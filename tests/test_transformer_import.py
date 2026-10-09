@@ -270,7 +270,9 @@ def test_paired_bootstrap_returns_ci_containing_observed_delta():
     observed = result["observed_diff"]
     ci_low, ci_high = result["ci_95"]
 
-    assert ci_low <= observed <= ci_high, f"CI [{ci_low}, {ci_high}] does not contain observed {observed}"
+    assert (
+        ci_low <= observed <= ci_high
+    ), f"CI [{ci_low}, {ci_high}] does not contain observed {observed}"
     assert result["crosses_zero"] == (ci_low <= 0 <= ci_high)
 
 
@@ -289,4 +291,6 @@ def test_no_code_path_reads_test_data():
     ]
 
     for token in forbidden_tokens:
-        assert token not in content, f"Forbidden test data reference '{token}' found in transformer_import.py!"
+        assert (
+            token not in content
+        ), f"Forbidden test data reference '{token}' found in transformer_import.py!"

@@ -101,7 +101,11 @@ def check_consistency():
         ("Top-5% Capacity Lift (2.51x)", r"2\.51x|2\.51", "reports/metrics/test_results.json"),
         ("Top-5% Precision (28.59%)", "28.59", "reports/metrics/test_results.json"),
         ("Calibrated Brier Score (0.0973)", "0.0973", "reports/metrics/test_results.json"),
-        ("Expected Calibration Error (0.0039 / 0.39%)", r"0\.0039|0\.39%", "reports/metrics/test_results.json"),
+        (
+            "Expected Calibration Error (0.0039 / 0.39%)",
+            r"0\.0039|0\.39%",
+            "reports/metrics/test_results.json",
+        ),
         ("Paired RAG Delta AUC (+0.0004)", r"\+?0\.0004", "reports/metrics/test_results.json"),
         ("Paired RAG Delta CI Lower (-0.0025)", "-0.0025", "reports/metrics/test_results.json"),
         ("Paired RAG Delta CI Upper (+0.0031)", r"\+?0\.0031", "reports/metrics/test_results.json"),
@@ -109,13 +113,25 @@ def check_consistency():
         ("Val AUC CI Lower (0.6602)", "0.6602", "reports/metrics/ablation_table.json"),
         ("Val AUC CI Upper (0.6863)", "0.6863", "reports/metrics/ablation_table.json"),
         ("Demographic Blinded Test AUC (0.6597)", "0.6597", "reports/metrics/fairness_audit.json"),
-        ("Blinded vs Primary Delta (+0.0007)", r"\+?0\.0007", "reports/metrics/fairness_audit.json"),
+        (
+            "Blinded vs Primary Delta (+0.0007)",
+            r"\+?0\.0007",
+            "reports/metrics/fairness_audit.json",
+        ),
         ("Caucasian Test Sample (11,188)", "11,188", "reports/metrics/fairness_audit.json"),
         ("African American Test Sample (2,782)", "2,782", "reports/metrics/fairness_audit.json"),
         ("Hispanic Test Sample (302)", "302", "reports/metrics/fairness_audit.json"),
-        ("p95 End-to-End Latency (386.0ms)", r"386(\.0)?ms", "reports/metrics/latency_benchmark.json"),
+        (
+            "p95 End-to-End Latency (386.0ms)",
+            r"386(\.0)?ms",
+            "reports/metrics/latency_benchmark.json",
+        ),
         ("Lite Serving Artifacts Disk (1.69 MB)", "1.69", "reports/metrics/serving_footprint.json"),
-        ("Full Serving Artifacts Disk (18.47 / 18.5 MB)", r"18\.47|18\.5", "reports/metrics/serving_footprint.json"),
+        (
+            "Full Serving Artifacts Disk (18.47 / 18.5 MB)",
+            r"18\.47|18\.5",
+            "reports/metrics/serving_footprint.json",
+        ),
         ("Disk Reduction in Lite Mode (90.9%)", "90.9", "reports/metrics/serving_footprint.json"),
     ]
 
@@ -123,45 +139,52 @@ def check_consistency():
     t_rows = [
         r
         for r in ablation.get("ablation_results", [])
-        if "transformer" in r.get("model", "").lower()
-        or "distilbert" in r.get("model", "").lower()
+        if "transformer" in r.get("model", "").lower() or "distilbert" in r.get("model", "").lower()
     ]
     if len(t_rows) >= 2:
         t_notes = next((r for r in t_rows if not r.get("rag_feature")), t_rows[0])
         t_rag = next((r for r in t_rows if r.get("rag_feature")), t_rows[1])
-        checks.append((
-            f"Transformer Notes Val AUC ({t_notes['auc_roc']:.4f})",
-            re.escape(f"{t_notes['auc_roc']:.4f}"),
-            "reports/metrics/ablation_table.json",
-        ))
-        checks.append((
-            f"Transformer Notes+RAG Val AUC ({t_rag['auc_roc']:.4f})",
-            re.escape(f"{t_rag['auc_roc']:.4f}"),
-            "reports/metrics/ablation_table.json",
-        ))
-        t_comps = ablation.get("comparisons", {}).get(
-            "transformer_rag_vs_transformer_notes", {}
+        checks.append(
+            (
+                f"Transformer Notes Val AUC ({t_notes['auc_roc']:.4f})",
+                re.escape(f"{t_notes['auc_roc']:.4f}"),
+                "reports/metrics/ablation_table.json",
+            )
         )
+        checks.append(
+            (
+                f"Transformer Notes+RAG Val AUC ({t_rag['auc_roc']:.4f})",
+                re.escape(f"{t_rag['auc_roc']:.4f}"),
+                "reports/metrics/ablation_table.json",
+            )
+        )
+        t_comps = ablation.get("comparisons", {}).get("transformer_rag_vs_transformer_notes", {})
         if "observed_diff" in t_comps:
             diff_val = t_comps["observed_diff"]
-            checks.append((
-                f"Transformer Paired RAG Delta ({diff_val:+.4f})",
-                rf"\{diff_val:+.4f}".replace("+", r"\+").replace("-", r"\-"),
-                "reports/metrics/ablation_table.json",
-            ))
+            checks.append(
+                (
+                    f"Transformer Paired RAG Delta ({diff_val:+.4f})",
+                    rf"\{diff_val:+.4f}".replace("+", r"\+").replace("-", r"\-"),
+                    "reports/metrics/ablation_table.json",
+                )
+            )
     else:
-        checks.append((
-            "Transformer Status (Pending Colab Run)",
-            r"pending Colab|Pending Colab|Pending Google Colab",
-            "reports/metrics/ablation_table.json",
-        ))
+        checks.append(
+            (
+                "Transformer Status (Pending Colab Run)",
+                r"pending Colab|Pending Colab|Pending Google Colab",
+                "reports/metrics/ablation_table.json",
+            )
+        )
 
     # Verification of frozen production integrity requirement
-    checks.append((
-        "Production Model Frozen Statement",
-        r"production model was frozen before the transformer results existed",
-        "README.md / QA_prep.md / DEMO_SCRIPT.md",
-    ))
+    checks.append(
+        (
+            "Production Model Frozen Statement",
+            r"production model was frozen before the transformer results existed",
+            "README.md / QA_prep.md / DEMO_SCRIPT.md",
+        )
+    )
 
     audit_results = []
     passed_count = 0
@@ -186,18 +209,22 @@ def check_consistency():
             status = "FAIL"
             print(f"  [FAIL] {name:<46} Pattern '{pattern}' not found!")
 
-        audit_results.append({
-            "metric_name": name,
-            "pattern": pattern,
-            "source_artifact": source,
-            "status": status,
-            "found_in_deck": found_in_deck,
-            "found_in_qa": found_in_qa,
-        })
+        audit_results.append(
+            {
+                "metric_name": name,
+                "pattern": pattern,
+                "source_artifact": source,
+                "status": status,
+                "found_in_deck": found_in_deck,
+                "found_in_qa": found_in_qa,
+            }
+        )
 
     total = len(checks)
     print("-" * 70)
-    print(f"Consistency Audit Result: {passed_count}/{total} Checks Passed ({passed_count/total*100:.1f}%)")
+    print(
+        f"Consistency Audit Result: {passed_count}/{total} Checks Passed ({passed_count/total*100:.1f}%)"
+    )
     print("=" * 70 + "\n")
 
     report_out = {

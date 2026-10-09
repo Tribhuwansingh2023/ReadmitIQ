@@ -6,6 +6,7 @@ import nbformat as nbf
 
 NOTEBOOK_PATH = Path("notebooks/colab_transformer_training.ipynb")
 
+
 def build_notebook() -> None:
     nb = nbf.v4.new_notebook()
 
@@ -36,21 +37,21 @@ def build_notebook() -> None:
         "# CONFIGURATION CELL (All hyperparameters in one place)\n"
         "# ==============================================================================\n"
         "from pathlib import Path\n\n"
-        "MODEL_NAME = \"distilbert-base-uncased\"\n"
+        'MODEL_NAME = "distilbert-base-uncased"\n'
         "TRAIN_N = None  # None = full train (69,535). If integer, must be >= 25,000.\n"
         "if TRAIN_N is not None:\n"
-        "    assert TRAIN_N >= 25000, f\"TRAIN_N must be >= 25,000, got {TRAIN_N}\"\n\n"
+        '    assert TRAIN_N >= 25000, f"TRAIN_N must be >= 25,000, got {TRAIN_N}"\n\n'
         "EPOCHS = 3\n"
         "BATCH_SIZE = 32\n"
         "LR = 3e-5\n"
         "MAX_LENGTH = 192  # Empirically selected: 0.0% truncated on clinical notes\n"
         "SEED = 42\n"
-        "DATA_DIR = Path(\".\")\n"
-        "OUT_DIR = Path(\"./outputs\")\n"
+        'DATA_DIR = Path(".")\n'
+        'OUT_DIR = Path("./outputs")\n'
         "OUT_DIR.mkdir(parents=True, exist_ok=True)\n\n"
-        "print(f\"Config: MODEL_NAME={MODEL_NAME}, TRAIN_N={TRAIN_N}, EPOCHS={EPOCHS}, \"\n"
-        "      f\"BATCH_SIZE={BATCH_SIZE}, LR={LR}, MAX_LENGTH={MAX_LENGTH}, SEED={SEED}\")\n"
-        "print(f\"DATA_DIR: {DATA_DIR.resolve()} | OUT_DIR: {OUT_DIR.resolve()}\")"
+        'print(f"Config: MODEL_NAME={MODEL_NAME}, TRAIN_N={TRAIN_N}, EPOCHS={EPOCHS}, "\n'
+        '      f"BATCH_SIZE={BATCH_SIZE}, LR={LR}, MAX_LENGTH={MAX_LENGTH}, SEED={SEED}")\n'
+        'print(f"DATA_DIR: {DATA_DIR.resolve()} | OUT_DIR: {OUT_DIR.resolve()}")'
     )
 
     # Cell 2: Setup, GPU, seeds, versions, Drive
@@ -66,13 +67,13 @@ def build_notebook() -> None:
         "try:\n"
         "    import transformers\n"
         "except ImportError:\n"
-        "    !pip install -q \"transformers>=4.30.0\" \"scikit-learn>=1.2.0\" \"pyarrow>=12.0.0\"\n"
+        '    !pip install -q "transformers>=4.30.0" "scikit-learn>=1.2.0" "pyarrow>=12.0.0"\n'
         "    import transformers\n\n"
         "import sklearn\n\n"
         "# Verify GPU\n"
-        "assert torch.cuda.is_available(), \"CUDA GPU required! Go to Runtime -> Change runtime type -> T4 GPU.\"\n"
-        "device = torch.device(\"cuda\")\n"
-        "print(f\"✓ GPU Active: {torch.cuda.get_device_name(0)}\")\n\n"
+        'assert torch.cuda.is_available(), "CUDA GPU required! Go to Runtime -> Change runtime type -> T4 GPU."\n'
+        'device = torch.device("cuda")\n'
+        'print(f"✓ GPU Active: {torch.cuda.get_device_name(0)}")\n\n'
         "# Deterministic seeds\n"
         "def set_all_seeds(seed: int = 42):\n"
         "    random.seed(seed)\n"
@@ -82,13 +83,13 @@ def build_notebook() -> None:
         "    torch.backends.cudnn.deterministic = True\n"
         "    torch.backends.cudnn.benchmark = False\n\n"
         "set_all_seeds(SEED)\n"
-        "print(f\"Versions: Python {sys.version.split()[0]} | PyTorch {torch.__version__} | Transformers {transformers.__version__}\")\n\n"
+        'print(f"Versions: Python {sys.version.split()[0]} | PyTorch {torch.__version__} | Transformers {transformers.__version__}")\n\n'
         "# OPTIONAL GOOGLE DRIVE MOUNT (Uncomment to save outputs directly to Drive)\n"
         "# from google.colab import drive\n"
         "# drive.mount('/content/drive')\n"
         "# OUT_DIR = Path('/content/drive/MyDrive/readmitt_iq_outputs')\n"
         "# OUT_DIR.mkdir(parents=True, exist_ok=True)\n"
-        "# print(f\"Drive mounted. Outputs will save to: {OUT_DIR}\")"
+        '# print(f"Drive mounted. Outputs will save to: {OUT_DIR}")'
     )
 
     # Cell 3: Load parquets, verify against MANIFEST, token distribution, MAX_LENGTH
@@ -102,46 +103,46 @@ def build_notebook() -> None:
         "from transformers import AutoTokenizer\n\n"
         "def compute_sha256(path: Path) -> str:\n"
         "    h = hashlib.sha256()\n"
-        "    with open(path, \"rb\") as f:\n"
-        "        for chunk in iter(lambda: f.read(65536), b\"\"):\n"
+        '    with open(path, "rb") as f:\n'
+        '        for chunk in iter(lambda: f.read(65536), b""):\n'
         "            h.update(chunk)\n"
         "    return h.hexdigest()\n\n"
-        "train_file = DATA_DIR / \"colab_train.parquet\"\n"
-        "val_file = DATA_DIR / \"colab_val.parquet\"\n"
-        "manifest_file = DATA_DIR / \"MANIFEST.json\"\n\n"
-        "assert train_file.exists(), f\"Missing {train_file}! Please upload colab_train.parquet.\"\n"
-        "assert val_file.exists(), f\"Missing {val_file}! Please upload colab_val.parquet.\"\n\n"
+        'train_file = DATA_DIR / "colab_train.parquet"\n'
+        'val_file = DATA_DIR / "colab_val.parquet"\n'
+        'manifest_file = DATA_DIR / "MANIFEST.json"\n\n'
+        'assert train_file.exists(), f"Missing {train_file}! Please upload colab_train.parquet."\n'
+        'assert val_file.exists(), f"Missing {val_file}! Please upload colab_val.parquet."\n\n'
         "train_df = pd.read_parquet(train_file)\n"
         "val_df = pd.read_parquet(val_file)\n"
-        "print(f\"Loaded train rows: {len(train_df):,} | Loaded val rows: {len(val_df):,}\")\n\n"
+        'print(f"Loaded train rows: {len(train_df):,} | Loaded val rows: {len(val_df):,}")\n\n'
         "if manifest_file.exists():\n"
-        "    with open(manifest_file, \"r\") as f:\n"
+        '    with open(manifest_file, "r") as f:\n'
         "        manifest = json.load(f)\n"
-        "    t_meta = manifest[\"files\"][\"colab_train.parquet\"]\n"
-        "    v_meta = manifest[\"files\"][\"colab_val.parquet\"]\n"
-        "    assert len(train_df) == t_meta[\"rows\"], f\"Train rows mismatch: {len(train_df)} vs {t_meta['rows']}\"\n"
-        "    assert len(val_df) == v_meta[\"rows\"], f\"Val rows mismatch: {len(val_df)} vs {v_meta['rows']}\"\n"
+        '    t_meta = manifest["files"]["colab_train.parquet"]\n'
+        '    v_meta = manifest["files"]["colab_val.parquet"]\n'
+        '    assert len(train_df) == t_meta["rows"], f"Train rows mismatch: {len(train_df)} vs {t_meta[\'rows\']}"\n'
+        '    assert len(val_df) == v_meta["rows"], f"Val rows mismatch: {len(val_df)} vs {v_meta[\'rows\']}"\n'
         "    t_sha = compute_sha256(train_file)\n"
         "    v_sha = compute_sha256(val_file)\n"
-        "    assert t_sha == t_meta[\"sha256\"], f\"Train SHA mismatch! {t_sha} != {t_meta['sha256']}\"\n"
-        "    assert v_sha == v_meta[\"sha256\"], f\"Val SHA mismatch! {v_sha} != {v_meta['sha256']}\"\n"
-        "    print(\"✓ MANIFEST.json verification PASSED (row counts and SHA-256 match perfectly).\")\n"
+        '    assert t_sha == t_meta["sha256"], f"Train SHA mismatch! {t_sha} != {t_meta[\'sha256\']}"\n'
+        '    assert v_sha == v_meta["sha256"], f"Val SHA mismatch! {v_sha} != {v_meta[\'sha256\']}"\n'
+        '    print("✓ MANIFEST.json verification PASSED (row counts and SHA-256 match perfectly).")\n'
         "else:\n"
-        "    assert len(train_df) == 69535, f\"Expected 69,535 train rows, got {len(train_df)}\"\n"
-        "    assert len(val_df) == 14902, f\"Expected 14,902 val rows, got {len(val_df)}\"\n\n"
+        '    assert len(train_df) == 69535, f"Expected 69,535 train rows, got {len(train_df)}"\n'
+        '    assert len(val_df) == 14902, f"Expected 14,902 val rows, got {len(val_df)}"\n\n'
         "# Tokenization and length distribution analysis\n"
         "tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)\n"
         "sample_notes = pd.concat([\n"
-        "    train_df[\"clinical_note\"].sample(min(3000, len(train_df)), random_state=SEED),\n"
-        "    val_df[\"clinical_note\"].sample(min(1500, len(val_df)), random_state=SEED),\n"
+        '    train_df["clinical_note"].sample(min(3000, len(train_df)), random_state=SEED),\n'
+        '    val_df["clinical_note"].sample(min(1500, len(val_df)), random_state=SEED),\n'
         "])\n"
         "lengths = [len(tokenizer.encode(n, truncation=False)) for n in sample_notes]\n"
         "p50, p90, p95, p98, p99, pmax = np.percentile(lengths, [50, 90, 95, 98, 99, 100])\n"
         "trunc_share = (np.array(lengths) > MAX_LENGTH).mean()\n"
-        "print(f\"Token length percentiles: 50%={p50:.0f}, 90%={p90:.0f}, 95%={p95:.0f}, 98%={p98:.0f}, 99%={p99:.0f}, Max={pmax:.0f}\")\n"
-        "print(f\"Share of notes truncated at MAX_LENGTH={MAX_LENGTH}: {trunc_share:.2%}\")\n"
-        "print(f\"DECISION: Selected MAX_LENGTH={MAX_LENGTH}. Truncation is {trunc_share:.2%}, strictly <= 2.0% requirement.\")\n"
-        "assert trunc_share <= 0.02, f\"Truncation {trunc_share:.2%} exceeds 2% limit!\""
+        'print(f"Token length percentiles: 50%={p50:.0f}, 90%={p90:.0f}, 95%={p95:.0f}, 98%={p98:.0f}, 99%={p99:.0f}, Max={pmax:.0f}")\n'
+        'print(f"Share of notes truncated at MAX_LENGTH={MAX_LENGTH}: {trunc_share:.2%}")\n'
+        'print(f"DECISION: Selected MAX_LENGTH={MAX_LENGTH}. Truncation is {trunc_share:.2%}, strictly <= 2.0% requirement.")\n'
+        'assert trunc_share <= 0.02, f"Truncation {trunc_share:.2%} exceeds 2% limit!"'
     )
 
     # Cell 4: Model architecture, Dataset, Collator, Trainer function
@@ -171,21 +172,21 @@ def build_notebook() -> None:
         "            return_tensors=None,\n"
         "        )\n"
         "        return {\n"
-        "            \"input_ids\": enc[\"input_ids\"],\n"
-        "            \"attention_mask\": enc[\"attention_mask\"],\n"
-        "            \"label\": int(self.labels[idx]),\n"
-        "            \"encounter_id\": self.encounter_ids[idx],\n"
+        '            "input_ids": enc["input_ids"],\n'
+        '            "attention_mask": enc["attention_mask"],\n'
+        '            "label": int(self.labels[idx]),\n'
+        '            "encounter_id": self.encounter_ids[idx],\n'
         "        }\n\n"
         "def dynamic_collate(batch, tokenizer):\n"
-        "    labels = torch.tensor([b[\"label\"] for b in batch], dtype=torch.long)\n"
-        "    encounter_ids = [b[\"encounter_id\"] for b in batch]\n"
-        "    features = [{\"input_ids\": b[\"input_ids\"], \"attention_mask\": b[\"attention_mask\"]} for b in batch]\n"
-        "    padded = tokenizer.pad(features, padding=True, return_tensors=\"pt\")\n"
+        '    labels = torch.tensor([b["label"] for b in batch], dtype=torch.long)\n'
+        '    encounter_ids = [b["encounter_id"] for b in batch]\n'
+        '    features = [{"input_ids": b["input_ids"], "attention_mask": b["attention_mask"]} for b in batch]\n'
+        '    padded = tokenizer.pad(features, padding=True, return_tensors="pt")\n'
         "    return {\n"
-        "        \"input_ids\": padded[\"input_ids\"],\n"
-        "        \"attention_mask\": padded[\"attention_mask\"],\n"
-        "        \"labels\": labels,\n"
-        "        \"encounter_ids\": encounter_ids,\n"
+        '        "input_ids": padded["input_ids"],\n'
+        '        "attention_mask": padded["attention_mask"],\n'
+        '        "labels": labels,\n'
+        '        "encounter_ids": encounter_ids,\n'
         "    }\n\n"
         "def train_and_eval_variant(\n"
         "    variant_name: str,\n"
@@ -203,10 +204,10 @@ def build_notebook() -> None:
         "    seed: int = SEED,\n"
         "    out_dir: Path = OUT_DIR,\n"
         "):\n"
-        "    print(\"=\" * 80)\n"
-        "    print(f\"TRAINING VARIANT: {variant_name.upper()}\")\n"
-        "    print(f\"Train cohort: {len(train_texts):,} encounters | Validation cohort: {len(val_texts):,} encounters\")\n"
-        "    print(\"=\" * 80)\n"
+        '    print("=" * 80)\n'
+        '    print(f"TRAINING VARIANT: {variant_name.upper()}")\n'
+        '    print(f"Train cohort: {len(train_texts):,} encounters | Validation cohort: {len(val_texts):,} encounters")\n'
+        '    print("=" * 80)\n'
         "    set_all_seeds(seed)\n\n"
         "    tokenizer = AutoTokenizer.from_pretrained(model_name)\n"
         "    model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2).to(device)\n\n"
@@ -226,7 +227,7 @@ def build_notebook() -> None:
         "    pos_weight = float(neg_n / max(1, pos_n))\n"
         "    weights = torch.tensor([1.0, pos_weight], dtype=torch.float32).to(device)\n"
         "    criterion = torch.nn.CrossEntropyLoss(weight=weights)\n"
-        "    print(f\"Positive class weight: {pos_weight:.2f} (Prevalence: {pos_n / len(train_labels):.2%})\")\n\n"
+        '    print(f"Positive class weight: {pos_weight:.2f} (Prevalence: {pos_n / len(train_labels):.2%})")\n\n'
         "    # torch.optim.AdamW optimizer (NOT transformers.AdamW)\n"
         "    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)\n"
         "    total_steps = len(train_loader) * epochs\n"
@@ -241,9 +242,9 @@ def build_notebook() -> None:
         "        running_loss = 0.0\n"
         "        for batch in train_loader:\n"
         "            optimizer.zero_grad()\n"
-        "            input_ids = batch[\"input_ids\"].to(device)\n"
-        "            attention_mask = batch[\"attention_mask\"].to(device)\n"
-        "            labels = batch[\"labels\"].to(device)\n\n"
+        '            input_ids = batch["input_ids"].to(device)\n'
+        '            attention_mask = batch["attention_mask"].to(device)\n'
+        '            labels = batch["labels"].to(device)\n\n'
         "            with torch.amp.autocast('cuda', dtype=torch.float16):\n"
         "                logits = model(input_ids=input_ids, attention_mask=attention_mask).logits\n"
         "                loss = criterion(logits, labels)\n\n"
@@ -261,68 +262,68 @@ def build_notebook() -> None:
         "        val_probs_temp = []\n"
         "        with torch.no_grad():\n"
         "            for val_batch in val_loader:\n"
-        "                v_ids = val_batch[\"input_ids\"].to(device)\n"
-        "                v_mask = val_batch[\"attention_mask\"].to(device)\n"
+        '                v_ids = val_batch["input_ids"].to(device)\n'
+        '                v_mask = val_batch["attention_mask"].to(device)\n'
         "                with torch.amp.autocast('cuda', dtype=torch.float16):\n"
         "                    out_logits = model(input_ids=v_ids, attention_mask=v_mask).logits\n"
         "                    probs = torch.softmax(out_logits, dim=-1)[:, 1]\n"
         "                    val_probs_temp.extend(probs.cpu().float().numpy().tolist())\n"
         "        epoch_auc = float(roc_auc_score(val_labels, val_probs_temp))\n"
         "        epoch_val_aucs.append(epoch_auc)\n"
-        "        print(f\"Epoch {epoch}/{epochs} | Train Loss: {mean_loss:.4f} | Validation AUC: {epoch_auc:.4f}\")\n\n"
+        '        print(f"Epoch {epoch}/{epochs} | Train Loss: {mean_loss:.4f} | Validation AUC: {epoch_auc:.4f}")\n\n'
         "        # Stop/warn check on epoch 2\n"
         "        if epoch == 2 and len(epoch_losses) >= 2:\n"
         "            if epoch_losses[1] >= epoch_losses[0]:\n"
-        "                print(\"=\" * 80)\n"
-        "                print(f\"WARNING: Epoch 2 loss ({epoch_losses[1]:.4f}) >= Epoch 1 loss ({epoch_losses[0]:.4f})!\")\n"
-        "                print(\"Training continues and exports results; review learning rate and loss convergence.\")\n"
-        "                print(\"=\" * 80)\n\n"
+        '                print("=" * 80)\n'
+        '                print(f"WARNING: Epoch 2 loss ({epoch_losses[1]:.4f}) >= Epoch 1 loss ({epoch_losses[0]:.4f})!")\n'
+        '                print("Training continues and exports results; review learning rate and loss convergence.")\n'
+        '                print("=" * 80)\n\n'
         "    runtime = time.time() - t0\n"
-        "    print(f\"Variant {variant_name} finished in {runtime:.1f}s.\")\n\n"
+        '    print(f"Variant {variant_name} finished in {runtime:.1f}s.")\n\n'
         "    # Final export strictly on LAST epoch (no cherry picking)\n"
         "    model.eval()\n"
         "    final_probs = []\n"
         "    final_enc_ids = []\n"
         "    with torch.no_grad():\n"
         "        for val_batch in val_loader:\n"
-        "            v_ids = val_batch[\"input_ids\"].to(device)\n"
-        "            v_mask = val_batch[\"attention_mask\"].to(device)\n"
+        '            v_ids = val_batch["input_ids"].to(device)\n'
+        '            v_mask = val_batch["attention_mask"].to(device)\n'
         "            with torch.amp.autocast('cuda', dtype=torch.float16):\n"
         "                out_logits = model(input_ids=v_ids, attention_mask=v_mask).logits\n"
         "                probs = torch.softmax(out_logits, dim=-1)[:, 1]\n"
         "                final_probs.extend(probs.cpu().float().numpy().tolist())\n"
-        "                final_enc_ids.extend(val_batch[\"encounter_ids\"])\n\n"
-        "    assert len(final_probs) == 14902, f\"Expected 14,902 validation rows, got {len(final_probs)}\"\n"
-        "    assert final_enc_ids == list(val_encounters), \"Validation encounter_id order mismatch!\"\n\n"
+        '                final_enc_ids.extend(val_batch["encounter_ids"])\n\n'
+        '    assert len(final_probs) == 14902, f"Expected 14,902 validation rows, got {len(final_probs)}"\n'
+        '    assert final_enc_ids == list(val_encounters), "Validation encounter_id order mismatch!"\n\n'
         "    # Save predictions immediately to OUT_DIR\n"
-        "    pred_csv_path = out_dir / f\"distilbert_val_predictions_{variant_name}.csv\"\n"
+        '    pred_csv_path = out_dir / f"distilbert_val_predictions_{variant_name}.csv"\n'
         "    pred_df = pd.DataFrame({\n"
-        "        \"encounter_id\": final_enc_ids,\n"
-        "        \"readmitted_30d\": val_labels,\n"
-        "        \"prob\": final_probs,\n"
+        '        "encounter_id": final_enc_ids,\n'
+        '        "readmitted_30d": val_labels,\n'
+        '        "prob": final_probs,\n'
         "    })\n"
         "    pred_df.to_csv(pred_csv_path, index=False)\n"
-        "    print(f\"✓ Saved {pred_csv_path} ({len(pred_df)} rows)\")\n\n"
+        '    print(f"✓ Saved {pred_csv_path} ({len(pred_df)} rows)")\n\n'
         "    # Save run json metadata\n"
-        "    run_json_path = out_dir / f\"run_{variant_name}.json\"\n"
+        '    run_json_path = out_dir / f"run_{variant_name}.json"\n'
         "    run_info = {\n"
-        "        \"variant\": variant_name,\n"
-        "        \"model_name\": model_name,\n"
-        "        \"train_samples\": len(train_texts),\n"
-        "        \"val_samples\": len(val_texts),\n"
-        "        \"epochs\": epochs,\n"
-        "        \"batch_size\": batch_size,\n"
-        "        \"learning_rate\": learning_rate,\n"
-        "        \"max_length\": max_length,\n"
-        "        \"seed\": seed,\n"
-        "        \"per_epoch_losses\": epoch_losses,\n"
-        "        \"per_epoch_val_aucs\": epoch_val_aucs,\n"
-        "        \"last_epoch_val_auc\": epoch_val_aucs[-1],\n"
-        "        \"runtime_seconds\": round(runtime, 2),\n"
+        '        "variant": variant_name,\n'
+        '        "model_name": model_name,\n'
+        '        "train_samples": len(train_texts),\n'
+        '        "val_samples": len(val_texts),\n'
+        '        "epochs": epochs,\n'
+        '        "batch_size": batch_size,\n'
+        '        "learning_rate": learning_rate,\n'
+        '        "max_length": max_length,\n'
+        '        "seed": seed,\n'
+        '        "per_epoch_losses": epoch_losses,\n'
+        '        "per_epoch_val_aucs": epoch_val_aucs,\n'
+        '        "last_epoch_val_auc": epoch_val_aucs[-1],\n'
+        '        "runtime_seconds": round(runtime, 2),\n'
         "    }\n"
-        "    with open(run_json_path, \"w\", encoding=\"utf-8\") as f:\n"
+        '    with open(run_json_path, "w", encoding="utf-8") as f:\n'
         "        json.dump(run_info, f, indent=2)\n"
-        "    print(f\"✓ Saved {run_json_path}\")\n"
+        '    print(f"✓ Saved {run_json_path}")\n'
         "    return run_info"
     )
 
@@ -333,9 +334,9 @@ def build_notebook() -> None:
         "# ==============================================================================\n"
         "# Subsample train set if TRAIN_N is specified (>= 25,000)\n"
         "if TRAIN_N is not None:\n"
-        "    assert TRAIN_N >= 25000, f\"TRAIN_N must be >= 25000, got {TRAIN_N}\"\n"
-        "    pos_train = train_df[train_df[\"readmitted_30d\"] == 1]\n"
-        "    neg_train = train_df[train_df[\"readmitted_30d\"] == 0]\n"
+        '    assert TRAIN_N >= 25000, f"TRAIN_N must be >= 25000, got {TRAIN_N}"\n'
+        '    pos_train = train_df[train_df["readmitted_30d"] == 1]\n'
+        '    neg_train = train_df[train_df["readmitted_30d"] == 0]\n'
         "    pos_ratio = len(pos_train) / len(train_df)\n"
         "    pos_cnt = int(TRAIN_N * pos_ratio)\n"
         "    neg_cnt = TRAIN_N - pos_cnt\n"
@@ -343,51 +344,51 @@ def build_notebook() -> None:
         "        pos_train.sample(n=pos_cnt, random_state=SEED),\n"
         "        neg_train.sample(n=neg_cnt, random_state=SEED),\n"
         "    ]).sample(frac=1.0, random_state=SEED).reset_index(drop=True)\n"
-        "    print(f\"Training on stratified subset of {len(active_train):,} notes.\")\n"
+        '    print(f"Training on stratified subset of {len(active_train):,} notes.")\n'
         "else:\n"
         "    active_train = train_df.copy()\n"
-        "    print(f\"Training on FULL training set of {len(active_train):,} notes.\")\n\n"
+        '    print(f"Training on FULL training set of {len(active_train):,} notes.")\n\n'
         "# Validation split is NEVER subsampled: exactly 14,902 rows\n"
         "active_val = val_df.copy()\n"
-        "assert len(active_val) == 14902, f\"Validation set must be full 14,902 rows, got {len(active_val)}\"\n\n"
+        'assert len(active_val) == 14902, f"Validation set must be full 14,902 rows, got {len(active_val)}"\n\n'
         "# ------------------------------------------------------------------------------\n"
         "# Variant A: Notes Only\n"
         "# ------------------------------------------------------------------------------\n"
         "run_notes = train_and_eval_variant(\n"
-        "    variant_name=\"notes\",\n"
-        "    train_texts=active_train[\"clinical_note\"].tolist(),\n"
-        "    train_labels=active_train[\"readmitted_30d\"].tolist(),\n"
-        "    train_encounters=active_train[\"encounter_id\"].tolist(),\n"
-        "    val_texts=active_val[\"clinical_note\"].tolist(),\n"
-        "    val_labels=active_val[\"readmitted_30d\"].tolist(),\n"
-        "    val_encounters=active_val[\"encounter_id\"].tolist(),\n"
+        '    variant_name="notes",\n'
+        '    train_texts=active_train["clinical_note"].tolist(),\n'
+        '    train_labels=active_train["readmitted_30d"].tolist(),\n'
+        '    train_encounters=active_train["encounter_id"].tolist(),\n'
+        '    val_texts=active_val["clinical_note"].tolist(),\n'
+        '    val_labels=active_val["readmitted_30d"].tolist(),\n'
+        '    val_encounters=active_val["encounter_id"].tolist(),\n'
         ")\n\n"
         "# ------------------------------------------------------------------------------\n"
         "# Variant B: Notes + RAG\n"
         "# Prefix: 'Similar past patients readmission rate: {rate:.0%}. '\n"
         "# ------------------------------------------------------------------------------\n"
         "train_rag_texts = [\n"
-        "    f\"Similar past patients readmission rate: {r:.0%}. \" + note\n"
-        "    for r, note in zip(active_train[\"rag_struct_rate_k20\"], active_train[\"clinical_note\"])\n"
+        '    f"Similar past patients readmission rate: {r:.0%}. " + note\n'
+        '    for r, note in zip(active_train["rag_struct_rate_k20"], active_train["clinical_note"])\n'
         "]\n"
         "val_rag_texts = [\n"
-        "    f\"Similar past patients readmission rate: {r:.0%}. \" + note\n"
-        "    for r, note in zip(active_val[\"rag_struct_rate_k20\"], active_val[\"clinical_note\"])\n"
+        '    f"Similar past patients readmission rate: {r:.0%}. " + note\n'
+        '    for r, note in zip(active_val["rag_struct_rate_k20"], active_val["clinical_note"])\n'
         "]\n\n"
         "run_notes_rag = train_and_eval_variant(\n"
-        "    variant_name=\"notes_rag\",\n"
+        '    variant_name="notes_rag",\n'
         "    train_texts=train_rag_texts,\n"
-        "    train_labels=active_train[\"readmitted_30d\"].tolist(),\n"
-        "    train_encounters=active_train[\"encounter_id\"].tolist(),\n"
+        '    train_labels=active_train["readmitted_30d"].tolist(),\n'
+        '    train_encounters=active_train["encounter_id"].tolist(),\n'
         "    val_texts=val_rag_texts,\n"
-        "    val_labels=active_val[\"readmitted_30d\"].tolist(),\n"
-        "    val_encounters=active_val[\"encounter_id\"].tolist(),\n"
+        '    val_labels=active_val["readmitted_30d"].tolist(),\n'
+        '    val_encounters=active_val["encounter_id"].tolist(),\n'
         ")\n\n"
-        "print(\"=\" * 80)\n"
-        "print(\"BOTH VARIANTS COMPLETE!\")\n"
+        'print("=" * 80)\n'
+        'print("BOTH VARIANTS COMPLETE!")\n'
         "print(f\"Variant A (notes)     Val AUC: {run_notes['last_epoch_val_auc']:.4f}\")\n"
         "print(f\"Variant B (notes_rag) Val AUC: {run_notes_rag['last_epoch_val_auc']:.4f}\")\n"
-        "print(\"=\" * 80)"
+        'print("=" * 80)'
     )
 
     # Cell 6: Zip outputs and trigger download
@@ -396,47 +397,50 @@ def build_notebook() -> None:
         "# STEP 6: Zip Outputs into colab_outputs.zip and Trigger Download\n"
         "# ==============================================================================\n"
         "import zipfile\n\n"
-        "zip_path = OUT_DIR / \"colab_outputs.zip\"\n"
+        'zip_path = OUT_DIR / "colab_outputs.zip"\n'
         "files_to_pack = [\n"
-        "    \"distilbert_val_predictions_notes.csv\",\n"
-        "    \"distilbert_val_predictions_notes_rag.csv\",\n"
-        "    \"run_notes.json\",\n"
-        "    \"run_notes_rag.json\",\n"
+        '    "distilbert_val_predictions_notes.csv",\n'
+        '    "distilbert_val_predictions_notes_rag.csv",\n'
+        '    "run_notes.json",\n'
+        '    "run_notes_rag.json",\n'
         "]\n\n"
-        "print(f\"Packaging outputs into {zip_path}...\")\n"
-        "with zipfile.ZipFile(zip_path, \"w\", zipfile.ZIP_DEFLATED) as zf:\n"
+        'print(f"Packaging outputs into {zip_path}...")\n'
+        'with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:\n'
         "    for fname in files_to_pack:\n"
         "        fpath = OUT_DIR / fname\n"
-        "        assert fpath.exists(), f\"Expected output file {fpath} not found!\"\n"
+        '        assert fpath.exists(), f"Expected output file {fpath} not found!"\n'
         "        zf.write(fpath, arcname=fname)\n"
-        "        print(f\"  + Added {fname} ({fpath.stat().st_size:,} bytes)\")\n\n"
-        "print(f\"Archive ready: {zip_path} ({zip_path.stat().st_size / 1024:.1f} KB)\")\n"
-        "print(\"\\n--- INSTRUCTIONS FOR LOCAL REPO ---\")\n"
-        "print(\"1. Download colab_outputs.zip and unzip the 4 files into: reports/colab/\")\n"
-        "print(\"2. Run: python -m src.transformer_import\")\n"
-        "print(\"3. Run: python scripts/sync_transformer_docs.py\")\n\n"
+        '        print(f"  + Added {fname} ({fpath.stat().st_size:,} bytes)")\n\n'
+        'print(f"Archive ready: {zip_path} ({zip_path.stat().st_size / 1024:.1f} KB)")\n'
+        'print("\\n--- INSTRUCTIONS FOR LOCAL REPO ---")\n'
+        'print("1. Download colab_outputs.zip and unzip the 4 files into: reports/colab/")\n'
+        'print("2. Run: python -m src.transformer_import")\n'
+        'print("3. Run: python scripts/sync_transformer_docs.py")\n\n'
         "# Auto-download if in Colab\n"
         "try:\n"
         "    from google.colab import files\n"
         "    files.download(str(zip_path))\n"
-        "    print(\"Triggered automatic browser download of colab_outputs.zip.\")\n"
+        '    print("Triggered automatic browser download of colab_outputs.zip.")\n'
         "except Exception:\n"
-        "    print(f\"Local environment detected. Archive is available at: {zip_path.resolve()}\")"
+        '    print(f"Local environment detected. Archive is available at: {zip_path.resolve()}")'
     )
 
-    nb.cells.extend([
-        nbf.v4.new_markdown_cell(cell0_md),
-        nbf.v4.new_code_cell(cell1_code),
-        nbf.v4.new_code_cell(cell2_code),
-        nbf.v4.new_code_cell(cell3_code),
-        nbf.v4.new_code_cell(cell4_code),
-        nbf.v4.new_code_cell(cell5_code),
-        nbf.v4.new_code_cell(cell6_code),
-    ])
+    nb.cells.extend(
+        [
+            nbf.v4.new_markdown_cell(cell0_md),
+            nbf.v4.new_code_cell(cell1_code),
+            nbf.v4.new_code_cell(cell2_code),
+            nbf.v4.new_code_cell(cell3_code),
+            nbf.v4.new_code_cell(cell4_code),
+            nbf.v4.new_code_cell(cell5_code),
+            nbf.v4.new_code_cell(cell6_code),
+        ]
+    )
 
     with open(NOTEBOOK_PATH, "w", encoding="utf-8") as f:
         nbf.write(nb, f)
     print(f"Successfully generated {NOTEBOOK_PATH} with {len(nb.cells)} cells.")
+
 
 if __name__ == "__main__":
     build_notebook()

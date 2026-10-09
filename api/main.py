@@ -200,9 +200,7 @@ def get_model_evaluation_metrics():
 
         validation_models = []
         for r in results:
-            feature_str = (
-                "With RAG (k=20)" if r.get("rag_feature") else "Tabular Features (No RAG)"
-            )
+            feature_str = "With RAG (k=20)" if r.get("rag_feature") else "Tabular Features (No RAG)"
             if "DistilBERT" in r.get("model", ""):
                 feature_str = (
                     "Clinical Notes + RAG" if r.get("rag_feature") else "Clinical Notes Only"

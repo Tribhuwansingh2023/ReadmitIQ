@@ -83,7 +83,9 @@ def extract_and_validate_split(
         cleaned_parquet = PROCESSED_DATA_DIR / f"{split_name}.parquet"
         assert cleaned_parquet.exists(), f"Fallback cleaned file not found: {cleaned_parquet}"
         cleaned_df = pd.read_parquet(cleaned_parquet, columns=["encounter_id"])
-        assert len(cleaned_df) == len(df), f"Row count mismatch between {split_name} and cleaned data"
+        assert len(cleaned_df) == len(
+            df
+        ), f"Row count mismatch between {split_name} and cleaned data"
         df["encounter_id"] = cleaned_df["encounter_id"].values
 
     for col in REQUIRED_COLUMNS:
@@ -96,9 +98,7 @@ def extract_and_validate_split(
         len(selected) == expected_rows
     ), f"Expected {expected_rows} rows for {split_name}, got {len(selected)}"
     null_counts = selected.isnull().sum()
-    assert (
-        null_counts.sum() == 0
-    ), f"Null values detected in {split_name}: {null_counts.to_dict()}"
+    assert null_counts.sum() == 0, f"Null values detected in {split_name}: {null_counts.to_dict()}"
 
     # Verify notes contain no label words
     verify_no_label_leakage(selected["clinical_note"], split_name)
