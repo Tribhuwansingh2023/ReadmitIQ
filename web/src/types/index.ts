@@ -103,18 +103,26 @@ export interface CohortResponse {
 
 export interface MetricsResponse {
   ablation_table?: {
+    transformer_status?: "pending" | "completed";
+    transformer_pending_message?: string;
+    transformer_comparisons?: Record<string, unknown>;
     validation_models: Array<{
       model: string;
       feature_set: string;
       auc: number;
       auc_ci_lower?: number;
       auc_ci_upper?: number;
-      brier_score?: number;
-      ece?: number;
+      brier_score?: number | null;
+      ece?: number | null;
       precision_at_top10?: number;
       lift_at_top10?: number;
       optimal_threshold?: number;
       f1_at_optimal_threshold?: number;
+      paired_delta_auc?: number;
+      paired_ci_95?: [number, number];
+      ci_crosses_zero?: boolean;
+      train_samples?: number;
+      val_samples?: number;
     }>;
     paired_rag_difference?: {
       delta_auc: number;

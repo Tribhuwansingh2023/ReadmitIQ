@@ -136,13 +136,21 @@ pytest tests/ -v
 
 ## Transformer (DistilBERT) Colab Workflow
 
-DistilBERT was intentionally configured for free-tier GPU execution in Google Colab to avoid CPU overnight bottlenecks:
+DistilBERT is evaluated as an offline, validation-only benchmark comparison on clinical notes using free-tier GPU execution in Google Colab:
 1. Open `notebooks/colab_transformer_training.ipynb` in [Google Colab](https://colab.research.google.com).
-2. Connect to a free T4 GPU runtime.
-3. Upload `data/processed/train.parquet` and `data/processed/val.parquet`.
-4. Run all cells: trains DistilBERT on 25,000 stratified encounters for 3 epochs with fp16 mixed precision.
-5. Download exported `distilbert_val_probs.npy` and `distilbert_metrics.json` into `reports/metrics/`.
-6. Run `python src/transformer_import.py` to ingest the transformer into the ablation table.
+2. Connect to a free T4 GPU runtime (**Runtime -> Change runtime type -> T4 GPU**).
+3. Upload files from `data/processed/colab_upload/`: `colab_train.parquet` (5.6 MB), `colab_val.parquet` (1.2 MB), and `MANIFEST.json`.
+4. Run all cells top to bottom (trains Variant A: Notes Only and Variant B: Notes + RAG for 3 epochs with AdamW and mixed precision).
+5. Download exported `colab_outputs.zip` and extract into `reports/colab/`.
+6. Run local import and documentation sync:
+   ```bash
+   python -m src.transformer_import
+   python scripts/sync_transformer_docs.py
+   ```
+
+<!-- TRANSFORMER:START -->
+*Transformer Benchmark Status:* Pending Google Colab T4 GPU execution (`notebooks/colab_transformer_training.ipynb`). The production model was frozen before the transformer results existed.
+<!-- TRANSFORMER:END -->
 
 ---
 

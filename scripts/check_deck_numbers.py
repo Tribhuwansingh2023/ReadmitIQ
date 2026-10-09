@@ -25,7 +25,7 @@ if sys.platform == "win32":
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from pptx import Presentation
+from pptx import Presentation  # noqa: E402
 
 
 def load_ground_truth():
@@ -71,11 +71,7 @@ def check_consistency():
     print("=" * 70)
 
     gt = load_ground_truth()
-    test = gt["test"]
     ablation = gt["ablation"]
-    fairness = gt["fairness"]
-    footprint = gt["footprint"]
-    latency = gt["latency"]
 
     pres_dir = ROOT_DIR / "docs" / "presentation"
     deck_path = pres_dir / "ReadmitIQ_deck.pptx"
@@ -123,6 +119,50 @@ def check_consistency():
         ("Disk Reduction in Lite Mode (90.9%)", "90.9", "reports/metrics/serving_footprint.json"),
     ]
 
+    # Verify transformer rows dynamically against ablation_table.json
+    t_rows = [
+        r
+        for r in ablation.get("ablation_results", [])
+        if "transformer" in r.get("model", "").lower()
+        or "distilbert" in r.get("model", "").lower()
+    ]
+    if len(t_rows) >= 2:
+        t_notes = next((r for r in t_rows if not r.get("rag_feature")), t_rows[0])
+        t_rag = next((r for r in t_rows if r.get("rag_feature")), t_rows[1])
+        checks.append((
+            f"Transformer Notes Val AUC ({t_notes['auc_roc']:.4f})",
+            re.escape(f"{t_notes['auc_roc']:.4f}"),
+            "reports/metrics/ablation_table.json",
+        ))
+        checks.append((
+            f"Transformer Notes+RAG Val AUC ({t_rag['auc_roc']:.4f})",
+            re.escape(f"{t_rag['auc_roc']:.4f}"),
+            "reports/metrics/ablation_table.json",
+        ))
+        t_comps = ablation.get("comparisons", {}).get(
+            "transformer_rag_vs_transformer_notes", {}
+        )
+        if "observed_diff" in t_comps:
+            diff_val = t_comps["observed_diff"]
+            checks.append((
+                f"Transformer Paired RAG Delta ({diff_val:+.4f})",
+                rf"\{diff_val:+.4f}".replace("+", r"\+").replace("-", r"\-"),
+                "reports/metrics/ablation_table.json",
+            ))
+    else:
+        checks.append((
+            "Transformer Status (Pending Colab Run)",
+            r"pending Colab|Pending Colab|Pending Google Colab",
+            "reports/metrics/ablation_table.json",
+        ))
+
+    # Verification of frozen production integrity requirement
+    checks.append((
+        "Production Model Frozen Statement",
+        r"production model was frozen before the transformer results existed",
+        "README.md / QA_prep.md / DEMO_SCRIPT.md",
+    ))
+
     audit_results = []
     passed_count = 0
 
@@ -135,9 +175,12 @@ def check_consistency():
             passed_count += 1
             status = "PASS"
             loc = []
-            if found_in_deck: loc.append("Deck")
-            if found_in_qa: loc.append("QA")
-            if not loc: loc.append("Script/Storyboard")
+            if found_in_deck:
+                loc.append("Deck")
+            if found_in_qa:
+                loc.append("QA")
+            if not loc:
+                loc.append("Script/Storyboard")
             print(f"  [PASS] {name:<46} Found in: {', '.join(loc)}")
         else:
             status = "FAIL"

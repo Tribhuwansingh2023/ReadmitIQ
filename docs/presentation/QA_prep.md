@@ -75,8 +75,10 @@
 - **What NOT to Say:** *"We picked LightGBM because it's the newest algorithm."*
 
 ### Q14: Where is the fine-tuned Transformer (DistilBERT) in your ablation table?
-- **Answer:** Fine-tuning DistilBERT on 25,000+ notes on CPU locally would require over 12 hours and risk thermal throttling. To respect overnight autonomous constraints, we created ready-to-run Google Colab GPU notebooks (`notebooks/02` and `notebooks/03`) and marked the Transformer row as **[Pending Colab GPU execution]** per our honest reporting protocol. The production app is decoupled and functions fully without it.
+<!-- TRANSFORMER:START -->
+- **Answer:** Fine-tuning DistilBERT on 25,000+ notes on CPU locally would require over 12 hours and risk thermal throttling. To respect overnight autonomous constraints, we created ready-to-run Google Colab GPU notebook `notebooks/colab_transformer_training.ipynb` and marked the Transformer row as **[pending Colab run]** per our honest reporting protocol. The production model was frozen before the transformer results existed, and the production app is decoupled and functions fully without it.
 - **What NOT to Say:** *"We trained a giant LLM overnight on our laptop."*
+<!-- TRANSFORMER:END -->
 
 ### Q15: Why not use a bigger, deep learning model?
 - **Answer:** Extensive research (e.g. Grinsztajn et al., NeurIPS 2022) demonstrates that gradient-boosted decision trees routinely outperform deep architectures on tabular EHR datasets with mixed numerical and high-cardinality categorical variables. Furthermore, tree models offer instant CPU inference (<15ms) and native TreeSHAP explainability without heavy GPU infrastructure.

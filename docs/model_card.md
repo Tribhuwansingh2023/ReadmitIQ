@@ -88,3 +88,16 @@ Fairness audits were conducted across protected demographic attributes on the he
 - **Historical Context:** Data is from 1999–2008. Treatment protocols, coding standards, and newer medications (GLP-1s, SGLT2i) are not represented.
 - **Network Censoring:** Only readmissions to the same hospital system are captured.
 - **Absence of Real-Time Vitals:** Clinical vitals (blood pressure, oxygenation) and daily laboratory values are absent from the dataset.
+
+---
+
+## 8. Clinical Notes Transformer Benchmark (Validation-Only Comparison)
+
+<!-- TRANSFORMER:START -->
+*Status: Pending Colab run.*
+- **Methodology Note:** The production model was frozen before the transformer results existed.
+- Fine-tuning DistilBERT (`distilbert-base-uncased`) on clinical discharge notes evaluates whether linguistic representations provide incremental signal over structured tabular features.
+- Evaluated strictly on the full validation split (N = 14,902 encounters). The held-out test split is never evaluated.
+- Run `notebooks/colab_transformer_training.ipynb` on Google Colab GPU and import outputs (`python -m src.transformer_import`) to populate measured metrics and paired bootstrap confidence intervals.
+<!-- TRANSFORMER:END -->
+
