@@ -30,3 +30,8 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning",
 ]
+
+[tool.pyright]
+extraPaths = ["."]
+include = ["src", "notebooks", "tests", "api", "scripts"]
+
