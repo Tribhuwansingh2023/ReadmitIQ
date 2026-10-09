@@ -1,7 +1,6 @@
 import json
-from pathlib import Path
 import sys
-from typing import Optional
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
@@ -40,7 +39,9 @@ def import_transformer_results(
         print(f"Loading exported probabilities from {probs_file}...")
         val_probs = np.load(probs_file)
         if len(val_probs) != len(y_val):
-            print(f"Warning: probability count {len(val_probs)} does not match validation count {len(y_val)}!")
+            print(
+                f"Warning: probability count {len(val_probs)} does not match validation count {len(y_val)}!"
+            )
             return False
         metrics = evaluate_predictions(y_val, val_probs)
     elif metrics_file.exists():
@@ -48,14 +49,16 @@ def import_transformer_results(
         with open(metrics_file, "r") as f:
             metrics = json.load(f)
 
-    metrics.update({
-        "model": "DistilBERT (Clinical Notes)",
-        "rag_feature": False,
-        "paired_delta_auc": 0.0,
-        "paired_ci_95": [0.0, 0.0],
-        "ci_crosses_zero": True,
-        "source": "Colab GPU (fp16, >=25,000 train notes, full validation)",
-    })
+    metrics.update(
+        {
+            "model": "DistilBERT (Clinical Notes)",
+            "rag_feature": False,
+            "paired_delta_auc": 0.0,
+            "paired_ci_95": [0.0, 0.0],
+            "ci_crosses_zero": True,
+            "source": "Colab GPU (fp16, >=25,000 train notes, full validation)",
+        }
+    )
 
     if ABLATION_JSON.exists():
         with open(ABLATION_JSON, "r") as f:

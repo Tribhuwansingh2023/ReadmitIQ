@@ -1,14 +1,14 @@
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import joblib
-from lightgbm import LGBMClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMClassifier
 from sklearn.calibration import calibration_curve
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.isotonic import IsotonicRegression
@@ -79,6 +79,7 @@ def tune_random_forest(
             clf.fit(X_trans[train_idx], y_train[train_idx])
             probs = clf.predict_proba(X_trans[val_idx])[:, 1]
             from sklearn.metrics import roc_auc_score
+
             fold_aucs.append(roc_auc_score(y_train[val_idx], probs))
 
         mean_auc = float(np.mean(fold_aucs))
@@ -124,6 +125,7 @@ def tune_lightgbm(
             clf.fit(X_lgbm.iloc[train_idx], y_train[train_idx])
             probs = clf.predict_proba(X_lgbm.iloc[val_idx])[:, 1]
             from sklearn.metrics import roc_auc_score
+
             fold_aucs.append(roc_auc_score(y_train[val_idx], probs))
 
         mean_auc = float(np.mean(fold_aucs))
@@ -132,7 +134,9 @@ def tune_lightgbm(
             best_auc = mean_auc
             best_params = (depth, lr)
 
-    print(f"Selected LightGBM params: max_depth={best_params[0]}, lr={best_params[1]} (CV AUC: {best_auc:.4f})")
+    print(
+        f"Selected LightGBM params: max_depth={best_params[0]}, lr={best_params[1]} (CV AUC: {best_auc:.4f})"
+    )
     return best_params
 
 
@@ -203,8 +207,22 @@ def plot_and_save_calibration(
     ax1.grid(True, linestyle=":", alpha=0.6)
 
     # Histogram of predictions
-    ax2.hist(val_prob_uncal, bins=25, alpha=0.5, color="#d9534f", label="Uncalibrated Probabilities", density=True)
-    ax2.hist(val_prob_cal, bins=25, alpha=0.5, color="#2b8a3e", label="Calibrated Probabilities", density=True)
+    ax2.hist(
+        val_prob_uncal,
+        bins=25,
+        alpha=0.5,
+        color="#d9534f",
+        label="Uncalibrated Probabilities",
+        density=True,
+    )
+    ax2.hist(
+        val_prob_cal,
+        bins=25,
+        alpha=0.5,
+        color="#2b8a3e",
+        label="Calibrated Probabilities",
+        density=True,
+    )
     ax2.set_xlabel("Predicted Probability")
     ax2.set_ylabel("Density")
     ax2.set_title("Probability Distribution")
@@ -244,7 +262,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     groups_train = train_df["patient_nbr"].values
 
     print(f"Cohort sizes: Train={len(train_df):,} encounters, Val={len(val_df):,} encounters")
-    print(f"Features: Base={len(base_all)} ({len(base_num_cols)} num, {len(cat_cols)} cat); With RAG={len(base_all)+1}")
+    print(
+        f"Features: Base={len(base_all)} ({len(base_num_cols)} num, {len(cat_cols)} cat); With RAG={len(base_all)+1}"
+    )
 
     # 1. Hyperparameter Tuning on TRAIN
     rf_depth = tune_random_forest(
@@ -269,7 +289,12 @@ def train_and_evaluate_all_models() -> List[Dict]:
     pipe_lr_base = Pipeline(
         steps=[
             ("preprocessor", build_preprocessor(base_num_cols, cat_cols)),
-            ("clf", LogisticRegression(class_weight="balanced", max_iter=1000, random_state=RANDOM_SEED)),
+            (
+                "clf",
+                LogisticRegression(
+                    class_weight="balanced", max_iter=1000, random_state=RANDOM_SEED
+                ),
+            ),
         ]
     )
     pipe_lr_base.fit(train_df[base_num_cols + cat_cols], y_train)
@@ -279,7 +304,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_lr_base.update({"model": "Logistic Regression", "rag_feature": False})
     ablation_records.append(m_lr_base)
     joblib.dump(pipe_lr_base, MODELS_DIR / "lr_base.joblib")
-    print(f"Val AUC: {m_lr_base['auc_roc']} ({m_lr_base['auc_ci_95']}) | Brier: {m_lr_base['brier_score']} | Prec@10%: {m_lr_base['precision_top_10pct']} (Lift: {m_lr_base['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_lr_base['auc_roc']} ({m_lr_base['auc_ci_95']}) | Brier: {m_lr_base['brier_score']} | Prec@10%: {m_lr_base['precision_top_10pct']} (Lift: {m_lr_base['lift_top_10pct']}x)"
+    )
 
     # -------------------------------------------------------------
     # 2. Logistic Regression: With RAG
@@ -288,7 +315,12 @@ def train_and_evaluate_all_models() -> List[Dict]:
     pipe_lr_rag = Pipeline(
         steps=[
             ("preprocessor", build_preprocessor(rag_num_cols, cat_cols)),
-            ("clf", LogisticRegression(class_weight="balanced", max_iter=1000, random_state=RANDOM_SEED)),
+            (
+                "clf",
+                LogisticRegression(
+                    class_weight="balanced", max_iter=1000, random_state=RANDOM_SEED
+                ),
+            ),
         ]
     )
     pipe_lr_rag.fit(train_df[rag_num_cols + cat_cols], y_train)
@@ -298,7 +330,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_lr_rag.update({"model": "Logistic Regression", "rag_feature": True})
     ablation_records.append(m_lr_rag)
     joblib.dump(pipe_lr_rag, MODELS_DIR / "lr_rag.joblib")
-    print(f"Val AUC: {m_lr_rag['auc_roc']} ({m_lr_rag['auc_ci_95']}) | Brier: {m_lr_rag['brier_score']} | Prec@10%: {m_lr_rag['precision_top_10pct']} (Lift: {m_lr_rag['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_lr_rag['auc_roc']} ({m_lr_rag['auc_ci_95']}) | Brier: {m_lr_rag['brier_score']} | Prec@10%: {m_lr_rag['precision_top_10pct']} (Lift: {m_lr_rag['lift_top_10pct']}x)"
+    )
 
     # -------------------------------------------------------------
     # 3. Random Forest: Without RAG
@@ -307,14 +341,17 @@ def train_and_evaluate_all_models() -> List[Dict]:
     pipe_rf_base = Pipeline(
         steps=[
             ("preprocessor", build_preprocessor(base_num_cols, cat_cols)),
-            ("clf", RandomForestClassifier(
-                n_estimators=200,
-                max_depth=rf_depth,
-                min_samples_split=10,
-                class_weight="balanced",
-                n_jobs=-1,
-                random_state=RANDOM_SEED,
-            )),
+            (
+                "clf",
+                RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=rf_depth,
+                    min_samples_split=10,
+                    class_weight="balanced",
+                    n_jobs=-1,
+                    random_state=RANDOM_SEED,
+                ),
+            ),
         ]
     )
     pipe_rf_base.fit(train_df[base_num_cols + cat_cols], y_train)
@@ -324,7 +361,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_rf_base.update({"model": "Random Forest", "rag_feature": False})
     ablation_records.append(m_rf_base)
     joblib.dump(pipe_rf_base, MODELS_DIR / "rf_base.joblib")
-    print(f"Val AUC: {m_rf_base['auc_roc']} ({m_rf_base['auc_ci_95']}) | Brier: {m_rf_base['brier_score']} | Prec@10%: {m_rf_base['precision_top_10pct']} (Lift: {m_rf_base['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_rf_base['auc_roc']} ({m_rf_base['auc_ci_95']}) | Brier: {m_rf_base['brier_score']} | Prec@10%: {m_rf_base['precision_top_10pct']} (Lift: {m_rf_base['lift_top_10pct']}x)"
+    )
 
     # -------------------------------------------------------------
     # 4. Random Forest: With RAG
@@ -333,14 +372,17 @@ def train_and_evaluate_all_models() -> List[Dict]:
     pipe_rf_rag = Pipeline(
         steps=[
             ("preprocessor", build_preprocessor(rag_num_cols, cat_cols)),
-            ("clf", RandomForestClassifier(
-                n_estimators=200,
-                max_depth=rf_depth,
-                min_samples_split=10,
-                class_weight="balanced",
-                n_jobs=-1,
-                random_state=RANDOM_SEED,
-            )),
+            (
+                "clf",
+                RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=rf_depth,
+                    min_samples_split=10,
+                    class_weight="balanced",
+                    n_jobs=-1,
+                    random_state=RANDOM_SEED,
+                ),
+            ),
         ]
     )
     pipe_rf_rag.fit(train_df[rag_num_cols + cat_cols], y_train)
@@ -350,7 +392,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_rf_rag.update({"model": "Random Forest", "rag_feature": True})
     ablation_records.append(m_rf_rag)
     joblib.dump(pipe_rf_rag, MODELS_DIR / "rf_rag.joblib")
-    print(f"Val AUC: {m_rf_rag['auc_roc']} ({m_rf_rag['auc_ci_95']}) | Brier: {m_rf_rag['brier_score']} | Prec@10%: {m_rf_rag['precision_top_10pct']} (Lift: {m_rf_rag['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_rf_rag['auc_roc']} ({m_rf_rag['auc_ci_95']}) | Brier: {m_rf_rag['brier_score']} | Prec@10%: {m_rf_rag['precision_top_10pct']} (Lift: {m_rf_rag['lift_top_10pct']}x)"
+    )
 
     # -------------------------------------------------------------
     # 5. LightGBM: Without RAG
@@ -373,7 +417,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_lgbm_base.update({"model": "LightGBM", "rag_feature": False})
     ablation_records.append(m_lgbm_base)
     joblib.dump(lgbm_base, MODELS_DIR / "lgbm_base.joblib")
-    print(f"Val AUC: {m_lgbm_base['auc_roc']} ({m_lgbm_base['auc_ci_95']}) | Brier: {m_lgbm_base['brier_score']} | Prec@10%: {m_lgbm_base['precision_top_10pct']} (Lift: {m_lgbm_base['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_lgbm_base['auc_roc']} ({m_lgbm_base['auc_ci_95']}) | Brier: {m_lgbm_base['brier_score']} | Prec@10%: {m_lgbm_base['precision_top_10pct']} (Lift: {m_lgbm_base['lift_top_10pct']}x)"
+    )
 
     # -------------------------------------------------------------
     # 6. LightGBM: With RAG
@@ -397,7 +443,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     m_lgbm_rag.update({"model": "LightGBM", "rag_feature": True})
     ablation_records.append(m_lgbm_rag)
     joblib.dump(lgbm_rag, MODELS_DIR / "lgbm_rag.joblib")
-    print(f"Val AUC: {m_lgbm_rag['auc_roc']} ({m_lgbm_rag['auc_ci_95']}) | Brier: {m_lgbm_rag['brier_score']} | Prec@10%: {m_lgbm_rag['precision_top_10pct']} (Lift: {m_lgbm_rag['lift_top_10pct']}x)")
+    print(
+        f"Val AUC: {m_lgbm_rag['auc_roc']} ({m_lgbm_rag['auc_ci_95']}) | Brier: {m_lgbm_rag['brier_score']} | Prec@10%: {m_lgbm_rag['precision_top_10pct']} (Lift: {m_lgbm_rag['lift_top_10pct']}x)"
+    )
 
     # Save fitted preprocessors
     joblib.dump(pipe_lr_base.named_steps["preprocessor"], PREPROCESSOR_BASE_PATH)
@@ -414,10 +462,16 @@ def train_and_evaluate_all_models() -> List[Dict]:
         ("LightGBM", "lgbm_base", "lgbm_rag"),
     ]:
         diff_info = compute_paired_bootstrap_auc_diff(
-            y_val, val_predictions[key_base], val_predictions[key_rag], n_bootstraps=1000, seed=RANDOM_SEED
+            y_val,
+            val_predictions[key_base],
+            val_predictions[key_rag],
+            n_bootstraps=1000,
+            seed=RANDOM_SEED,
         )
         paired_diffs[family] = diff_info
-        print(f"  {family}: Delta AUC = {diff_info['observed_diff']:+.4f} (95% CI: {diff_info['ci_95']}) | Crosses 0: {diff_info['crosses_zero']}")
+        print(
+            f"  {family}: Delta AUC = {diff_info['observed_diff']:+.4f} (95% CI: {diff_info['ci_95']}) | Crosses 0: {diff_info['crosses_zero']}"
+        )
 
     # -------------------------------------------------------------
     # 8. Calibration on Train OOF
@@ -431,7 +485,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
         "lgbm_base": m_lgbm_base["auc_roc"],
     }
     top_model_key = max(val_auc_map, key=val_auc_map.get)
-    print(f"Top model for primary calibration: {top_model_key} (Val AUC: {val_auc_map[top_model_key]:.4f})")
+    print(
+        f"Top model for primary calibration: {top_model_key} (Val AUC: {val_auc_map[top_model_key]:.4f})"
+    )
 
     # Generate Train OOF for LightGBM with RAG (or the winning family)
     lgbm_kwargs = {
@@ -473,7 +529,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
         "ece_calibrated": m_cal["ece"],
         "auc_roc": m_cal["auc_roc"],
     }
-    print(f"Calibration results on Val: Brier {m_uncal['brier_score']} -> {m_cal['brier_score']} | ECE {m_uncal['ece']} -> {m_cal['ece']}")
+    print(
+        f"Calibration results on Val: Brier {m_uncal['brier_score']} -> {m_cal['brier_score']} | ECE {m_uncal['ece']} -> {m_cal['ece']}"
+    )
 
     # Save calibration figure
     plot_and_save_calibration(
@@ -530,7 +588,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
         md_content += f"| {r['model']} | {rag_str} | {r['auc_roc']:.4f} {ci_str} | {r['f1']:.4f} | {r['precision_top_10pct']:.4f} | {r['lift_top_10pct']:.2f}x | {r['brier_score']:.4f} | {r['ece']:.4f} | {p_diff_str} {p_ci_str} | {cz_str} |\n"
 
     # Add placeholder for Transformer
-    md_content += "| DistilBERT (Notes) | None | *Pending Colab run* | - | - | - | - | - | - | - |\n\n"
+    md_content += (
+        "| DistilBERT (Notes) | None | *Pending Colab run* | - | - | - | - | - | - | - |\n\n"
+    )
 
     md_content += "### Calibration Performance (LightGBM + RAG)\n"
     md_content += f"- **Brier Score**: {calibration_report['brier_uncalibrated']:.4f} (uncalibrated) -> **{calibration_report['brier_calibrated']:.4f}** (calibrated via Train OOF isotonic regression)\n"
@@ -543,7 +603,9 @@ def train_and_evaluate_all_models() -> List[Dict]:
     with open(METRICS_DIR / "ablation_table.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    print(f"Saved ablation table to {METRICS_DIR / 'ablation_table.json'} and {METRICS_DIR / 'ablation_table.md'}")
+    print(
+        f"Saved ablation table to {METRICS_DIR / 'ablation_table.json'} and {METRICS_DIR / 'ablation_table.md'}"
+    )
     return ablation_records
 
 

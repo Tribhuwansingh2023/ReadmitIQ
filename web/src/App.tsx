@@ -1,21 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Activity,
   BarChart2,
   LayoutDashboard,
   Scale,
   UserCheck,
-} from 'lucide-react';
-import { apiClient } from './api/client';
-import { CohortPage } from './pages/CohortPage';
-import { FairnessPage } from './pages/FairnessPage';
-import { ModelLabPage } from './pages/ModelLabPage';
-import { PatientPage } from './pages/PatientPage';
-import type { HealthResponse, PatientFormInput } from './types';
+} from "lucide-react";
+import { apiClient } from "./api/client";
+import { CohortPage } from "./pages/CohortPage";
+import { FairnessPage } from "./pages/FairnessPage";
+import { ModelLabPage } from "./pages/ModelLabPage";
+import { PatientPage } from "./pages/PatientPage";
+import type { HealthResponse, PatientFormInput } from "./types";
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'cohort' | 'patient' | 'lab' | 'fairness'>('cohort');
-  const [selectedPatient, setSelectedPatient] = useState<Partial<PatientFormInput> | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "cohort" | "patient" | "lab" | "fairness"
+  >("cohort");
+  const [selectedPatient, setSelectedPatient] =
+    useState<Partial<PatientFormInput> | null>(null);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [apiConnected, setApiConnected] = useState<boolean | null>(null);
 
@@ -36,7 +39,7 @@ export const App: React.FC = () => {
 
   const handleSelectCohortPatient = (patient: Partial<PatientFormInput>) => {
     setSelectedPatient(patient);
-    setActiveTab('patient');
+    setActiveTab("patient");
   };
 
   return (
@@ -51,7 +54,9 @@ export const App: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-black tracking-tight text-white">ReadmitIQ</span>
+                <span className="text-lg font-black tracking-tight text-white">
+                  ReadmitIQ
+                </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-mono">
                   v1.0 FROZEN
                 </span>
@@ -65,11 +70,11 @@ export const App: React.FC = () => {
           {/* Navigation Tabs */}
           <nav className="hidden md:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
             <button
-              onClick={() => setActiveTab('cohort')}
+              onClick={() => setActiveTab("cohort")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all ${
-                activeTab === 'cohort'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === "cohort"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -77,11 +82,11 @@ export const App: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('patient')}
+              onClick={() => setActiveTab("patient")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all ${
-                activeTab === 'patient'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === "patient"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <UserCheck className="w-3.5 h-3.5" />
@@ -89,11 +94,11 @@ export const App: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('lab')}
+              onClick={() => setActiveTab("lab")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all ${
-                activeTab === 'lab'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === "lab"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <BarChart2 className="w-3.5 h-3.5" />
@@ -101,11 +106,11 @@ export const App: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab('fairness')}
+              onClick={() => setActiveTab("fairness")}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg font-medium transition-all ${
-                activeTab === 'fairness'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                activeTab === "fairness"
+                  ? "bg-sky-500/20 text-sky-300 border border-sky-500/30 shadow-sm"
+                  : "text-slate-400 hover:text-white"
               }`}
             >
               <Scale className="w-3.5 h-3.5" />
@@ -119,18 +124,18 @@ export const App: React.FC = () => {
               <span
                 className={`w-2 h-2 rounded-full ${
                   apiConnected === true
-                    ? 'bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse'
+                    ? "bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse"
                     : apiConnected === false
-                    ? 'bg-rose-500'
-                    : 'bg-amber-400'
+                      ? "bg-rose-500"
+                      : "bg-amber-400"
                 }`}
               />
               <span className="text-slate-300">
                 {apiConnected === true
-                  ? 'API Online'
+                  ? "API Online"
                   : apiConnected === false
-                  ? 'API Disconnected'
-                  : 'Connecting...'}
+                    ? "API Disconnected"
+                    : "Connecting..."}
               </span>
             </div>
           </div>
@@ -139,33 +144,41 @@ export const App: React.FC = () => {
         {/* Mobile Navigation Bar */}
         <div className="md:hidden flex overflow-x-auto px-4 py-2 bg-slate-950 border-t border-slate-800 gap-1 text-xs">
           <button
-            onClick={() => setActiveTab('cohort')}
+            onClick={() => setActiveTab("cohort")}
             className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-              activeTab === 'cohort' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'
+              activeTab === "cohort"
+                ? "bg-sky-500/20 text-sky-300"
+                : "text-slate-400"
             }`}
           >
             Cohort Triage
           </button>
           <button
-            onClick={() => setActiveTab('patient')}
+            onClick={() => setActiveTab("patient")}
             className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-              activeTab === 'patient' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'
+              activeTab === "patient"
+                ? "bg-sky-500/20 text-sky-300"
+                : "text-slate-400"
             }`}
           >
             Patient & RAG
           </button>
           <button
-            onClick={() => setActiveTab('lab')}
+            onClick={() => setActiveTab("lab")}
             className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-              activeTab === 'lab' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'
+              activeTab === "lab"
+                ? "bg-sky-500/20 text-sky-300"
+                : "text-slate-400"
             }`}
           >
             Model Lab
           </button>
           <button
-            onClick={() => setActiveTab('fairness')}
+            onClick={() => setActiveTab("fairness")}
             className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${
-              activeTab === 'fairness' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-400'
+              activeTab === "fairness"
+                ? "bg-sky-500/20 text-sky-300"
+                : "text-slate-400"
             }`}
           >
             Fairness & Drift
@@ -175,14 +188,14 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'cohort' && (
+        {activeTab === "cohort" && (
           <CohortPage onSelectPatient={handleSelectCohortPatient} />
         )}
-        {activeTab === 'patient' && (
+        {activeTab === "patient" && (
           <PatientPage initialPatient={selectedPatient} />
         )}
-        {activeTab === 'lab' && <ModelLabPage />}
-        {activeTab === 'fairness' && <FairnessPage />}
+        {activeTab === "lab" && <ModelLabPage />}
+        {activeTab === "fairness" && <FairnessPage />}
       </main>
 
       {/* Footer */}
@@ -192,15 +205,16 @@ export const App: React.FC = () => {
             <span className="font-semibold text-slate-400">ReadmitIQ</span>
             <span>•</span>
             <span className="font-mono">
-              Model: {health?.model_name || 'LightGBM + Structured RAG'}
+              Model: {health?.model_name || "LightGBM + Structured RAG"}
             </span>
             <span>•</span>
             <span className="font-mono">
-              Git: {health?.git_commit_hash.slice(0, 7) || 'frozen'}
+              Git: {health?.git_commit_hash.slice(0, 7) || "frozen"}
             </span>
           </div>
           <div className="text-center sm:text-right text-[11px] text-slate-500">
-            Clinical Decision Support System. Not intended as sole autonomous diagnostic device.
+            Clinical Decision Support System. Not intended as sole autonomous
+            diagnostic device.
           </div>
         </div>
       </footer>

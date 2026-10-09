@@ -1,4 +1,5 @@
 import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -26,7 +27,11 @@ def data_splits():
 def test_no_nulls_in_features(data_splits):
     """Test that all engineered feature columns have zero missing values across all splits."""
     train_df, val_df, test_df, meta = data_splits
-    base_numeric = [c for c in meta.get("base_numeric_features", meta["numeric_features"]) if c != "rag_readmit_rate_k20"]
+    base_numeric = [
+        c
+        for c in meta.get("base_numeric_features", meta["numeric_features"])
+        if c != "rag_readmit_rate_k20"
+    ]
     feature_cols = base_numeric + meta["categorical_features"]
 
     for name, df in [("train", train_df), ("val", val_df), ("test", test_df)]:
@@ -70,8 +75,12 @@ def test_preprocessor_pipeline_fit_transform(data_splits):
 
     assert not np.isnan(X_train_trans).any(), "NaN detected in transformed train features"
     assert not np.isnan(X_val_trans).any(), "NaN detected in transformed val features"
-    assert X_train_trans.shape[1] == X_val_trans.shape[1], "Feature dimension mismatch between train and val"
-    assert X_train_trans.shape[1] < 150, f"Transformed column count {X_train_trans.shape[1]} exceeds target of 150!"
+    assert (
+        X_train_trans.shape[1] == X_val_trans.shape[1]
+    ), "Feature dimension mismatch between train and val"
+    assert (
+        X_train_trans.shape[1] < 150
+    ), f"Transformed column count {X_train_trans.shape[1]} exceeds target of 150!"
 
 
 def test_rare_category_collapsing(data_splits):
@@ -85,7 +94,9 @@ def test_rare_category_collapsing(data_splits):
     # Check grouper inside categorical transformer
     cat_pipe = preprocessor.named_transformers_["cat"]
     grouper = cat_pipe.named_steps["grouper"]
-    assert len(grouper.top_specialties_) <= 10, f"Expected at most 10 top specialties, got {len(grouper.top_specialties_)}"
+    assert (
+        len(grouper.top_specialties_) <= 10
+    ), f"Expected at most 10 top specialties, got {len(grouper.top_specialties_)}"
     assert len(grouper.frequent_payers_) > 0, "No frequent payers learned"
 
     # Verify transformed column count is well under 150

@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import numpy as np
@@ -96,7 +96,11 @@ def compute_ece(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> flo
 
     for i in range(n_bins):
         low, high = bin_limits[i], bin_limits[i + 1]
-        mask = (y_prob >= low) & (y_prob <= high) if i == n_bins - 1 else (y_prob >= low) & (y_prob < high)
+        mask = (
+            (y_prob >= low) & (y_prob <= high)
+            if i == n_bins - 1
+            else (y_prob >= low) & (y_prob < high)
+        )
         n_in_bin = np.sum(mask)
         if n_in_bin > 0:
             bin_acc = np.mean(y_true[mask])

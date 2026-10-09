@@ -1,4 +1,5 @@
 import json
+
 import pandas as pd
 import pytest
 
@@ -31,9 +32,15 @@ def test_no_patient_overlap(data_splits):
     train_test_overlap = train_pts.intersection(test_pts)
     val_test_overlap = val_pts.intersection(test_pts)
 
-    assert len(train_val_overlap) == 0, f"Found {len(train_val_overlap)} overlapping patients between train and val"
-    assert len(train_test_overlap) == 0, f"Found {len(train_test_overlap)} overlapping patients between train and test"
-    assert len(val_test_overlap) == 0, f"Found {len(val_test_overlap)} overlapping patients between val and test"
+    assert (
+        len(train_val_overlap) == 0
+    ), f"Found {len(train_val_overlap)} overlapping patients between train and val"
+    assert (
+        len(train_test_overlap) == 0
+    ), f"Found {len(train_test_overlap)} overlapping patients between train and test"
+    assert (
+        len(val_test_overlap) == 0
+    ), f"Found {len(val_test_overlap)} overlapping patients between val and test"
 
 
 def test_target_rate_per_split(data_splits):

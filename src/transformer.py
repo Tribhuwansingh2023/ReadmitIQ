@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -70,7 +70,10 @@ def train_distilbert_classifier(
 
     if device == "cpu":
         print("WARNING: Running DistilBERT on CPU without GPU acceleration.", flush=True)
-        print("CPU runs are restricted to smoke testing only. For full benchmark results, run notebooks/colab_transformer_training.ipynb on Colab GPU.", flush=True)
+        print(
+            "CPU runs are restricted to smoke testing only. For full benchmark results, run notebooks/colab_transformer_training.ipynb on Colab GPU.",
+            flush=True,
+        )
         if sample_size_cpu and len(train_df) > sample_size_cpu:
             print(f"CPU smoke-test mode: capping to {sample_size_cpu} train notes...", flush=True)
         # Stratified sample
@@ -78,15 +81,31 @@ def train_distilbert_classifier(
         neg_train = train_df[train_df["readmitted_30d"] == 0]
         pos_n = int(sample_size_cpu * 0.114)
         neg_n = sample_size_cpu - pos_n
-        train_df = pd.concat([pos_train.sample(n=min(len(pos_train), pos_n), random_state=RANDOM_SEED),
-                              neg_train.sample(n=min(len(neg_train), neg_n), random_state=RANDOM_SEED)]).sample(frac=1.0, random_state=RANDOM_SEED).reset_index(drop=True)
+        train_df = (
+            pd.concat(
+                [
+                    pos_train.sample(n=min(len(pos_train), pos_n), random_state=RANDOM_SEED),
+                    neg_train.sample(n=min(len(neg_train), neg_n), random_state=RANDOM_SEED),
+                ]
+            )
+            .sample(frac=1.0, random_state=RANDOM_SEED)
+            .reset_index(drop=True)
+        )
 
         pos_val = val_df[val_df["readmitted_30d"] == 1]
         neg_val = val_df[val_df["readmitted_30d"] == 0]
         pos_vn = int(val_sample_size_cpu * 0.114)
         neg_vn = val_sample_size_cpu - pos_vn
-        val_df = pd.concat([pos_val.sample(n=min(len(pos_val), pos_vn), random_state=RANDOM_SEED),
-                            neg_val.sample(n=min(len(neg_val), neg_vn), random_state=RANDOM_SEED)]).sample(frac=1.0, random_state=RANDOM_SEED).reset_index(drop=True)
+        val_df = (
+            pd.concat(
+                [
+                    pos_val.sample(n=min(len(pos_val), pos_vn), random_state=RANDOM_SEED),
+                    neg_val.sample(n=min(len(neg_val), neg_vn), random_state=RANDOM_SEED),
+                ]
+            )
+            .sample(frac=1.0, random_state=RANDOM_SEED)
+            .reset_index(drop=True)
+        )
 
     print(f"Fine-tuning on: Train={len(train_df)} notes, Val={len(val_df)} notes", flush=True)
 
@@ -94,7 +113,9 @@ def train_distilbert_classifier(
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
     model.to(device)
 
-    train_dataset = ClinicalNotesDataset(train_df["clinical_note"], train_df["readmitted_30d"], tokenizer)
+    train_dataset = ClinicalNotesDataset(
+        train_df["clinical_note"], train_df["readmitted_30d"], tokenizer
+    )
     val_dataset = ClinicalNotesDataset(val_df["clinical_note"], val_df["readmitted_30d"], tokenizer)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -121,7 +142,10 @@ def train_distilbert_classifier(
             optimizer.step()
             total_loss += loss.item()
 
-        print(f"Epoch {epoch+1}/{epochs} | Avg Train Loss: {total_loss/len(train_loader):.4f}", flush=True)
+        print(
+            f"Epoch {epoch+1}/{epochs} | Avg Train Loss: {total_loss/len(train_loader):.4f}",
+            flush=True,
+        )
 
     # Evaluate on Validation notes
     model.eval()
@@ -142,12 +166,16 @@ def train_distilbert_classifier(
     val_targets = np.array(val_targets)
 
     metrics = evaluate_predictions(val_targets, val_probs)
-    metrics.update({
-        "model": "DistilBERT (Clinical Notes)",
-        "rag_feature": "N/A (Text Model)",
-    })
+    metrics.update(
+        {
+            "model": "DistilBERT (Clinical Notes)",
+            "rag_feature": "N/A (Text Model)",
+        }
+    )
 
-    print(f"Validation AUC: {metrics['auc_roc']} (CI: {metrics['auc_ci_95']}) | F1: {metrics['f1']} | Prec@10%: {metrics['precision_top_10pct']} (Lift: {metrics['lift_top_10pct']}x)")
+    print(
+        f"Validation AUC: {metrics['auc_roc']} (CI: {metrics['auc_ci_95']}) | F1: {metrics['f1']} | Prec@10%: {metrics['precision_top_10pct']} (Lift: {metrics['lift_top_10pct']}x)"
+    )
 
     # Save fine-tuned weights and tokenizer
     tokenizer.save_pretrained(output_dir)

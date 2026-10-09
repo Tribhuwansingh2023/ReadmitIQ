@@ -6,10 +6,10 @@ import type {
   PatientFormInput,
   PredictResponse,
   SimilarResponse,
-} from '../types';
+} from "../types";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -17,7 +17,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
     try {
       const data = await res.json();
       if (data.detail) {
-        if (typeof data.detail === 'string') {
+        if (typeof data.detail === "string") {
           errDetail = data.detail;
         } else {
           errDetail = JSON.stringify(data.detail);
@@ -39,33 +39,41 @@ export const apiClient = {
 
   async predict(patient: PatientFormInput): Promise<PredictResponse> {
     const res = await fetch(`${API_BASE_URL}/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patient),
     });
     return handleResponse<PredictResponse>(res);
   },
 
-  async retrieveSimilar(patient: Partial<PatientFormInput>, k: number = 20): Promise<SimilarResponse> {
+  async retrieveSimilar(
+    patient: Partial<PatientFormInput>,
+    k: number = 20,
+  ): Promise<SimilarResponse> {
     const res = await fetch(`${API_BASE_URL}/similar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ patient_features: patient, k }),
     });
     return handleResponse<SimilarResponse>(res);
   },
 
-  async explain(patient: Partial<PatientFormInput>, topK: number = 3): Promise<ExplainResponse> {
+  async explain(
+    patient: Partial<PatientFormInput>,
+    topK: number = 3,
+  ): Promise<ExplainResponse> {
     const res = await fetch(`${API_BASE_URL}/explain?top_k=${topK}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patient),
     });
     return handleResponse<ExplainResponse>(res);
   },
 
-  async getCohort(capacity: number = 0.10): Promise<CohortResponse> {
-    const res = await fetch(`${API_BASE_URL}/cohort?capacity=${capacity.toFixed(2)}`);
+  async getCohort(capacity: number = 0.1): Promise<CohortResponse> {
+    const res = await fetch(
+      `${API_BASE_URL}/cohort?capacity=${capacity.toFixed(2)}`,
+    );
     return handleResponse<CohortResponse>(res);
   },
 

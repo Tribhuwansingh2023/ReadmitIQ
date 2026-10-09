@@ -6,8 +6,8 @@ Saves preprocessor_base.joblib and updates feature_list.json.
 """
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from src.config import (
+from src.config import (  # noqa: E402
     FEATURE_LIST_PATH,
     MODELS_DIR,
     PREPROCESSOR_BASE_PATH,
@@ -28,7 +28,7 @@ from src.config import (
     TRAIN_PARQUET,
     VAL_PARQUET,
 )
-from src.features import build_preprocessor, get_feature_columns
+from src.features import build_preprocessor, get_feature_columns  # noqa: E402
 
 
 def run_block1_pipeline():
@@ -43,7 +43,9 @@ def run_block1_pipeline():
 
     numeric_cols, categorical_cols = get_feature_columns(train_df)
     base_features = numeric_cols + categorical_cols
-    print(f"Base raw features: {len(base_features)} ({len(numeric_cols)} numeric, {len(categorical_cols)} categorical)")
+    print(
+        f"Base raw features: {len(base_features)} ({len(numeric_cols)} numeric, {len(categorical_cols)} categorical)"
+    )
 
     # 2. Build and fit preprocessor strictly on TRAIN
     preprocessor = build_preprocessor(numeric_cols, categorical_cols)
@@ -67,11 +69,13 @@ def run_block1_pipeline():
     coef_series = pd.Series(lr_l2.coef_[0], index=feature_names)
     abs_coef = coef_series.abs().sort_values(ascending=False)
     top_20_coef_names = abs_coef.head(20).index
-    top_20_df = pd.DataFrame({
-        "Feature": top_20_coef_names,
-        "Coefficient": coef_series[top_20_coef_names].values,
-        "Abs_Coefficient": abs_coef[top_20_coef_names].values
-    })
+    top_20_df = pd.DataFrame(
+        {
+            "Feature": top_20_coef_names,
+            "Coefficient": coef_series[top_20_coef_names].values,
+            "Abs_Coefficient": abs_coef[top_20_coef_names].values,
+        }
+    )
 
     print("\n" + "=" * 70)
     print("TOP 20 LOGISTIC REGRESSION COEFFICIENTS (BY MAGNITUDE)")
@@ -105,10 +109,14 @@ def run_block1_pipeline():
     print(f"L1 Sparsity: {n_nonzero} active features, {n_zero} zeroed features out of {col_count}")
 
     # Column-level permutation importance on validation subsample
-    print("Computing column-level permutation importance on validation subsample (n=5,000, seed=42)...")
+    print(
+        "Computing column-level permutation importance on validation subsample (n=5,000, seed=42)..."
+    )
     val_sub = val_df.sample(5000, random_state=RANDOM_SEED).copy()
     y_sub = val_sub["readmitted_30d"].values
-    sub_base_auc = roc_auc_score(y_sub, lr_l2.predict_proba(preprocessor.transform(val_sub[base_features]))[:, 1])
+    sub_base_auc = roc_auc_score(
+        y_sub, lr_l2.predict_proba(preprocessor.transform(val_sub[base_features]))[:, 1]
+    )
 
     perm_records = []
     for col in base_features:
@@ -118,16 +126,17 @@ def run_block1_pipeline():
             rng = np.random.RandomState(RANDOM_SEED + r)
             val_perm[col] = rng.permutation(val_sub[col].values)
             auc_p = roc_auc_score(
-                y_sub,
-                lr_l2.predict_proba(preprocessor.transform(val_perm[base_features]))[:, 1]
+                y_sub, lr_l2.predict_proba(preprocessor.transform(val_perm[base_features]))[:, 1]
             )
             diffs.append(sub_base_auc - auc_p)
-        perm_records.append({
-            "feature": col,
-            "type": "numeric" if col in numeric_cols else "categorical",
-            "mean_importance": float(np.mean(diffs)),
-            "std_importance": float(np.std(diffs)),
-        })
+        perm_records.append(
+            {
+                "feature": col,
+                "type": "numeric" if col in numeric_cols else "categorical",
+                "mean_importance": float(np.mean(diffs)),
+                "std_importance": float(np.std(diffs)),
+            }
+        )
 
     perm_df = pd.DataFrame(perm_records).sort_values(by="mean_importance", ascending=False)
     print("\nTop 10 features by validation permutation importance:")

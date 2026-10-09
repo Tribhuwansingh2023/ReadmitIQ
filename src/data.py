@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Dict, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -10,14 +10,10 @@ from sklearn.model_selection import StratifiedGroupKFold
 
 from src.config import (
     EXCLUDE_DISCHARGE_IDS,
-    FEATURE_METADATA_PATH,
     PROCESSED_DATA_DIR,
     RANDOM_SEED,
     RAW_DATA_PATH,
     SPLIT_N_SPLITS,
-    TEST_PARQUET,
-    TRAIN_PARQUET,
-    VAL_PARQUET,
 )
 from src.features import engineer_features, get_feature_columns
 
@@ -128,9 +124,7 @@ def process_and_save_data(
         test_raw.to_parquet(test_cache, index=False)
 
     print("Engineering features on TRAIN split...")
-    train_feat, capping_thresholds, retained_drugs = engineer_features(
-        train_raw, is_train=True
-    )
+    train_feat, capping_thresholds, retained_drugs = engineer_features(train_raw, is_train=True)
 
     print("Transforming VAL split with train-fitted statistics...")
     val_feat, _, _ = engineer_features(

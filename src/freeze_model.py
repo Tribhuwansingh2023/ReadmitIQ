@@ -1,10 +1,9 @@
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
-from typing import Dict
+from datetime import datetime, timezone
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import joblib
@@ -35,7 +34,9 @@ def freeze_model_selection():
 
     base_all = f_list["base_features"]
     rag_col = "rag_struct_rate_k20"
-    rag_num_cols = sorted([c for c in base_all if pd.api.types.is_numeric_dtype(pd.Series([0]))] + [rag_col])
+    rag_num_cols = sorted(
+        [c for c in base_all if pd.api.types.is_numeric_dtype(pd.Series([0]))] + [rag_col]
+    )
 
     # Re-verify numeric vs categorical columns from train parquet schema
     train_sample = pd.read_parquet(TRAIN_RAG_PARQUET, columns=base_all + [rag_col]).head(10)
@@ -72,18 +73,14 @@ def freeze_model_selection():
     th_top_10 = float(np.percentile(cal_val_probs, 90.0))
     th_top_20 = float(np.percentile(cal_val_probs, 80.0))
 
-    print(f"Validation Thresholds Calculated:")
+    print("Validation Thresholds Calculated:")
     print(f"  Optimal F1 Decision Threshold: {best_th:.4f}")
     print(f"  Capacity Threshold (Top 5%):   {th_top_5:.4f}")
     print(f"  Capacity Threshold (Top 10%):  {th_top_10:.4f}")
     print(f"  Capacity Threshold (Top 20%):  {th_top_20:.4f}")
 
     # 6. Retrieve git commit hash
-    git_hash = (
-        subprocess.check_output(["git", "rev-parse", "HEAD"])
-        .decode("ascii")
-        .strip()
-    )
+    git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("ascii").strip()
 
     now_utc = datetime.now(timezone.utc).isoformat()
 

@@ -1,17 +1,16 @@
 import json
-from pathlib import Path
 import sys
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, List
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import joblib
-from lightgbm import LGBMClassifier
 import numpy as np
 import pandas as pd
+from lightgbm import LGBMClassifier
 from sklearn.metrics import roc_auc_score
 
 from src.config import (
-    FEATURE_LIST_PATH,
     METRICS_DIR,
     MODELS_DIR,
     RANDOM_SEED,
@@ -216,7 +215,9 @@ def run_fairness_audit(split: str = "validation") -> Dict:
         "capacity_threshold_evaluated": threshold,
         "primary_model_auc": primary_auc,
         "blinded_model_auc": blinded_results[f"{split}_auc"],
-        "auc_difference_unblinded_minus_blinded": round(primary_auc - blinded_results[f"{split}_auc"], 4),
+        "auc_difference_unblinded_minus_blinded": round(
+            primary_auc - blinded_results[f"{split}_auc"], 4
+        ),
         "audits": {
             "race": audit_race,
             "gender": audit_gender,
