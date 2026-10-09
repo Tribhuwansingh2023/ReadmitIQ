@@ -1,9 +1,22 @@
-import json
-import sys
-from pathlib import Path
-from typing import Dict, Optional
+"""CPU Smoke Test for Clinical Notes Transformer.
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+This module provides a CPU-only smoke test to verify tokenization, data loading,
+and model forward/backward passes on a small subset of clinical notes (< 5,000 notes).
+
+CRITICAL NOTE:
+This is exclusively for pipeline smoke testing and CI sanity checks.
+Full benchmark evaluation of the DistilBERT model occurs via Google Colab GPU
+(notebooks/colab_transformer_training.ipynb) on the full validation split.
+Results here are saved ONLY to reports/metrics/transformer_smoke_test.json
+and NEVER into the ablation table.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any, Dict, Optional
+
 import numpy as np
 import pandas as pd
 import torch
@@ -12,18 +25,25 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.config import (
     METRICS_DIR,
-    MODELS_DIR,
     RANDOM_SEED,
     TRAIN_RAG_PARQUET,
     VAL_RAG_PARQUET,
 )
 from src.evaluate import evaluate_predictions
 
+SMOKE_TEST_METRICS_PATH = METRICS_DIR / "transformer_smoke_test.json"
+
 
 class ClinicalNotesDataset(Dataset):
     """PyTorch Dataset for clinical discharge notes tokenization."""
 
-    def __init__(self, texts, labels, tokenizer, max_length=128):
+    def __init__(
+        self,
+        texts: list[str] | pd.Series,
+        labels: list[int] | pd.Series | np.ndarray,
+        tokenizer: Any,
+        max_length: int = 128,
+    ) -> None:
         self.labels = torch.tensor(list(labels), dtype=torch.long)
         encodings = tokenizer(
             list(texts),
@@ -35,10 +55,10 @@ class ClinicalNotesDataset(Dataset):
         self.input_ids = encodings["input_ids"]
         self.attention_mask = encodings["attention_mask"]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.labels)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
             "input_ids": self.input_ids[idx],
             "attention_mask": self.attention_mask[idx],
@@ -46,156 +66,133 @@ class ClinicalNotesDataset(Dataset):
         }
 
 
-def train_distilbert_classifier(
+def sample_stratified_subset(
+    df: pd.DataFrame,
+    target_col: str,
+    max_samples: int,
+    seed: int = RANDOM_SEED,
+) -> pd.DataFrame:
+    """Sample a balanced/stratified subset up to max_samples for smoke testing."""
+    if len(df) <= max_samples:
+        return df.copy().reset_index(drop=True)
+
+    pos_df = df[df[target_col] == 1]
+    neg_df = df[df[target_col] == 0]
+    pos_ratio = len(pos_df) / len(df)
+    pos_n = int(max_samples * pos_ratio)
+    neg_n = max_samples - pos_n
+
+    sampled_pos = pos_df.sample(n=min(len(pos_df), pos_n), random_state=seed)
+    sampled_neg = neg_df.sample(n=min(len(neg_df), neg_n), random_state=seed)
+    combined = pd.concat([sampled_pos, sampled_neg]).sample(frac=1.0, random_state=seed)
+    return combined.reset_index(drop=True)
+
+
+def run_cpu_smoke_test(
     train_parquet: Path = TRAIN_RAG_PARQUET,
     val_parquet: Path = VAL_RAG_PARQUET,
     model_name: str = "distilbert-base-uncased",
-    sample_size_cpu: int = 300,
-    val_sample_size_cpu: int = 150,
-    epochs: int = 1,
+    train_samples: int = 200,
+    val_samples: int = 100,
     batch_size: int = 16,
-    learning_rate: float = 3e-5,
+    max_length: int = 128,
     device: Optional[str] = None,
-) -> Dict:
-    """Fine-tune DistilBERT sequence classifier on clinical discharge notes."""
-    output_dir = MODELS_DIR / "transformer"
-    output_dir.mkdir(parents=True, exist_ok=True)
+) -> Dict[str, Any]:
+    """Execute a CPU smoke test on a small subset of notes (< 5,000).
+
+    Saves metrics ONLY to reports/metrics/transformer_smoke_test.json.
+    Never alters the production ablation table.
+    """
+    assert train_samples < 5000, f"train_samples must be < 5000 for smoke test, got {train_samples}"
+    assert val_samples < 5000, f"val_samples must be < 5000 for smoke test, got {val_samples}"
+
+    print("=" * 70, flush=True)
+    print(" LOUD WARNING: RUNNING TRANSFORMER CPU SMOKE TEST ONLY!", flush=True)
+    print(" This is a sanity check on a tiny sample and NOT a production model.", flush=True)
+    print(" Benchmark models are trained on Colab GPU on full datasets.", flush=True)
+    print(f" Writing output strictly to: {SMOKE_TEST_METRICS_PATH}", flush=True)
+    print("=" * 70, flush=True)
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"DistilBERT Training Device: {device.upper()}", flush=True)
 
-    train_df = pd.read_parquet(train_parquet)
-    val_df = pd.read_parquet(val_parquet)
+    train_df = pd.read_parquet(train_parquet, columns=["clinical_note", "readmitted_30d"])
+    val_df = pd.read_parquet(val_parquet, columns=["clinical_note", "readmitted_30d"])
 
-    if device == "cpu":
-        print("WARNING: Running DistilBERT on CPU without GPU acceleration.", flush=True)
-        print(
-            "CPU runs are restricted to smoke testing only. For full benchmark results, run notebooks/colab_transformer_training.ipynb on Colab GPU.",
-            flush=True,
-        )
-        if sample_size_cpu and len(train_df) > sample_size_cpu:
-            print(f"CPU smoke-test mode: capping to {sample_size_cpu} train notes...", flush=True)
-        # Stratified sample
-        pos_train = train_df[train_df["readmitted_30d"] == 1]
-        neg_train = train_df[train_df["readmitted_30d"] == 0]
-        pos_n = int(sample_size_cpu * 0.114)
-        neg_n = sample_size_cpu - pos_n
-        train_df = (
-            pd.concat(
-                [
-                    pos_train.sample(n=min(len(pos_train), pos_n), random_state=RANDOM_SEED),
-                    neg_train.sample(n=min(len(neg_train), neg_n), random_state=RANDOM_SEED),
-                ]
-            )
-            .sample(frac=1.0, random_state=RANDOM_SEED)
-            .reset_index(drop=True)
-        )
-
-        pos_val = val_df[val_df["readmitted_30d"] == 1]
-        neg_val = val_df[val_df["readmitted_30d"] == 0]
-        pos_vn = int(val_sample_size_cpu * 0.114)
-        neg_vn = val_sample_size_cpu - pos_vn
-        val_df = (
-            pd.concat(
-                [
-                    pos_val.sample(n=min(len(pos_val), pos_vn), random_state=RANDOM_SEED),
-                    neg_val.sample(n=min(len(neg_val), neg_vn), random_state=RANDOM_SEED),
-                ]
-            )
-            .sample(frac=1.0, random_state=RANDOM_SEED)
-            .reset_index(drop=True)
-        )
-
-    print(f"Fine-tuning on: Train={len(train_df)} notes, Val={len(val_df)} notes", flush=True)
+    train_subset = sample_stratified_subset(train_df, "readmitted_30d", train_samples)
+    val_subset = sample_stratified_subset(val_df, "readmitted_30d", val_samples)
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
     model.to(device)
 
-    train_dataset = ClinicalNotesDataset(
-        train_df["clinical_note"], train_df["readmitted_30d"], tokenizer
+    train_ds = ClinicalNotesDataset(
+        train_subset["clinical_note"],
+        train_subset["readmitted_30d"],
+        tokenizer,
+        max_length=max_length,
     )
-    val_dataset = ClinicalNotesDataset(val_df["clinical_note"], val_df["readmitted_30d"], tokenizer)
+    val_ds = ClinicalNotesDataset(
+        val_subset["clinical_note"],
+        val_subset["readmitted_30d"],
+        tokenizer,
+        max_length=max_length,
+    )
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
 
-    # Class-weighted loss to handle imbalanced ~11% positive class
-    weights = torch.tensor([1.0, 7.7], dtype=torch.float32).to(device)
-    criterion = torch.nn.CrossEntropyLoss(weight=weights)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    criterion = torch.nn.CrossEntropyLoss()
 
-    print(f"Starting fine-tuning for {epochs} epochs...", flush=True)
     model.train()
-    for epoch in range(epochs):
-        total_loss = 0.0
-        for step, batch in enumerate(train_loader):
-            optimizer.zero_grad()
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+    # 1 mini-batch step to test forward + backward
+    batch = next(iter(train_loader))
+    optimizer.zero_grad()
+    outputs = model(
+        input_ids=batch["input_ids"].to(device),
+        attention_mask=batch["attention_mask"].to(device),
+    )
+    loss = criterion(outputs.logits, batch["label"].to(device))
+    loss.backward()
+    optimizer.step()
 
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            loss = criterion(outputs.logits, labels)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-        print(
-            f"Epoch {epoch+1}/{epochs} | Avg Train Loss: {total_loss/len(train_loader):.4f}",
-            flush=True,
-        )
-
-    # Evaluate on Validation notes
+    # Quick eval loop
     model.eval()
     val_probs = []
     val_targets = []
     with torch.no_grad():
-        for batch in val_loader:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
-
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            probs = torch.softmax(outputs.logits, dim=-1)[:, 1]
+        for val_batch in val_loader:
+            out = model(
+                input_ids=val_batch["input_ids"].to(device),
+                attention_mask=val_batch["attention_mask"].to(device),
+            )
+            probs = torch.softmax(out.logits, dim=-1)[:, 1]
             val_probs.extend(probs.cpu().numpy())
-            val_targets.extend(labels.cpu().numpy())
+            val_targets.extend(val_batch["label"].cpu().numpy())
 
-    val_probs = np.array(val_probs)
-    val_targets = np.array(val_targets)
+    y_val = np.array(val_targets)
+    y_prob = np.array(val_probs)
 
-    metrics = evaluate_predictions(val_targets, val_probs)
-    metrics.update(
-        {
-            "model": "DistilBERT (Clinical Notes)",
-            "rag_feature": "N/A (Text Model)",
-        }
-    )
+    smoke_metrics = evaluate_predictions(y_val, y_prob)
+    smoke_results = {
+        "mode": "CPU_SMOKE_TEST",
+        "model_name": model_name,
+        "train_samples_used": len(train_subset),
+        "val_samples_used": len(val_subset),
+        "smoke_test_loss": float(loss.item()),
+        "auc_roc": smoke_metrics["auc_roc"],
+        "auc_ci_95": smoke_metrics["auc_ci_95"],
+        "note": "Smoke test sanity check only; not for clinical or ablation evaluation.",
+    }
 
-    print(
-        f"Validation AUC: {metrics['auc_roc']} (CI: {metrics['auc_ci_95']}) | F1: {metrics['f1']} | Prec@10%: {metrics['precision_top_10pct']} (Lift: {metrics['lift_top_10pct']}x)"
-    )
+    SMOKE_TEST_METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(SMOKE_TEST_METRICS_PATH, "w", encoding="utf-8") as f:
+        json.dump(smoke_results, f, indent=2)
 
-    # Save fine-tuned weights and tokenizer
-    tokenizer.save_pretrained(output_dir)
-    model.save_pretrained(output_dir)
-    print(f"Saved fine-tuned transformer weights to {output_dir}")
-
-    # Append to ablation table
-    ablation_file = METRICS_DIR / "ablation_table.json"
-    if ablation_file.exists():
-        with open(ablation_file, "r") as f:
-            records = json.load(f)
-    else:
-        records = []
-
-    records.append(metrics)
-    with open(ablation_file, "w") as f:
-        json.dump(records, f, indent=2)
-
-    return metrics
+    print(f"Smoke test successful! Saved results to {SMOKE_TEST_METRICS_PATH}", flush=True)
+    return smoke_results
 
 
 if __name__ == "__main__":
-    train_distilbert_classifier()
+    run_cpu_smoke_test()
