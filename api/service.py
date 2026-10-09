@@ -39,6 +39,13 @@ class ModelService:
         with open(self.frozen_meta_path, "r", encoding="utf-8") as f:
             self.frozen_config = json.load(f)
 
+        # Configure FAISS thread count for fast parallel batch retrieval
+        try:
+            num_threads = min(os.cpu_count() or 4, 8)
+            faiss.omp_set_num_threads(num_threads)
+        except Exception:
+            pass
+
         # Load models and preprocessors (always lightweight, < 350 KB total)
         self.model = joblib.load(self.final_dir / "model.joblib")
         self.preprocessor = joblib.load(self.final_dir / "preprocessor.joblib")
@@ -64,11 +71,20 @@ class ModelService:
         # Base features required by SVD preprocessor (without RAG feature)
         self.base_num_cols = [c for c in self.num_cols if c != "rag_struct_rate_k20"]
 
+        # Load serving raw-score thresholds
+        serving_th_path = self.final_dir / "serving_thresholds.json"
+        if serving_th_path.exists():
+            with open(serving_th_path, "r", encoding="utf-8") as f:
+                self.serving_thresholds = json.load(f)
+        else:
+            self.serving_thresholds = None
+
         # Initialize explainer
         self.explainer = ModelExplainer(
             model_path=self.final_dir / "model.joblib",
             feature_list_path=self.final_dir / "feature_list.json",
         )
+        self._shap_cache: Dict[Any, Dict[str, Any]] = {}
 
         # Preloaded cohort scored parquet for fast /cohort replay (adaptive)
         if self.is_lite and (REPORTS_DIR / "demo" / "cohort_scored_lite.parquet").exists():
@@ -80,6 +96,151 @@ class ModelService:
             self.cohort_df = pd.read_parquet(self.cohort_parquet_path)
         else:
             self.cohort_df = None
+
+    def assign_tier(self, raw_score: float) -> str:
+        """Assign risk tier based on frozen validation raw-score cutoffs (Top 5%, 10%, 20%)."""
+        if self.serving_thresholds and "raw_score_cutoffs" in self.serving_thresholds:
+            cutoffs = self.serving_thresholds["raw_score_cutoffs"]
+            if raw_score >= cutoffs["top_5pct"]:
+                return "Critical"
+            elif raw_score >= cutoffs["top_10pct"]:
+                return "High"
+            elif raw_score >= cutoffs["top_20pct"]:
+                return "Medium"
+            return "Low"
+        # Fallbacks matching serving_thresholds.json
+        if raw_score >= 0.683933:
+            return "Critical"
+        elif raw_score >= 0.640775:
+            return "High"
+        elif raw_score >= 0.579340:
+            return "Medium"
+        return "Low"
+
+    def score_batch(
+        self, encounters: List[Dict[str, Any]], include_neighbor_details: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Vectorized live scoring through SVD-FAISS retriever, LightGBM, and Isotonic calibration.
+
+        High-throughput: processes 1,000 rows in ~100-300 ms (< 2.0s target).
+        """
+        if isinstance(encounters, pd.DataFrame):
+            df = encounters.copy()
+        else:
+            df = pd.DataFrame(encounters)
+
+        # Batch ensure required columns exist
+        missing_cats = [c for c in self.cat_cols if c not in df.columns]
+        for c in missing_cats:
+            df[c] = "Missing"
+
+        missing_nums = [c for c in self.base_num_cols if c not in df.columns]
+        for c in missing_nums:
+            df[c] = 0.0
+
+        df[self.cat_cols] = df[self.cat_cols].fillna("Missing").astype(str)
+        df[self.base_num_cols] = df[self.base_num_cols].fillna(0.0).astype(float)
+
+        # 1. Vectorized FAISS retrieval
+        missing_rag = "rag_struct_rate_k20" not in df.columns or df["rag_struct_rate_k20"].isna().any()
+        neighbor_indices = None
+        neighbor_sims = None
+
+        if missing_rag:
+            dense_feats = self.base_preprocessor.transform(df[self.base_num_cols + self.cat_cols])
+            if hasattr(dense_feats, "toarray"):
+                dense_feats = dense_feats.toarray()
+            query_vecs = self.svd.transform(dense_feats).astype(np.float32)
+            faiss.normalize_L2(query_vecs)
+            scores, indices = self.faiss_index.search(query_vecs, 20)
+            neighbor_indices = indices
+            neighbor_sims = scores
+            # Vectorized neighbor readmission rate across top 20 train neighbors
+            rag_rates = self.train_meta["readmitted_30d"].values[indices].mean(axis=1)
+            df["rag_struct_rate_k20"] = rag_rates
+        else:
+            df["rag_struct_rate_k20"] = pd.to_numeric(df["rag_struct_rate_k20"], errors="coerce").fillna(0.0)
+
+        # 2. Vectorized LightGBM feature prep & inference
+        X_lgbm = prepare_lgbm_data(df, self.num_cols, self.cat_cols)
+        raw_scores = self.model.predict_proba(X_lgbm)[:, 1]
+        cal_probs = self.calibrator.transform(raw_scores)
+
+        # 3. Vectorized tier assignment
+        cutoffs = (
+            self.serving_thresholds["raw_score_cutoffs"]
+            if self.serving_thresholds and "raw_score_cutoffs" in self.serving_thresholds
+            else {"top_5pct": 0.683933, "top_10pct": 0.640775, "top_20pct": 0.579340}
+        )
+        th_5, th_10, th_20 = cutoffs["top_5pct"], cutoffs["top_10pct"], cutoffs["top_20pct"]
+        tiers = np.where(
+            raw_scores >= th_5,
+            "Critical",
+            np.where(raw_scores >= th_10, "High", np.where(raw_scores >= th_20, "Medium", "Low")),
+        )
+
+        rag_vals = df["rag_struct_rate_k20"].values
+
+        # If neighbor details requested (for single patient view)
+        meta_dict = None
+        if include_neighbor_details and neighbor_indices is not None:
+            if not hasattr(self, "_train_meta_records"):
+                self._train_meta_records = self.train_meta.to_dict(orient="records")
+            meta_dict = self._train_meta_records
+
+        results = []
+        for i in range(len(df)):
+            raw_s = float(raw_scores[i])
+            cal_p = float(cal_probs[i])
+            tier = str(tiers[i])
+            r_rate = float(rag_vals[i])
+
+            neighbor_summary = {
+                "k_neighbors": 20,
+                "neighbor_readmission_rate": round(r_rate, 4),
+            }
+
+            if meta_dict is not None and neighbor_indices is not None:
+                top_idx = neighbor_indices[i][:5]
+                top_scores = neighbor_sims[i][:5]
+                top_list = []
+                for j, idx_val in enumerate(top_idx):
+                    row = meta_dict[idx_val]
+                    top_list.append(
+                        {
+                            "encounter_id": int(row.get("encounter_id", 0)),
+                            "similarity_score": round(float(top_scores[j]), 3),
+                            "age": str(row.get("age", "[60-70)")),
+                            "gender": str(row.get("gender", "Female")),
+                            "time_in_hospital": int(row.get("time_in_hospital", 3)),
+                            "primary_diagnosis": str(row.get("diag_1_group", "Other")),
+                            "prior_inpatient": int(row.get("number_inpatient", 0)),
+                            "readmitted_30d": int(row.get("readmitted_30d", 0)),
+                        }
+                    )
+                neighbor_summary["top_neighbors"] = top_list
+
+            results.append(
+                {
+                    "raw_score": round(raw_s, 6),
+                    "calibrated_prob": round(cal_p, 4),
+                    "tier": tier,
+                    "rag_struct_rate_k20": round(r_rate, 4),
+                    "neighbor_summary": neighbor_summary,
+                    "features": encounters[i],
+                }
+            )
+
+        return results
+
+    def explain_cached(self, cache_key: Any, patient_dict: Dict[str, Any], top_k: int = 3) -> Dict[str, Any]:
+        """Compute TreeSHAP explanations on demand and cache them."""
+        if cache_key in self._shap_cache:
+            return self._shap_cache[cache_key]
+
+        explanation = self.explain(patient_dict, top_k=top_k)
+        self._shap_cache[cache_key] = explanation
+        return explanation
 
     def retrieve_similar(
         self, patient_dict: Dict[str, Any], k: int = 20

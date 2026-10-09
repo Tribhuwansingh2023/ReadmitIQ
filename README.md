@@ -167,3 +167,29 @@ Test suite verifies:
 - Test evaluation lock enforcement (`test_stage2_phase4.py`)
 - PSI population stability index calculation (`test_stage2_phase4.py`)
 - FastAPI endpoints, validation, and error handling (`test_api.py`)
+
+---
+
+## Integration Options
+
+ReadmitIQ supports flexible clinical hospital data integration pathways:
+
+### 1. REST Push (`POST /v1/discharges`) — [Implemented]
+- Real-time synchronous HTTP POST from hospital EHR or ADT (Admission-Discharge-Transfer) engines upon patient discharge.
+- Accepts single encounter or vectorized batches (up to 5,000 records).
+- Sub-2s vectorized scoring throughput with immediate ranked risk tier assignment.
+
+### 2. CSV Batch Drop (`POST /v1/discharges/upload`) — [Implemented]
+- Daily or shift-based batch upload by hospital informatics or care coordination teams.
+- Standard downloadable template (`GET /v1/templates/discharge.csv`) with full validation reporting (accepted rows vs. per-row error breakdown).
+
+### 3. FHIR / HL7 v2 Adapter — [Design Only — Not Implemented]
+- **Architecture Specification:** Inbound HL7 v2 `ADT^A03` (Discharge) or FHIR R4 `Encounter` resource subscription trigger.
+- **Resource Mapping:**
+  - `Encounter.period.end` -> `received_at`
+  - `Encounter.length` -> `time_in_hospital`
+  - `Condition` resources where `category=encounter-diagnosis` -> `diag_1_group`, `diag_2_group`, `diag_3_group`
+  - `MedicationRequest` resources -> medication usage and dose change counts
+  - `Observation` where `code=4548-4` (HbA1c) -> `A1Cresult`
+- **Output:** Transformed into ReadmitIQ `PatientEncounterRequest` schema and ingested via internal REST pipeline. Currently specified as architecture design pattern for enterprise integration.
+
