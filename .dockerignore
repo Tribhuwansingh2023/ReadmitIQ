@@ -1,0 +1,16 @@
+.git/
+.github/
+.pytest_cache/
+__pycache__/
+*.pyc
+data/raw/
+data/interim/
+data/processed/*.parquet
+data/processed/*.npy
+models/*.pt
+models/transformer/
+node_modules/
+web/node_modules/
+web/dist/
+.env*
+docs/screenshots/

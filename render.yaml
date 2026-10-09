@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: readmitiq-api
+    env: python
+    region: ohio
+    plan: standard
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt"
+    startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CORS_ORIGINS
+        value: "*"
