@@ -18,6 +18,7 @@ data/raw/diabetic_data.csv
 data/interim/
 data/processed/*.parquet
 data/processed/.cache_*
+data/processed/colab_upload/
 diabetic_data.csv
 
 # Large binaries & documents
