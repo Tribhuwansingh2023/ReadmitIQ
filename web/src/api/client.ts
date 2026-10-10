@@ -1,11 +1,16 @@
 import type {
   CohortResponse,
+  DischargeDetailResponse,
   ExplainResponse,
+  FeedStatusResponse,
   HealthResponse,
   MetricsResponse,
+  ModelInfoResponse,
+  MonitoringResponse,
   PatientFormInput,
   PredictResponse,
   SimilarResponse,
+  WorklistResponse,
 } from "../types";
 
 export const API_BASE_URL =
@@ -36,6 +41,148 @@ export const apiClient = {
     const res = await fetch(`${API_BASE_URL}/health`);
     return handleResponse<HealthResponse>(res);
   },
+
+  // --- v1 Worklist & Discharges ---
+
+  async getWorklist(params?: {
+    status?: string;
+    tier?: string;
+    search?: string;
+    capacity?: number;
+    page?: number;
+    pageSize?: number;
+  }): Promise<WorklistResponse> {
+    const url = new URL(`${API_BASE_URL}/v1/worklist`);
+    if (params?.status) url.searchParams.set("status", params.status);
+    if (params?.tier) url.searchParams.set("tier", params.tier);
+    if (params?.search) url.searchParams.set("search", params.search);
+    if (params?.capacity !== undefined)
+      url.searchParams.set("capacity", params.capacity.toString());
+    if (params?.page) url.searchParams.set("page", params.page.toString());
+    if (params?.pageSize)
+      url.searchParams.set("page_size", params.pageSize.toString());
+
+    const res = await fetch(url.toString());
+    return handleResponse<WorklistResponse>(res);
+  },
+
+  async getDischarge(id: number): Promise<DischargeDetailResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${id}`);
+    return handleResponse<DischargeDetailResponse>(res);
+  },
+
+  async createDischarge(
+    patient: Partial<PatientFormInput>,
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patient),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async uploadCsv(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    return handleResponse<any>(res);
+  },
+
+  getTemplateCsvUrl(): string {
+    return `${API_BASE_URL}/v1/templates/discharge.csv`;
+  },
+
+  async updateDischarge(
+    id: number,
+    data: {
+      status?: string;
+      assignee?: string;
+      clinician_override_tier?: string;
+      override_reason?: string;
+      actor?: string;
+    },
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async addAction(
+    id: number,
+    action: { type: string; note: string; actor?: string },
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${id}/actions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(action),
+    });
+    return handleResponse<any>(res);
+  },
+
+  async recordOutcome(
+    id: number,
+    outcome: { outcome_readmitted_30d: number; actor?: string },
+  ): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${id}/outcome`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(outcome),
+    });
+    return handleResponse<any>(res);
+  },
+
+  // --- v1 Simulated Feed & Time Machine ---
+
+  async startFeed(ratePerMinute: number = 60, seed: number = 42): Promise<FeedStatusResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/feed/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rate_per_minute: ratePerMinute, seed }),
+    });
+    return handleResponse<FeedStatusResponse>(res);
+  },
+
+  async stopFeed(): Promise<FeedStatusResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/feed/stop`, {
+      method: "POST",
+    });
+    return handleResponse<FeedStatusResponse>(res);
+  },
+
+  async getFeedStatus(): Promise<FeedStatusResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/feed/status`);
+    return handleResponse<FeedStatusResponse>(res);
+  },
+
+  async advanceTimeMachine(days: number = 30): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/feed/time-machine`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days }),
+    });
+    return handleResponse<any>(res);
+  },
+
+  // --- v1 Monitoring & Model Info ---
+
+  async getMonitoring(): Promise<MonitoringResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/monitoring`);
+    return handleResponse<MonitoringResponse>(res);
+  },
+
+  async getModelInfo(): Promise<ModelInfoResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/model/info`);
+    return handleResponse<ModelInfoResponse>(res);
+  },
+
+  // --- Core / Legacy inference endpoints ---
 
   async predict(patient: PatientFormInput): Promise<PredictResponse> {
     const res = await fetch(`${API_BASE_URL}/predict`, {

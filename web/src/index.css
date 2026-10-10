@@ -1,50 +1,85 @@
+@import "@fontsource/fraunces/600.css";
+@import "@fontsource/fraunces/700.css";
+@import "@fontsource/inter-tight/400.css";
+@import "@fontsource/inter-tight/500.css";
+@import "@fontsource/inter-tight/600.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
 @layer base {
   :root {
-    color-scheme: dark light;
-  }
-
-  html.dark {
-    color-scheme: dark;
-  }
-
-  html.light {
     color-scheme: light;
+    /* Daylight Theme (Default, Projector-Friendly) */
+    --bg-canvas: #F5F1E8;
+    --bg-surface: #FFFFFF;
+    --bg-subtle: #EBE5D8;
+    --border-hairline: #D9D2C3;
+    --text-primary: #101B2D;
+    --text-muted: #5A677B;
+    --color-risk-critical: #D9472B;
+    --color-risk-high: #D9732B;
+    --color-caution: #C68A00;
+    --color-protective: #0B7A75;
+    --color-accent: #0B7A75;
+  }
+
+  html.dark,
+  html.night,
+  [data-theme="night"] {
+    color-scheme: dark;
+    /* Night Theme (Tuned for High Contrast WCAG AA) */
+    --bg-canvas: #0A1020;
+    --bg-surface: #111A30;
+    --bg-subtle: #182442;
+    --border-hairline: #1F2E50;
+    --text-primary: #E8EEF9;
+    --text-muted: #8E9EB8;
+    --color-risk-critical: #FF6B4A;
+    --color-risk-high: #FF8F6B;
+    --color-caution: #FFC857;
+    --color-protective: #3DD6C3;
+    --color-accent: #3DD6C3;
+  }
+
+  .bg-accent {
+    background-color: #0B7A75;
+    color: #FFFFFF;
+  }
+  html.night .bg-accent,
+  html.dark .bg-accent {
+    background-color: #3DD6C3;
+    color: #0A1020;
   }
 
   body {
-    @apply antialiased font-sans transition-colors duration-200 min-h-screen;
-  }
-
-  .dark body {
-    @apply bg-slate-950 text-slate-100 selection:bg-sky-500 selection:text-slate-950;
-    background-image:
-      radial-gradient(
-        at 15% 15%,
-        rgba(14, 165, 233, 0.08) 0px,
-        transparent 50%
-      ),
-      radial-gradient(at 85% 85%, rgba(99, 102, 241, 0.06) 0px, transparent 50%);
-    background-attachment: fixed;
-  }
-
-  .light body {
-    @apply bg-slate-50 text-slate-900 selection:bg-sky-500 selection:text-white;
-    background-image:
-      radial-gradient(
-        at 15% 15%,
-        rgba(14, 165, 233, 0.05) 0px,
-        transparent 50%
-      ),
-      radial-gradient(at 85% 85%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
-    background-attachment: fixed;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans, "Inter Tight", system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
   }
 }
 
-/* Skeleton Pulse Animation */
+/* Tabular numbers for all figures and metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Smooth hairline borders */
+.hairline-border {
+  border: 1px solid var(--border-hairline);
+}
+
+.hairline-divide > * + * {
+  border-color: var(--border-hairline);
+}
+
+/* Skeleton Loading Animation */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -57,55 +92,79 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04) 25%,
-    rgba(255, 255, 255, 0.08) 37%,
-    rgba(255, 255, 255, 0.04) 63%
+    rgba(16, 27, 45, 0.04) 25%,
+    rgba(16, 27, 45, 0.09) 37%,
+    rgba(16, 27, 45, 0.04) 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
-.light .skeleton {
+.dark .skeleton,
+[data-theme="night"] .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.04) 25%,
-    rgba(0, 0, 0, 0.08) 37%,
-    rgba(0, 0, 0, 0.04) 63%
+    rgba(232, 238, 249, 0.04) 25%,
+    rgba(232, 238, 249, 0.09) 37%,
+    rgba(232, 238, 249, 0.04) 63%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
-/* Custom scrollbars */
+/* Custom minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+::-webkit-scrollbar-thumb {
+  background: var(--border-hairline);
+  border-radius: 3px;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
-.light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.light ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Accessibility Focus Ring */
+/* Accessibility Focus Ring (AA Compliant) */
 *:focus-visible {
-  outline: 2px solid #0284c7;
+  outline: 2px solid var(--color-protective);
   outline-offset: 2px;
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print Stylesheet for Discharge Brief Export */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  nav,
+  header,
+  .no-print,
+  button,
+  .command-palette {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+  .hairline-border {
+    border: 1px solid #CCCCCC !important;
+  }
 }

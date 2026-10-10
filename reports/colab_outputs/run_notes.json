@@ -1,0 +1,28 @@
+{
+  "variant": "notes",
+  "model_name": "distilbert-base-uncased",
+  "train_samples": 69535,
+  "val_samples": 14902,
+  "epochs": 3,
+  "batch_size": 32,
+  "learning_rate": 3e-05,
+  "max_length": 192,
+  "seed": 42,
+  "per_epoch_losses": [
+    0.6691664515334892,
+    0.6613267501323277,
+    0.6565990038884711
+  ],
+  "per_epoch_val_aucs": [
+    0.6496447056602772,
+    0.642270041548252,
+    0.6496528274387593
+  ],
+  "last_epoch_val_auc": 0.6496528274387593,
+  "runtime_seconds": 1025.57,
+  "versions": {
+    "python": "3.13.15",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.18.0"
+  }
+}
