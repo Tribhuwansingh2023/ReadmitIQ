@@ -269,7 +269,12 @@ def create_discharges(payload: Union[Dict[str, Any], List[Dict[str, Any]]]):
     row_errors = []
     for idx, raw_item in enumerate(items):
         try:
-            validated = PatientEncounterRequest(**raw_item)
+            feats_source = (
+                raw_item["features"]
+                if "features" in raw_item and isinstance(raw_item["features"], dict)
+                else raw_item
+            )
+            validated = PatientEncounterRequest(**feats_source)
             item_dict = validated.model_dump()
             if "external_ref" in raw_item:
                 item_dict["external_ref"] = raw_item["external_ref"]
@@ -784,6 +789,7 @@ def get_discharge_detail(discharge_id: int):
             "features": feats,
             "shap_explanation": explanation,
             "similar_patients_summary": neighbor_summary,
+            "retrieval": neighbor_summary,
             "suggested_interventions": interventions,
             "tasks": tasks,
             "capacity_status": {
@@ -869,7 +875,7 @@ def create_task(discharge_id: int, req: TaskCreateRequest):
             ts=now_iso,
         )
 
-    return {
+    t_obj = {
         "id": task_id,
         "discharge_id": discharge_id,
         "title": req.title,
@@ -883,6 +889,7 @@ def create_task(discharge_id: int, req: TaskCreateRequest):
         "created_at": now_iso,
         "updated_at": now_iso,
     }
+    return {**t_obj, "task": t_obj}
 
 
 @router.patch("/discharges/{discharge_id}/tasks/{task_id}")
@@ -934,7 +941,35 @@ def update_task(discharge_id: int, task_id: int, req: TaskPatchRequest):
             ts=now_iso,
         )
 
-    return {"status": "success", "task_id": task_id, "updated_at": now_iso}
+        cur_updated = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+        up_row = cur_updated.fetchone()
+        t_updated = dict(up_row) if up_row else {"id": task_id, "status": req.status}
+
+    return {"status": "success", "task_id": task_id, "updated_at": now_iso, "task": t_updated}
+
+
+@router.post("/predict")
+def predict_v1(
+    encounter: PatientEncounterRequest,
+    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
+):
+    """Predict calibrated 30-day readmission risk, risk tier, SHAP explanations, and similar encounters."""
+    svc = get_service()
+    try:
+        patient_dict = encounter.model_dump()
+        result = svc.predict(patient_dict, allow_degraded=allow_degraded)
+        result["raw_score"] = result.get("raw_score", result.get("raw_lgbm_score", result.get("calibrated_risk_probability")))
+        result["calibrated_prob"] = result.get("calibrated_risk_probability")
+        result["tier"] = result.get("risk_tier")
+        result["shap_explanation"] = {
+            "top_risk_increasing": result.get("top_risk_increasing_factors", []),
+            "top_risk_reducing": result.get("top_risk_reducing_factors", []),
+        }
+        return result
+    except (ValueError, TypeError) as ve:
+        raise HTTPException(status_code=422, detail="Invalid encounter input data.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
