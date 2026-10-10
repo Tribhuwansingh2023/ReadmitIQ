@@ -1,36 +1,32 @@
 version: '3.8'
 
 services:
-  api:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: readmitiq-api
+      dockerfile: Dockerfile.backend
+    container_name: readmitiq-backend
     ports:
       - "8000:8000"
     environment:
       - READMITIQ_SERVE_MODE=full
-      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173
-      - PORT=8000
-      - WORKERS=2
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:80
+    volumes:
+      - readmitiq_data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
 
-  web:
+  frontend:
     build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: readmitiq-web
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: readmitiq-frontend
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - "5173:80"
     depends_on:
-      api:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
+
+volumes:
+  readmitiq_data:
