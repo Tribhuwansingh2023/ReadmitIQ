@@ -1,0 +1,8 @@
+# Requirements for scripts/embed_notes.py (GPU machine or Colab) and scripts/embed_notes_jina.py.
+# Install with uv:  uv pip install -r requirements-note-rag.txt
+# The Jina script needs only numpy, pandas and pyarrow; the GPU script also needs the packages below.
+numpy>=1.24
+pandas>=2.0
+pyarrow>=14.0
+sentence-transformers>=2.7
+torch>=2.0
