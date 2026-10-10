@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "readmitt-iq"
+name = "readmit-iq"
 version = "1.0.0"
-description = "Clinical Readmission Risk Prediction Platform with RAG and Interpretability"
-authors = [{ name = "ReadmitIQ ML Team" }]
+description = "ReadmitIQ: Capacity-Aware Hospital Readmission Decision Support Platform"
+authors = [{ name = "Tribhuwan Singh", email = "tribhuwan@example.com" }]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.24.0",
     "pandas>=2.0.0",
@@ -57,11 +57,8 @@ filterwarnings = [
     "ignore::UserWarning",
 ]
 
-[tool.pyright]
-extraPaths = ["."]
-include = ["src", "tests", "api", "scripts"]
-exclude = ["notebooks", "web", "**/node_modules"]
-typeCheckingMode = "basic"
-reportMissingTypeStubs = false
-reportUnnecessaryCast = false
+[project.scripts]
+readmitiq-verify = "scripts.verify_reproducibility:main"
+readmitiq-export-demo = "scripts.export_demo_encounters:main"
+readmitiq-health = "scripts.check_system_health:main"
 
