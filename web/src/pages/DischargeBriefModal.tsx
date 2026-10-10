@@ -13,10 +13,12 @@ import { apiClient } from "../api/client";
 import type {
   DischargeDetailResponse,
   EncounterStatus,
-  PatientFormInput,
   MetricsResponse,
 } from "../types";
 import { RiskGlyph } from "../components/RiskGlyph";
+import { ActionPlanBoard } from "../components/ActionPlanBoard";
+import { ChronologicalTimeline } from "../components/ChronologicalTimeline";
+import { WhatIfExplorer } from "../components/WhatIfExplorer";
 
 interface DischargeBriefModalProps {
   dischargeId: number | null;
@@ -47,6 +49,9 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Active brief tab
+  const [activeBriefTab, setActiveBriefTab] = useState<"actionloop" | "whatif">("actionloop");
+
   // Metrics for RAG explanation lift disclaimer
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
 
@@ -62,15 +67,6 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
   const [selectedActionType, setSelectedActionType] =
     useState<string>("phone_call");
 
-  // Sensitivity Lab State
-  const [sensitivityInputs, setSensitivityInputs] =
-    useState<Partial<PatientFormInput>>({});
-  const [sensitivityScore, setSensitivityScore] = useState<number | null>(null);
-  const [sensitivityCalibrated, setSensitivityCalibrated] = useState<
-    number | null
-  >(null);
-  const [sensitivityLoading, setSensitivityLoading] = useState<boolean>(false);
-
   // Fetch Discharge Details
   const fetchDetail = async () => {
     if (!dischargeId) return;
@@ -79,14 +75,6 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
       const data = await apiClient.getDischarge(dischargeId);
       setDetail(data);
       setSelectedStatus(data.status);
-      setSensitivityInputs({
-        time_in_hospital: data.features.time_in_hospital,
-        number_inpatient: data.features.number_inpatient,
-        num_medications: data.features.num_medications,
-        number_emergency: data.features.number_emergency,
-      });
-      setSensitivityScore(data.raw_score);
-      setSensitivityCalibrated(data.calibrated_prob);
       setError(null);
     } catch (err: any) {
       setError(err.message || "Failed to load discharge brief");
@@ -116,30 +104,6 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // Debounced Sensitivity Lab scoring
-  useEffect(() => {
-    if (!detail || !sensitivityInputs.time_in_hospital) return;
-    const timer = setTimeout(async () => {
-      try {
-        setSensitivityLoading(true);
-        const simPayload = {
-          ...detail.features,
-          ...sensitivityInputs,
-        };
-        const pred = await apiClient.predict(simPayload as PatientFormInput);
-        const calibratedProb = pred.calibrated_prob ?? pred.calibrated_risk_probability ?? 0.25;
-        const rawScore = pred.raw_score ?? 0.5;
-        setSensitivityScore(rawScore);
-        setSensitivityCalibrated(calibratedProb);
-      } catch {
-        // ignore
-      } finally {
-        setSensitivityLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [sensitivityInputs]);
 
   // Handle Stepper Status Change
   const handleUpdateStatus = async (status: EncounterStatus) => {
@@ -190,21 +154,6 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
     }
   };
 
-  // Handle Action Checklist toggle
-  const handleToggleAction = async (actionTitle: string, timeframe: string) => {
-    if (!detail) return;
-    try {
-      await apiClient.addAction(detail.id, {
-        type: `checklist_${timeframe}`,
-        note: `Completed: ${actionTitle}`,
-        actor: "Discharge Specialist",
-      });
-      fetchDetail();
-      onStatusUpdated?.();
-    } catch (err: any) {
-      alert(`Failed to record action: ${err.message}`);
-    }
-  };
 
   // Handle Add Action Note
   const handleAddNote = async (e: React.FormEvent) => {
@@ -272,6 +221,31 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
           </div>
         </div>
 
+        {/* Tab Navigation: ActionLoop Workflow vs What-If Risk Explorer */}
+        <div className="px-6 bg-surface border-b border-hairline flex items-center gap-6 text-xs font-mono shrink-0">
+          <button
+            onClick={() => setActiveBriefTab("actionloop")}
+            className={`py-3 border-b-2 font-medium flex items-center gap-2 transition-colors ${
+              activeBriefTab === "actionloop"
+                ? "border-accent text-accent font-semibold"
+                : "border-transparent text-muted hover:text-primary"
+            }`}
+          >
+            <span>ReadmitIQ ActionLoop (Stages 1–5)</span>
+          </button>
+          <button
+            onClick={() => setActiveBriefTab("whatif")}
+            className={`py-3 border-b-2 font-medium flex items-center gap-2 transition-colors ${
+              activeBriefTab === "whatif"
+                ? "border-accent text-accent font-semibold"
+                : "border-transparent text-muted hover:text-primary"
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span>What-If Risk Explorer</span>
+          </button>
+        </div>
+
         {/* Content Area */}
         <div className="p-6 overflow-y-auto space-y-8 flex-1">
           {loading && (
@@ -290,9 +264,18 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
           )}
 
           {detail && !loading && (
-            <>
-              {/* Patient Core Headline & Dial */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-surface p-6 rounded-sm hairline-border">
+            activeBriefTab === "whatif" ? (
+              <WhatIfExplorer
+                dischargeId={detail.id}
+                initialFeatures={detail.features}
+                baselineRawScore={detail.raw_score}
+                baselineCalibratedProb={detail.calibrated_prob}
+                baselineTier={detail.tier}
+              />
+            ) : (
+              <>
+                {/* Patient Core Headline & Dial */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-surface p-6 rounded-sm hairline-border">
                 {/* Col 1 & 2: Patient Summary & Stepper */}
                 <div className="lg:col-span-2 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline pb-3">
@@ -744,154 +727,118 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
                 </div>
               </div>
 
-              {/* Section 4: Suggested Actions Timeline */}
+              {/* ActionLoop Stage 3: Care Transition Action Plan */}
+              <div className="bg-surface p-6 rounded-sm hairline-border">
+                <ActionPlanBoard
+                  dischargeId={detail.id}
+                  initialTasks={detail.tasks || []}
+                  onTaskUpdated={fetchDetail}
+                />
+              </div>
+
+              {/* ActionLoop Stage 4: Capacity-Aware Priority Triage Context */}
               <div className="bg-surface p-6 rounded-sm hairline-border space-y-4">
-                <div className="border-b border-hairline pb-2">
-                  <h2 className="text-sm font-semibold text-primary">
-                    Tailored Post-Discharge Action Plan & Care Protocol
-                  </h2>
-                  <p className="text-xs text-muted">
-                    Time-sequenced interventions dynamically triggered by model risk drivers. Check items to record care actions.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 bg-accent/10 text-accent font-bold rounded">
+                      ActionLoop Stage 4
+                    </span>
+                    <h3 className="text-sm font-semibold text-primary">
+                      Capacity-Aware Priority Triage Context
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono text-muted">
+                    Queue Position #{detail.capacity_triage?.priority_rank || detail.capacity_status?.priority_rank || 1}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* 48 Hours */}
-                  <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-hairline pb-1.5">
-                      <span className="font-mono text-xs font-bold text-critical uppercase">
-                        Phase 1: 48 Hours
-                      </span>
-                      <span className="text-[10px] font-mono text-muted">Immediate Triage</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-start gap-2 text-xs text-primary cursor-pointer hover:bg-subtle/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 accent-accent"
-                          onChange={() =>
-                            handleToggleAction("Pharmacist medication reconciliation phone call", "48h")
-                          }
-                        />
-                        <div>
-                          <p className="font-medium">Medication Reconciliation Call</p>
-                          <p className="text-[10px] text-muted">
-                            Triggered by: {detail.features.num_medications} active meds & {detail.features.insulin} insulin
-                          </p>
-                        </div>
-                      </label>
-
-                      <label className="flex items-start gap-2 text-xs text-primary cursor-pointer hover:bg-subtle/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 accent-accent"
-                          onChange={() =>
-                            handleToggleAction("Urgent PCP follow-up confirmation", "48h")
-                          }
-                        />
-                        <div>
-                          <p className="font-medium">Confirm PCP Appointment</p>
-                          <p className="text-[10px] text-muted">
-                            Triggered by: {detail.features.diag_1_group} primary diagnosis
-                          </p>
-                        </div>
-                      </label>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="p-3 bg-canvas hairline-border rounded-sm">
+                    <span className="text-[10px] font-mono text-muted uppercase block">
+                      Triage Queue Rank
+                    </span>
+                    <span className="font-mono text-lg font-bold text-primary">
+                      #{detail.capacity_triage?.priority_rank || detail.capacity_status?.priority_rank || 1}
+                    </span>
+                    <span className="text-[10px] text-muted block mt-0.5">
+                      of {detail.capacity_triage?.active_backlog_total || detail.capacity_status?.active_open_count || 1} active discharges
+                    </span>
                   </div>
 
-                  {/* 7 Days */}
-                  <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-hairline pb-1.5">
-                      <span className="font-mono text-xs font-bold text-caution uppercase">
-                        Phase 2: 7 Days
-                      </span>
-                      <span className="text-[10px] font-mono text-muted">Clinical Check-in</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-start gap-2 text-xs text-primary cursor-pointer hover:bg-subtle/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 accent-accent"
-                          onChange={() =>
-                            handleToggleAction("Nurse home visit / telehealth glucose review", "7d")
-                          }
-                        />
-                        <div>
-                          <p className="font-medium">Telehealth Glycemic Review</p>
-                          <p className="text-[10px] text-muted">
-                            Triggered by: HbA1c {detail.features.A1Cresult}
-                          </p>
-                        </div>
-                      </label>
-
-                      <label className="flex items-start gap-2 text-xs text-primary cursor-pointer hover:bg-subtle/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 accent-accent"
-                          onChange={() =>
-                            handleToggleAction("Durable medical equipment & test strip check", "7d")
-                          }
-                        />
-                        <div>
-                          <p className="font-medium">Supplies & DME Delivery Check</p>
-                          <p className="text-[10px] text-muted">
-                            Triggered by: {detail.features.discharge_disposition_group} disposition
-                          </p>
-                        </div>
-                      </label>
-                    </div>
+                  <div className="p-3 bg-canvas hairline-border rounded-sm">
+                    <span className="text-[10px] font-mono text-muted uppercase block">
+                      Capacity Allocation
+                    </span>
+                    <span
+                      className={`font-mono text-xs font-bold block ${
+                        (detail.capacity_triage?.is_in_capacity ?? detail.capacity_status?.is_in_capacity)
+                          ? "text-protective"
+                          : "text-caution"
+                      }`}
+                    >
+                      {(detail.capacity_triage?.is_in_capacity ?? detail.capacity_status?.is_in_capacity)
+                        ? "● Within Outreach Capacity"
+                        : "▲ Beyond Capacity Threshold"}
+                    </span>
+                    <span className="text-[10px] text-muted block mt-0.5">
+                      Target Outreach Limit: Top {detail.capacity_triage?.capacity_limit || 15}
+                    </span>
                   </div>
 
-                  {/* 30 Days */}
-                  <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-                    <div className="flex items-center justify-between border-b border-hairline pb-1.5">
-                      <span className="font-mono text-xs font-bold text-protective uppercase">
-                        Phase 3: 30 Days
-                      </span>
-                      <span className="text-[10px] font-mono text-muted">Transition Closeout</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="flex items-start gap-2 text-xs text-primary cursor-pointer hover:bg-subtle/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 accent-accent"
-                          onChange={() =>
-                            handleToggleAction("Day-30 readmission survey & case resolution", "30d")
-                          }
-                        />
-                        <div>
-                          <p className="font-medium">Day-30 Episode Closeout</p>
-                          <p className="text-[10px] text-muted">
-                            Verify transition stability and complete documentation
-                          </p>
-                        </div>
-                      </label>
-                    </div>
+                  <div className="p-3 bg-canvas hairline-border rounded-sm">
+                    <span className="text-[10px] font-mono text-muted uppercase block">
+                      Deterministic Tie-Breaker
+                    </span>
+                    <span className="font-mono text-[11px] text-primary font-semibold block">
+                      Raw Score DESC → Arrival DESC
+                    </span>
+                    <span className="text-[10px] text-muted block mt-0.5">
+                      Strict deterministic priority order
+                    </span>
                   </div>
                 </div>
 
-                {/* Add Quick Action Note Form */}
+                <p className="text-[11px] text-muted leading-relaxed font-mono">
+                  {detail.capacity_triage?.clinical_disclaimer ||
+                    "Capacity triage optimizes operational outreach allocation; it does not claim to identify preventable readmissions or maximize clinical benefit without randomized prospective trial validation."}
+                </p>
+              </div>
+
+              {/* ActionLoop Stage 5: Closed-Loop Follow-up & Chronological Timeline */}
+              <div className="bg-surface p-6 rounded-sm hairline-border space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 bg-accent/10 text-accent font-bold rounded">
+                      ActionLoop Stage 5
+                    </span>
+                    <h3 className="text-sm font-semibold text-primary">
+                      Closed-Loop Follow-up & Touchpoint History
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono text-muted">
+                    Outcome: {detail.outcome_status || (detail.outcome_readmitted_30d !== null ? `30d Outcome: ${detail.outcome_readmitted_30d}` : "Pending Surveillance")}
+                  </span>
+                </div>
+
+                {/* Touchpoint Note entry form */}
                 <form
                   onSubmit={handleAddNote}
-                  className="pt-2 flex flex-col sm:flex-row gap-2"
+                  className="flex flex-col sm:flex-row gap-2"
                 >
                   <select
                     value={selectedActionType}
                     onChange={(e) => setSelectedActionType(e.target.value)}
                     className="text-xs bg-canvas hairline-border rounded px-2.5 py-1.5 text-primary"
                   >
-                    <option value="phone_call">Phone Call</option>
-                    <option value="home_visit">Home Visit</option>
+                    <option value="phone_call">Phone Call Outreach</option>
+                    <option value="home_visit">Home Visit Check-in</option>
                     <option value="med_rec">Medication Reconciliation</option>
                     <option value="transportation">Transportation Assist</option>
-                    <option value="other">General Note</option>
+                    <option value="other">Care Coordinator Touchpoint</option>
                   </select>
                   <input
                     type="text"
-                    placeholder="Record care coordinator note..."
+                    placeholder="Record care coordinator touchpoint note (PHI-free)..."
                     value={newActionNote}
                     onChange={(e) => setNewActionNote(e.target.value)}
                     className="flex-1 text-xs bg-canvas hairline-border rounded px-3 py-1.5 text-primary"
@@ -901,176 +848,19 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
                     className="px-4 py-1.5 bg-accent text-white text-xs font-medium rounded hover:opacity-90 flex items-center justify-center gap-1.5 shrink-0"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Save Action Note</span>
+                    <span>Record Note</span>
                   </button>
                 </form>
-              </div>
 
-              {/* Section 5: Sensitivity Lab */}
-              <div className="bg-surface p-6 rounded-sm hairline-border space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-2">
-                  <div>
-                    <h2 className="text-sm font-semibold text-primary flex items-center gap-2">
-                      <Sliders className="w-4 h-4 text-accent" />
-                      <span>Clinical Sensitivity Lab</span>
-                    </h2>
-                    <p className="text-[11px] text-muted font-mono mt-0.5">
-                      model sensitivity, not causal effect, not clinical advice
-                    </p>
-                  </div>
-
-                  <div className="p-2 bg-canvas hairline-border rounded-sm text-right">
-                    <span className="text-[10px] font-mono text-muted uppercase block">
-                      Simulated Calibrated Risk {sensitivityLoading && "(Updating...)"}
-                    </span>
-                    <span className="text-base font-mono font-bold text-accent">
-                      {sensitivityCalibrated !== null
-                        ? `${(sensitivityCalibrated * 100).toFixed(1)}%`
-                        : "---"}
-                    </span>
-                    {sensitivityScore !== null && (
-                      <span className="text-[10px] font-mono text-muted block">
-                        Raw score: {sensitivityScore.toFixed(4)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                  <div>
-                    <label className="block text-muted mb-1">
-                      Length of Stay (Days: {sensitivityInputs.time_in_hospital})
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="14"
-                      value={sensitivityInputs.time_in_hospital || 4}
-                      onChange={(e) =>
-                        setSensitivityInputs({
-                          ...sensitivityInputs,
-                          time_in_hospital: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      className="w-full accent-accent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-muted mb-1">
-                      Prior Inpatient Admissions ({sensitivityInputs.number_inpatient})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="10"
-                      value={sensitivityInputs.number_inpatient || 0}
-                      onChange={(e) =>
-                        setSensitivityInputs({
-                          ...sensitivityInputs,
-                          number_inpatient: parseInt(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full accent-accent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-muted mb-1">
-                      Total Medications ({sensitivityInputs.num_medications})
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="40"
-                      value={sensitivityInputs.num_medications || 15}
-                      onChange={(e) =>
-                        setSensitivityInputs({
-                          ...sensitivityInputs,
-                          num_medications: parseInt(e.target.value) || 1,
-                        })
-                      }
-                      className="w-full accent-accent"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-muted mb-1">
-                      Prior ER Encounters ({sensitivityInputs.number_emergency})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="8"
-                      value={sensitivityInputs.number_emergency || 0}
-                      onChange={(e) =>
-                        setSensitivityInputs({
-                          ...sensitivityInputs,
-                          number_emergency: parseInt(e.target.value) || 0,
-                        })
-                      }
-                      className="w-full accent-accent"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 6: Action History & Audit Timeline */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Care Action History */}
-                <div className="p-4 bg-surface hairline-border rounded-sm space-y-3">
-                  <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-muted border-b border-hairline pb-1">
-                    Recorded Care Coordinator Actions ({detail.action_history.length})
-                  </h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto text-xs">
-                    {detail.action_history.length === 0 ? (
-                      <p className="text-muted font-mono text-[11px] py-4 text-center">
-                        No actions logged yet. Use the protocol checklist above.
-                      </p>
-                    ) : (
-                      detail.action_history.map((a) => (
-                        <div
-                          key={a.id}
-                          className="p-2 bg-canvas hairline-border rounded-sm space-y-0.5"
-                        >
-                          <div className="flex justify-between font-mono text-[10px] text-muted">
-                            <span className="font-semibold text-primary">{a.actor}</span>
-                            <span>{new Date(a.created_at).toLocaleTimeString()}</span>
-                          </div>
-                          <p className="text-primary text-[11px]">{a.note}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Audit Timeline */}
-                <div className="p-4 bg-surface hairline-border rounded-sm space-y-3">
-                  <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-muted border-b border-hairline pb-1">
-                    System Audit Trail ({detail.audit_trail.length})
-                  </h3>
-                  <div className="space-y-2 max-h-48 overflow-y-auto text-xs">
-                    {detail.audit_trail.map((t) => (
-                      <div
-                        key={t.id}
-                        className="p-2 bg-canvas hairline-border rounded-sm flex items-center justify-between font-mono text-[10px]"
-                      >
-                        <div>
-                          <span className="font-semibold text-primary block">
-                            {t.event}
-                          </span>
-                          <span className="text-muted">Actor: {t.actor}</span>
-                        </div>
-                        <span className="text-muted">
-                          {new Date(t.ts).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {/* Chronological Timeline */}
+                <ChronologicalTimeline
+                  events={detail.timeline || detail.chronological_timeline || []}
+                  dischargeId={detail.id}
+                  outcomeReadmitted={detail.outcome_readmitted_30d}
+                />
               </div>
             </>
-          )}
+          ))}
         </div>
       </div>
     </div>
