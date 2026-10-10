@@ -1,92 +1,87 @@
 # ReadmitIQ System Architecture
 
-ReadmitIQ is an end-to-end clinical decision support platform for 30-day hospital readmission risk prediction among diabetic inpatients.
+## Overview
+ReadmitIQ is a clinical decision support system designed for 30-day all-cause hospital readmission risk prediction and evidence-based care coordination. Unlike conventional machine learning dashboards that stop at binary risk scoring, ReadmitIQ integrates prediction, precedent case evidence, automated care-transition task scheduling, capacity-aware triage, and closed-loop follow-up tracking into a unified clinical workflow: the **ReadmitIQ ActionLoop**.
 
----
+```
++---------------------------------------------------------------------------------------------------+
+|                                      READMITIQ ARCHITECTURE                                       |
++---------------------------------------------------------------------------------------------------+
 
-## 1. High-Level System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Data["Data & Preprocessing Layer"]
-        Raw["UCI Diabetic Encounters (101,766 encounters / 71,518 patients)"]
-        Clean["Data Cleaning & Preprocessing (99,340 eligible encounters)"]
-        Split["Patient-Disjoint Split (70% Train / 15% Val / 15% Test)"]
-        Raw --> Clean --> Split
-    end
-
-    subgraph FeaturePipeline["Feature Engineering & RAG Pipeline"]
-        FE["Base Feature Engineering (41 clean tabular features)"]
-        SVD["64-dim Truncated SVD (Fit strictly on Train features)"]
-        FAISS["FAISS Cosine Similarity Index (69,535 Train encounters)"]
-        RAG["Structured RAG Retriever (k=20 Precedents)"]
-        OOF["5-Fold Patient-Disjoint OOF (Train RAG feature generation)"]
-        
-        Split --> FE
-        FE --> SVD --> FAISS
-        FE --> OOF --> RAG
-    end
-
-    subgraph Modeling["Modeling & Serving Layer"]
-        Model["LightGBM Classifier (CV-tuned depth=4, lr=0.05)"]
-        Calib["Isotonic Calibrator (Fit strictly on Train 5-Fold OOF)"]
-        SHAP["TreeExplainer Attribution Engine"]
-        Freeze["models/FROZEN_SELECTION.json"]
-
-        RAG --> Model
-        Model --> Calib
-        Model --> SHAP
-        Calib --> Freeze
-    end
-
-    subgraph Application["Application Layer"]
-        API["FastAPI REST Backend (:8000)"]
-        Web["React + TypeScript + Tailwind SPA (:5173)"]
-        
-        Freeze --> API
-        API <--> Web
-    end
+     +-----------------------+        +------------------------+        +----------------------+
+     |  EHR Ingestion (CSV)  |        |  Real-Time REST API    |        |  Simulated Feed Replay|
+     +-----------+-----------+        +-----------+------------+        +----------+-----------+
+                 |                                |                                |
+                 +--------------------------------+--------------------------------+
+                                                  |
+                                                  v
+                              +---------------------------------------+
+                              |      FastAPI Clinical Gateway (v1)     |
+                              |  - Pydantic Schema Validation         |
+                              |  - Data Quality & Rejection Logging   |
+                              |  - Mandatory X-Model-Version Header   |
+                              +-------------------+-------------------+
+                                                  |
+                         +------------------------+------------------------+
+                         |                                                 |
+                         v                                                 v
+           +---------------------------+                     +---------------------------+
+           |     Predictive Core       |                     |     RAG Vector Engine     |
+           |  - Tabular Preprocessor   |                     |  - Base Dense Transformer |
+           |  - Frozen LightGBM (42f)  |                     |  - Truncated SVD (64-dim) |
+           |  - Isotonic Calibrator    |                     |  - L2 Normalized FAISS    |
+           |  - Decile Serving Tiers   |                     |  - 69k Reference Vectors  |
+           +-------------+-------------+                     +-------------+-------------+
+                         |                                                 |
+                         +------------------------+------------------------+
+                                                  |
+                                                  v
+                              +---------------------------------------+
+                              |    ReadmitIQ ActionLoop Coordinator   |
+                              |  1. Risk Intelligence (Raw + Calib)   |
+                              |  2. Precedent Evidence (k=20 peers)   |
+                              |  3. Action Plan (Transition Tasks)    |
+                              |  4. Capacity-Aware Triage Queue       |
+                              |  5. Closed-Loop Follow-up & Audit     |
+                              +-------------------+-------------------+
+                                                  |
+                         +------------------------+------------------------+
+                         |                                                 |
+                         v                                                 v
+           +---------------------------+                     +---------------------------+
+           |   Persistence (SQLite)    |                     |   React / Vite Web UI     |
+           |  - Encounters & Features  |                     |  - Discharge Desk (Queue) |
+           |  - Care Tasks & Statuses  |                     |  - Patient Brief Modal    |
+           |  - Touchpoint Audit Trail |                     |  - What-If Risk Explorer  |
+           |  - Sealed Ground-Truth    |                     |  - Trust & Safety Monitor |
+           +---------------------------+                     +---------------------------+
 ```
 
 ---
 
-## 2. Structured RAG Retrieval Mechanism
+## Component Specifications
 
-The Structured RAG engine provides explainable case-based clinical reasoning by identifying the historical patients in the training set who most closely resemble the current patient:
+### 1. Tabular Machine Learning Pipeline
+- **Classifier:** LightGBM Gradient Boosted Decision Trees trained on 42 clinical encounter covariates.
+- **Model Parameters:** Fixed in `models/final/model.joblib`.
+- **Calibration:** Non-parametric Isotonic Regression (`models/final/calibrator.joblib`) mapping raw scores to empirical probabilities.
+- **Serving Thresholds:**
+  - **Critical Tier (Top 5%):** $\text{Raw Score} \ge 0.6839$
+  - **High Tier (Top 10%):** $\text{Raw Score} \ge 0.6408$
+  - **Medium Tier (Top 20%):** $\text{Raw Score} \ge 0.5793$
+  - **Low Tier (Remaining 80%):** $\text{Raw Score} < 0.5793$
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Clinician as Care Team / Clinician
-    participant UI as ReadmitIQ Web SPA
-    participant API as FastAPI Backend
-    participant Pipe as Preprocessor Base
-    participant SVD as 64-dim Truncated SVD
-    participant FAISS as FAISS Index (Train Split)
-    participant Model as Calibrated LightGBM
+### 2. Retrieval-Augmented Generation (RAG) Vector Store
+- **Index Type:** `faiss.IndexFlatIP` (inner product over unit-normalized embeddings, equivalent to cosine similarity).
+- **Latent Dimension:** 64-dimensional clinical vector space generated via truncated Singular Value Decomposition (`models/final/structured_svd.joblib`).
+- **Reference Cohort:** 69,535 patient-disjoint training encounters (`models/final/retriever_meta.parquet`).
+- **Retrieval Scale:** $k = 20$ nearest neighbors retrieved per patient encounter.
 
-    Clinician->>UI: Enter patient discharge parameters
-    UI->>API: POST /predict {patient_features}
-    API->>Pipe: Transform 41 base attributes to 141-dim vector
-    Pipe->>SVD: Project to 64-dim normalized latent vector
-    SVD->>FAISS: Search top-20 nearest neighbors (L2-normalized Inner Product)
-    FAISS-->>API: Return neighbor indices, similarities, and historical 30d outcomes
-    API->>API: Compute neighborhood readmission rate (rag_struct_rate_k20)
-    API->>Model: Predict raw probability using 42 features
-    Model->>API: Isotonic calibration -> Calibrated Risk Probability
-    API->>API: Assign Risk Tier (Critical, High, Medium, Low) & SHAP attributions
-    API-->>UI: Return risk probability, tier, plain-language factors & similar patients
-    UI-->>Clinician: Display calibrated risk gauge, SHAP cards & historical precedents
-```
-
----
-
-## 3. Retrospective Cohort Replay Architecture
-
-To simulate operational clinical workload allocation, the Cohort Command Center performs real-time capacity triage replay on the held-out Test split (N = 14,903):
-
-- **Capacity Fraction ($c$):** Adjustable from 1% to 30%.
-- **Flagged Volume ($N_c$):** $N_c = \text{round}(c \times 14,903)$.
-- **True Readmissions Caught ($R_c$):** Number of true $<30$-day readmissions in top $N_c$ ranked patients.
-- **Precision at Capacity:** $P_c = R_c / N_c$.
-- **Lift vs Random Prevalence:** $\text{Lift} = P_c / 0.1137$.
+### 3. SQLite Storage Engine
+- **Mode:** Write-Ahead Logging (`WAL`) for concurrent reader/writer support.
+- **Schema:**
+  - `discharges`: Clinical encounters, features JSON, raw score, calibrated probability, serving tier, outreach status, and sealed outcome.
+  - `tasks`: Action plan checklist items with title, priority, assignee, status (`pending`, `in_progress`, `completed`), and completion timestamp.
+  - `discharge_actions`: Coordinator contact logs (phone calls, home visits, med rec).
+  - `audit_log`: System lifecycle audit trail.
+  - `data_quality_events`: Validation failures, rejected payloads, and schema conformity anomalies.
