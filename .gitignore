@@ -100,3 +100,9 @@ models/faiss_index/
 api/logs/*.jsonl
 *.log
 
+
+# Note-RAG generated data (rebuilt by scripts; manifests stay tracked)
+data/processed/note_rag/*.parquet
+models/note_rag/*.sqlite
+data/processed/note_rag/*.sqlite
+data/processed/colab_upload_noterag/
