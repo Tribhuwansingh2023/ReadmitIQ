@@ -7796,7 +7796,7 @@ a.anchor-link {
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
 <main>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ac1dbb37">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=21b1153f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7809,7 +7809,7 @@ a.anchor-link {
 <h3 id="What-This-Stage-Covers">What This Stage Covers<a class="anchor-link" href="#What-This-Stage-Covers">¶</a></h3><p>From the ReadmitIQ project specification, Stage 1 establishes the operational and architectural foundation for 30-day all-cause hospital readmission prediction:</p>
 <ol>
 <li><strong>Clinical &amp; Business Problem Framing</strong>: The 30-day readmission bottleneck, who acts, why hospital care-coordinator capacity is constrained, and what ReadmitIQ is <em>not</em> (no diagnosis).</li>
-<li><strong>Dataset Understanding &amp; Cohort Funnel</strong>: Encounters vs. patients, class imbalance, and the step-by-step exclusion funnel from raw encounters to the eligible cohort.</li>
+<li><strong>Dataset Understanding &amp; Cohort Funnel</strong>: Encounters vs. patients, class imbalance, and the step-by-step exclusion funnel from raw encounters to the eligible cohort computed directly from <code>data/raw/diabetic_data.csv</code>.</li>
 <li><strong>Data Quality &amp; Domain Dictionary</strong>: Missingness overview across clinical domains and structured feature definitions.</li>
 <li><strong>Feature Selection &amp; Leakage Traps</strong>: The 4 leakage traps (patient multi-visits, discharge mortality, future label fields, preprocessing snooping) and how each is mitigated.</li>
 <li><strong>System Architecture &amp; Component Contracts</strong>: Complete 13-stage architecture and data-flow diagrams drawn with matplotlib, paired with formal input/output component contracts.</li>
@@ -7821,13 +7821,13 @@ a.anchor-link {
 <hr/>
 <h3 id="Inputs-and-Outputs-of-Stage-1">Inputs and Outputs of Stage 1<a class="anchor-link" href="#Inputs-and-Outputs-of-Stage-1">¶</a></h3><ul>
 <li><strong>Inputs Read (Existing Artifacts)</strong>:<ul>
+<li><code>data/raw/diabetic_data.csv</code> (Raw UCI diabetic encounter dataset; 101,766 records)</li>
 <li><code>data/processed/feature_metadata.json</code> (Cohort counts, split statistics, capping thresholds)</li>
 <li><code>data/processed/feature_list.json</code> &amp; <code>models/final/feature_list.json</code> (Base &amp; RAG feature schemas)</li>
 <li><code>docs/data_card.md</code> (Cohort provenance, exclusion steps, missingness, limitations)</li>
 <li><code>docs/data_dictionary.md</code> (Domain feature definitions)</li>
 <li><code>docs/api_contract.md</code> (FastAPI schema, endpoint contracts)</li>
 <li><code>reports/metrics/test_results.json</code> (Locked test results, read-only display)</li>
-<li><code>data/raw/diabetic_data.csv</code> (Checked dynamically; pending box if unavailable)</li>
 </ul>
 </li>
 <li><strong>Outputs Created (New Artifacts)</strong>:<ul>
@@ -7842,7 +7842,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d7195e63">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=84bad575">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7906,7 +7906,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=4a58e27a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=d1bb6688">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7916,7 +7916,7 @@ a.anchor-link {
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=24974112">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3111367f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8042,17 +8042,17 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a3a3bbfb">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=54fe035a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="2.-Dataset-Understanding-&amp;-Cohort-Funnel">2. Dataset Understanding &amp; Cohort Funnel<a class="anchor-link" href="#2.-Dataset-Understanding-&amp;-Cohort-Funnel">¶</a></h2><p><strong>Purpose</strong>: Ingest existing cohort metadata, verify data availability, compute raw encounter dimensions, and trace the clinical exclusion funnel from 101,766 raw records to 99,340 eligible encounters.</p>
+<h2 id="2.-Dataset-Understanding-&amp;-Cohort-Funnel">2. Dataset Understanding &amp; Cohort Funnel<a class="anchor-link" href="#2.-Dataset-Understanding-&amp;-Cohort-Funnel">¶</a></h2><p><strong>Purpose</strong>: Ingest the raw encounter dataset <code>data/raw/diabetic_data.csv</code>, compute raw encounter dimensions, and trace the clinical exclusion funnel from 101,766 raw records to 99,340 eligible encounters.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=08c6c9a1">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=57f23340">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8060,33 +8060,48 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Check raw data availability and load processed metadata</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load raw data and processed metadata</span>
 <span class="n">raw_data_path</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"raw"</span> <span class="o">/</span> <span class="s2">"diabetic_data.csv"</span>
 <span class="n">metadata_path</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"processed"</span> <span class="o">/</span> <span class="s2">"feature_metadata.json"</span>
 
-<span class="k">if</span> <span class="ow">not</span> <span class="n">raw_data_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-    <span class="n">display</span><span class="p">(</span><span class="n">render_pending_box</span><span class="p">(</span>
-        <span class="n">title</span><span class="o">=</span><span class="s2">"Raw Dataset Ingestion Notice"</span><span class="p">,</span>
-        <span class="n">what_is_missing</span><span class="o">=</span><span class="n">rel_path</span><span class="p">(</span><span class="n">raw_data_path</span><span class="p">),</span>
-        <span class="n">how_to_produce</span><span class="o">=</span><span class="s2">"Download diabetic_data.csv from the UCI ML Repository into data/raw/diabetic_data.csv, or run the automated ETL script."</span>
-    <span class="p">))</span>
+<span class="k">assert</span> <span class="n">raw_data_path</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">"Raw data not found at </span><span class="si">{</span><span class="n">raw_data_path</span><span class="si">}</span><span class="s2">"</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading raw dataset from </span><span class="si">{</span><span class="n">rel_path</span><span class="p">(</span><span class="n">raw_data_path</span><span class="p">)</span><span class="si">}</span><span class="s2">..."</span><span class="p">)</span>
+
+<span class="n">df_raw</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+    <span class="n">raw_data_path</span><span class="p">,</span>
+    <span class="n">na_values</span><span class="o">=</span><span class="p">[</span><span class="s2">"?"</span><span class="p">],</span>
+    <span class="n">keep_default_na</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"max_glu_serum"</span><span class="p">,</span> <span class="s2">"A1Cresult"</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df_raw</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">df_raw</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_raw</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s2">"None"</span><span class="p">)</span>
+
+<span class="n">total_raw_encounters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_raw</span><span class="p">)</span>
+<span class="n">total_raw_patients</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df_raw</span><span class="p">[</span><span class="s2">"patient_nbr"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Raw Ingestion Complete: </span><span class="si">{</span><span class="n">total_raw_encounters</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> encounters across </span><span class="si">{</span><span class="n">total_raw_patients</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> unique patients (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df_raw</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> columns)"</span><span class="p">)</span>
 
 <span class="c1"># Load verified cohort metadata</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metadata_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">feat_meta</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-<span class="c1"># Cohort Funnel Definitions (derived from UCI raw specifications and data_card.md)</span>
-<span class="n">total_raw_encounters</span> <span class="o">=</span> <span class="mi">101766</span>
-<span class="n">total_raw_patients</span> <span class="o">=</span> <span class="mi">71518</span>
-<span class="n">expired_hospice_excluded</span> <span class="o">=</span> <span class="mi">2423</span>
-<span class="n">unknown_gender_excluded</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="n">eligible_cohort_encounters</span> <span class="o">=</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"num_total_records"</span><span class="p">]</span>
-<span class="n">eligible_cohort_patients</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">split</span><span class="p">[</span><span class="s2">"unique_patients"</span><span class="p">]</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"splits"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<span class="c1"># Cohort Exclusions Computed Directly from df_raw</span>
+<span class="n">EXCLUDE_DISCHARGE_IDS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">]</span>  <span class="c1"># Expired or hospice</span>
+<span class="n">mask_expired</span> <span class="o">=</span> <span class="n">df_raw</span><span class="p">[</span><span class="s2">"discharge_disposition_id"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">EXCLUDE_DISCHARGE_IDS</span><span class="p">)</span>
+<span class="n">expired_hospice_excluded</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask_expired</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+<span class="n">df_post_mortality</span> <span class="o">=</span> <span class="n">df_raw</span><span class="p">[</span><span class="o">~</span><span class="n">mask_expired</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">mask_invalid_gender</span> <span class="o">=</span> <span class="n">df_post_mortality</span><span class="p">[</span><span class="s2">"gender"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"Unknown/Invalid"</span>
+<span class="n">unknown_gender_excluded</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask_invalid_gender</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+<span class="n">df_eligible</span> <span class="o">=</span> <span class="n">df_post_mortality</span><span class="p">[</span><span class="o">~</span><span class="n">mask_invalid_gender</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">eligible_cohort_encounters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_eligible</span><span class="p">)</span>
+<span class="n">eligible_cohort_patients</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df_eligible</span><span class="p">[</span><span class="s2">"patient_nbr"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
 
 <span class="n">funnel_data</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"1. Raw Encounters Ingested"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="n">total_raw_encounters</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="n">total_raw_patients</span><span class="p">,</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"Full UCI diabetic inpatient cohort (1999-2008)"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"2. Exclude Expired / Hospice"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="o">-</span><span class="n">expired_hospice_excluded</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1076</span><span class="p">,</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.38</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"Discharge IDs 11, 13, 14, 19, 20, 21 ineligible for community readmission"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"3. Exclude Invalid Gender"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="o">-</span><span class="n">unknown_gender_excluded</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.003</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"Missing demographic data cannot be reliably clinically imputed"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"2. Exclude Expired / Hospice"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="o">-</span><span class="n">expired_hospice_excluded</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">df_raw</span><span class="p">[</span><span class="n">mask_expired</span><span class="p">][</span><span class="s1">'patient_nbr'</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()),</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="o">-</span><span class="p">(</span><span class="n">expired_hospice_excluded</span> <span class="o">/</span> <span class="n">total_raw_encounters</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"Discharge IDs 11, 13, 14, 19, 20, 21 ineligible for community readmission"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"3. Exclude Invalid Gender"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="o">-</span><span class="n">unknown_gender_excluded</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">df_post_mortality</span><span class="p">[</span><span class="n">mask_invalid_gender</span><span class="p">][</span><span class="s1">'patient_nbr'</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()),</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="o">-</span><span class="p">(</span><span class="n">unknown_gender_excluded</span> <span class="o">/</span> <span class="n">total_raw_encounters</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"Missing demographic data cannot be reliably clinically imputed"</span><span class="p">},</span>
     <span class="p">{</span><span class="s2">"Stage"</span><span class="p">:</span> <span class="s2">"4. Final Eligible Cohort"</span><span class="p">,</span> <span class="s2">"Encounters"</span><span class="p">:</span> <span class="n">eligible_cohort_encounters</span><span class="p">,</span> <span class="s2">"Patients"</span><span class="p">:</span> <span class="n">eligible_cohort_patients</span><span class="p">,</span> <span class="s2">"Pct Cohort"</span><span class="p">:</span> <span class="p">(</span><span class="n">eligible_cohort_encounters</span> <span class="o">/</span> <span class="n">total_raw_encounters</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="s2">"Clinical Rationale"</span><span class="p">:</span> <span class="s2">"High-integrity study cohort for leak-free modeling"</span><span class="p">},</span>
 <span class="p">]</span>
 
@@ -8107,7 +8122,7 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 <span class="n">display</span><span class="p">(</span><span class="n">splits_df</span><span class="p">)</span>
 
 <span class="n">enc_per_patient</span> <span class="o">=</span> <span class="n">eligible_cohort_encounters</span> <span class="o">/</span> <span class="n">eligible_cohort_patients</span>
-<span class="n">pos_rate_overall</span> <span class="o">=</span> <span class="p">(</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'train'</span><span class="p">][</span><span class="s1">'positive_count'</span><span class="p">]</span> <span class="o">+</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'val'</span><span class="p">][</span><span class="s1">'positive_count'</span><span class="p">]</span> <span class="o">+</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'test'</span><span class="p">][</span><span class="s1">'positive_count'</span><span class="p">])</span> <span class="o">/</span> <span class="n">eligible_cohort_encounters</span>
+<span class="n">pos_rate_overall</span> <span class="o">=</span> <span class="p">(</span><span class="n">df_eligible</span><span class="p">[</span><span class="s2">"readmitted"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"&lt;30"</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total Eligible Encounters: </span><span class="si">{</span><span class="n">eligible_cohort_encounters</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> across </span><span class="si">{</span><span class="n">eligible_cohort_patients</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> unique patients"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mean Encounters per Patient: </span><span class="si">{</span><span class="n">enc_per_patient</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> | Overall Positive Rate: </span><span class="si">{</span><span class="n">pos_rate_overall</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
@@ -8123,18 +8138,16 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
-<div style="border: 2px solid #F59E0B; background-color: #FFFBEB; border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-family: sans-serif;">
-<div style="font-weight: bold; color: #B45309; font-size: 14px; margin-bottom: 6px;">
-            [PENDING] Raw Dataset Ingestion Notice
-        </div>
-<div style="color: #92400E; font-size: 13px; line-height: 1.5; margin-bottom: 6px;">
-<strong>Unavailable Artifact / Dependency:</strong> data/raw/diabetic_data.csv
-        </div>
-<div style="color: #78350F; font-size: 12px; background-color: #FEF3C7; padding: 8px 12px; border-radius: 4px; font-family: monospace;">
-<strong>Resolution:</strong> Download diabetic_data.csv from the UCI ML Repository into data/raw/diabetic_data.csv, or run the automated ETL script.
-        </div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading raw dataset from data/raw/diabetic_data.csv...
+</pre>
 </div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Raw Ingestion Complete: 101,766 encounters across 71,518 unique patients (50 columns)
+</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8171,23 +8184,23 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 <td>1. Raw Encounters Ingested</td>
 <td>101766</td>
 <td>71518</td>
-<td>100.0000</td>
+<td>100.000000</td>
 <td>Full UCI diabetic inpatient cohort (1999-2008)</td>
 </tr>
 <tr>
 <th>1</th>
 <td>2. Exclude Expired / Hospice</td>
 <td>-2423</td>
-<td>-1076</td>
-<td>-2.3800</td>
+<td>2399</td>
+<td>-2.380952</td>
 <td>Discharge IDs 11, 13, 14, 19, 20, 21 ineligibl...</td>
 </tr>
 <tr>
 <th>2</th>
 <td>3. Exclude Invalid Gender</td>
 <td>-3</td>
-<td>-3</td>
-<td>-0.0030</td>
+<td>3</td>
+<td>-0.002948</td>
 <td>Missing demographic data cannot be reliably cl...</td>
 </tr>
 <tr>
@@ -8195,7 +8208,7 @@ Takeaway: ReadmitIQ solves an operational capacity-allocation challenge under CM
 <td>4. Final Eligible Cohort</td>
 <td>99340</td>
 <td>69987</td>
-<td>97.6161</td>
+<td>97.616100</td>
 <td>High-integrity study cohort for leak-free mode...</td>
 </tr>
 </tbody>
@@ -8276,7 +8289,7 @@ Takeaway: Mortality/hospice exclusions prune 2,423 ineligible cases, yielding 99
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=08673597">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=e9afc570">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8396,17 +8409,17 @@ Takeaway: Mortality/hospice exclusions prune 2,423 ineligible cases, yielding 99
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ef8c42dc">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a675cd8a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="3.-Data-Quality,-Missingness-&amp;-Data-Dictionary-by-Domain">3. Data Quality, Missingness &amp; Data Dictionary by Domain<a class="anchor-link" href="#3.-Data-Quality,-Missingness-&amp;-Data-Dictionary-by-Domain">¶</a></h2><p><strong>Purpose</strong>: Document empirical missingness patterns, distinguish informative non-ordering of diagnostic tests from administrative gaps, and catalog features by clinical domain.</p>
+<h2 id="3.-Data-Quality,-Missingness-&amp;-Data-Dictionary-by-Domain">3. Data Quality, Missingness &amp; Data Dictionary by Domain<a class="anchor-link" href="#3.-Data-Quality,-Missingness-&amp;-Data-Dictionary-by-Domain">¶</a></h2><p><strong>Purpose</strong>: Document empirical missingness patterns computed directly from <code>df_raw</code>, distinguish informative non-ordering of diagnostic tests from administrative gaps, and catalog features by clinical domain.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9ee9c3fc">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a22293cc">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8414,16 +8427,19 @@ Takeaway: Mortality/hospice exclusions prune 2,423 ineligible cases, yielding 99
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Empirical Missingness and Informative Levels (from data_card.md &amp; feature_metadata.json)</span>
-<span class="n">missingness_overview</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"payer_code"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Administrative / Financial"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"~40.0%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; preserved as insurance status proxy"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"medical_specialty"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Administrative / Clinical"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"~49.0%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; reflects hospital admission source gaps"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"race"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Demographic"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"2.2%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; audited in fairness checks"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"weight"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Physical Acuity"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"&gt;96.0%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Dropped completely from feature list due to excessive non-reporting"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"max_glu_serum"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Laboratory Glycemic"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"0.0% (Special)"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"'None' indicates test not ordered during stay (informative clinical decision)"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"A1Cresult"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Laboratory Glycemic"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"0.0% (Special)"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"'None' indicates HbA1c not checked; clinically distinct from tested normal"</span><span class="p">},</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Empirical Missingness Computed Directly from df_raw</span>
+<span class="n">null_counts</span> <span class="o">=</span> <span class="n">df_raw</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="n">null_pcts</span> <span class="o">=</span> <span class="p">(</span><span class="n">null_counts</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_raw</span><span class="p">))</span> <span class="o">*</span> <span class="mi">100</span>
+
+<span class="n">missingness_computed</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"payer_code"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Administrative / Financial"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_counts</span><span class="p">[</span><span class="s1">'payer_code'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_pcts</span><span class="p">[</span><span class="s1">'payer_code'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; preserved as insurance status proxy"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"medical_specialty"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Administrative / Clinical"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_counts</span><span class="p">[</span><span class="s1">'medical_specialty'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_pcts</span><span class="p">[</span><span class="s1">'medical_specialty'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; reflects hospital admission source gaps"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"race"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Demographic"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_counts</span><span class="p">[</span><span class="s1">'race'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_pcts</span><span class="p">[</span><span class="s1">'race'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Explicit 'Missing' category; audited in fairness checks"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"weight"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Physical Acuity"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_counts</span><span class="p">[</span><span class="s1">'weight'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_pcts</span><span class="p">[</span><span class="s1">'weight'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"Dropped completely from feature list due to excessive non-reporting"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"max_glu_serum"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Laboratory Glycemic"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="s2">"0 (Recorded 'None')"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"0.00%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"'None' indicates test not ordered during stay (informative clinical decision)"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Field"</span><span class="p">:</span> <span class="s2">"A1Cresult"</span><span class="p">,</span> <span class="s2">"Domain"</span><span class="p">:</span> <span class="s2">"Laboratory Glycemic"</span><span class="p">,</span> <span class="s2">"Missing Count"</span><span class="p">:</span> <span class="s2">"0 (Recorded 'None')"</span><span class="p">,</span> <span class="s2">"Missing Pct"</span><span class="p">:</span> <span class="s2">"0.00%"</span><span class="p">,</span> <span class="s2">"Handling Strategy"</span><span class="p">:</span> <span class="s2">"'None' indicates HbA1c not checked; clinically distinct from tested normal"</span><span class="p">},</span>
 <span class="p">]</span>
-<span class="n">missingness_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">missingness_overview</span><span class="p">)</span>
+<span class="n">missingness_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">missingness_computed</span><span class="p">)</span>
 <span class="n">display</span><span class="p">(</span><span class="n">missingness_df</span><span class="p">)</span>
 
 <span class="c1"># Feature Dictionary Grouped by Clinical Domain</span>
@@ -8481,6 +8497,7 @@ Takeaway: Mortality/hospice exclusions prune 2,423 ineligible cases, yielding 99
 <th></th>
 <th>Field</th>
 <th>Domain</th>
+<th>Missing Count</th>
 <th>Missing Pct</th>
 <th>Handling Strategy</th>
 </tr>
@@ -8490,42 +8507,48 @@ Takeaway: Mortality/hospice exclusions prune 2,423 ineligible cases, yielding 99
 <th>0</th>
 <td>payer_code</td>
 <td>Administrative / Financial</td>
-<td>~40.0%</td>
+<td>40,256</td>
+<td>39.56%</td>
 <td>Explicit 'Missing' category; preserved as insu...</td>
 </tr>
 <tr>
 <th>1</th>
 <td>medical_specialty</td>
 <td>Administrative / Clinical</td>
-<td>~49.0%</td>
+<td>49,949</td>
+<td>49.08%</td>
 <td>Explicit 'Missing' category; reflects hospital...</td>
 </tr>
 <tr>
 <th>2</th>
 <td>race</td>
 <td>Demographic</td>
-<td>2.2%</td>
+<td>2,273</td>
+<td>2.23%</td>
 <td>Explicit 'Missing' category; audited in fairne...</td>
 </tr>
 <tr>
 <th>3</th>
 <td>weight</td>
 <td>Physical Acuity</td>
-<td>&gt;96.0%</td>
+<td>98,569</td>
+<td>96.86%</td>
 <td>Dropped completely from feature list due to ex...</td>
 </tr>
 <tr>
 <th>4</th>
 <td>max_glu_serum</td>
 <td>Laboratory Glycemic</td>
-<td>0.0% (Special)</td>
+<td>0 (Recorded 'None')</td>
+<td>0.00%</td>
 <td>'None' indicates test not ordered during stay ...</td>
 </tr>
 <tr>
 <th>5</th>
 <td>A1Cresult</td>
 <td>Laboratory Glycemic</td>
-<td>0.0% (Special)</td>
+<td>0 (Recorded 'None')</td>
+<td>0.00%</td>
 <td>'None' indicates HbA1c not checked; clinically...</td>
 </tr>
 </tbody>
@@ -8612,7 +8635,7 @@ Takeaway: Missingness is clinically structured: non-ordered lab tests ('None') p
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e9dfb012">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ccd5c34a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8622,7 +8645,7 @@ Takeaway: Missingness is clinically structured: non-ordered lab tests ('None') p
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=299be11b">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=321b802d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8638,7 +8661,7 @@ Takeaway: Missingness is clinically structured: non-ordered lab tests ('None') p
 <span class="c1"># Analysis of dropped features</span>
 <span class="n">dropped_features_audit</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"encounter_id, patient_nbr"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Identifiers"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="s2">"Direct identity leakage; prevents model from learning patient hashes or database row ordering"</span><span class="p">},</span>
-    <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"weight"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Physical Acuity"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="s2">"&gt;96% missing across inpatient charts; severe non-random reporting bias"</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"weight"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Physical Acuity"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">null_pcts</span><span class="p">[</span><span class="s1">'weight'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">% missing across inpatient charts; severe non-random reporting bias"</span><span class="p">},</span>
     <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"examide, citoglipton"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Zero-Variance Medications"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="s2">"100</span><span class="si">% o</span><span class="s2">f records are 'No'; zero mathematical variance"</span><span class="p">},</span>
     <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"10 Ultra-Sparse Drugs (acetohexamide, tolbutamide, etc.)"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Sparse Medications"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="s2">"&gt;99.9% 'No'; signal condensed into n_active_drugs and n_dose_changes prior to column deletion"</span><span class="p">},</span>
     <span class="p">{</span><span class="s2">"Column Name"</span><span class="p">:</span> <span class="s2">"readmitted"</span><span class="p">,</span> <span class="s2">"Category"</span><span class="p">:</span> <span class="s2">"Raw Ground Truth"</span><span class="p">,</span> <span class="s2">"Reason for Exclusion"</span><span class="p">:</span> <span class="s2">"Raw 3-class target string (&lt;30, &gt;30, NO); replaced by binary readmitted_30d"</span><span class="p">},</span>
@@ -8716,7 +8739,7 @@ Takeaway: Missingness is clinically structured: non-ordered lab tests ('None') p
 <th>1</th>
 <td>weight</td>
 <td>Physical Acuity</td>
-<td>&gt;96% missing across inpatient charts; severe n...</td>
+<td>96.86% missing across inpatient charts; severe...</td>
 </tr>
 <tr>
 <th>2</th>
@@ -8801,7 +8824,7 @@ Takeaway: Missingness is clinically structured: non-ordered lab tests ('None') p
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Base Feature Count: 41 | Features with RAG: 42
-Verified: Zero identifiers ({'encounter_id', 'readmitted_30d', 'readmitted', 'patient_nbr'}) present in feature lists.
+Verified: Zero identifiers ({'encounter_id', 'patient_nbr', 'readmitted', 'readmitted_30d'}) present in feature lists.
 Takeaway: The feature pipeline strictly prevents target snooping, aggregates sparse medications into composite titration counts, and guarantees patient-disjoint partitions.
 </pre>
 </div>
@@ -8809,7 +8832,7 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=7829675a">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=34609224">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8819,7 +8842,7 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=0c8dde8e">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=a587b321">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8833,9 +8856,6 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 
-<span class="c1"># 13 stages layout: 2 rows</span>
-<span class="c1"># Row 1: Stages 1 to 7 (Data to RAG)</span>
-<span class="c1"># Row 2: Stages 8 to 13 (Modeling to Monitoring)</span>
 <span class="n">stages_row1</span> <span class="o">=</span> <span class="p">[</span>
     <span class="p">(</span><span class="s2">"1. Data Ingestion"</span><span class="p">,</span> <span class="s2">"Raw EHR CSV</span><span class="se">\n</span><span class="s2">(101k rows)"</span><span class="p">,</span> <span class="n">STAGE_PALETTE</span><span class="p">[</span><span class="s2">"primary"</span><span class="p">]),</span>
     <span class="p">(</span><span class="s2">"2. Clinical Cleaning"</span><span class="p">,</span> <span class="s2">"Mortality Excl.</span><span class="se">\n</span><span class="s2">Grouping (99k)"</span><span class="p">,</span> <span class="n">STAGE_PALETTE</span><span class="p">[</span><span class="s2">"primary"</span><span class="p">]),</span>
@@ -8868,12 +8888,11 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
     <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">box_w</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">box_h</span> <span class="o">-</span> <span class="mf">0.35</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mf">8.5</span><span class="p">,</span> <span class="n">fontweight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">box_w</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">y1</span> <span class="o">+</span> <span class="mf">0.65</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#374151"</span><span class="p">)</span>
     
-    <span class="c1"># Arrow to next</span>
     <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">stages_row1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">box_w</span> <span class="o">+</span> <span class="mf">0.35</span><span class="p">,</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">box_h</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">box_w</span><span class="p">,</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">box_h</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">),</span>
                     <span class="n">arrowprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">arrowstyle</span><span class="o">=</span><span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#9CA3AF"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.8</span><span class="p">))</span>
 
-<span class="c1"># Arrow connecting Row 1 end to Row 2 start</span>
+<span class="c1"># Arrow connecting Row 1 to Row 2</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="mf">0.3</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">*</span> <span class="mf">1.95</span> <span class="o">+</span> <span class="n">box_w</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">box_h</span><span class="p">),</span>
             <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mf">0.3</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">*</span> <span class="mf">1.95</span> <span class="o">+</span> <span class="n">box_w</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span>
             <span class="n">arrowprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">arrowstyle</span><span class="o">=</span><span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#9CA3AF"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.8</span><span class="p">,</span> <span class="n">connectionstyle</span><span class="o">=</span><span class="s2">"arc3,rad=-0.2"</span><span class="p">))</span>
@@ -9085,7 +9104,7 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ac274999">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9e963be0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9095,7 +9114,7 @@ Takeaway: The feature pipeline strictly prevents target snooping, aggregates spa
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d551d479">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=d0bb10ff">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9419,7 +9438,7 @@ Takeaway: The six-model comparison evaluates LR, RF, and Transformer with and wi
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=126e2ab7">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bebe5545">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9429,7 +9448,7 @@ Takeaway: The six-model comparison evaluates LR, RF, and Transformer with and wi
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=95ba6049">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=38ad26e1">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9641,7 +9660,7 @@ Takeaway: The 5-minute presentation plan allocates distinct ownership across all
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=9d0aaa57">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6768d9a0">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9651,7 +9670,7 @@ Takeaway: The 5-minute presentation plan allocates distinct ownership across all
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4c2b6209">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b00ea457">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9660,17 +9679,17 @@ Takeaway: The 5-minute presentation plan allocates distinct ownership across all
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># 1. Dataset Loaded Check</span>
-<span class="n">chk_dataset_loaded</span> <span class="o">=</span> <span class="p">(</span><span class="n">metadata_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"num_total_records"</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">det_dataset_loaded</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Loaded metadata from </span><span class="si">{</span><span class="n">rel_path</span><span class="p">(</span><span class="n">metadata_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'num_total_records'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> total records)"</span>
+<span class="n">chk_dataset_loaded</span> <span class="o">=</span> <span class="p">(</span><span class="n">raw_data_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">total_raw_encounters</span> <span class="o">==</span> <span class="mi">101766</span> <span class="ow">and</span> <span class="n">metadata_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"num_total_records"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">99340</span><span class="p">)</span>
+<span class="n">det_dataset_loaded</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Loaded raw dataset from </span><span class="si">{</span><span class="n">rel_path</span><span class="p">(</span><span class="n">raw_data_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">total_raw_encounters</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows) and verified metadata (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'num_total_records'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> rows)"</span>
 
 <span class="c1"># 2. Counts Consistent Check</span>
 <span class="n">total_split_rows</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"rows"</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"splits"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-<span class="n">chk_counts_consistent</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_split_rows</span> <span class="o">==</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"num_total_records"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">99340</span><span class="p">)</span>
-<span class="n">det_counts_consistent</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Train (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'train'</span><span class="p">][</span><span class="s1">'rows'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) + Val (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'val'</span><span class="p">][</span><span class="s1">'rows'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) + Test (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'test'</span><span class="p">][</span><span class="s1">'rows'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">total_split_rows</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> (matches </span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'num_total_records'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">)"</span>
+<span class="n">chk_counts_consistent</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_split_rows</span> <span class="o">==</span> <span class="n">eligible_cohort_encounters</span> <span class="o">==</span> <span class="mi">99340</span><span class="p">)</span>
+<span class="n">det_counts_consistent</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Raw (</span><span class="si">{</span><span class="n">total_raw_encounters</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) - Expired (</span><span class="si">{</span><span class="n">expired_hospice_excluded</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) - Invalid Sex (</span><span class="si">{</span><span class="n">unknown_gender_excluded</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">eligible_cohort_encounters</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> == Splits (</span><span class="si">{</span><span class="n">total_split_rows</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">)"</span>
 
 <span class="c1"># 3. No Patient Overlap Check</span>
 <span class="n">unique_patients_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"unique_patients"</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">feat_meta</span><span class="p">[</span><span class="s2">"splits"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-<span class="n">chk_no_patient_overlap</span> <span class="o">=</span> <span class="p">(</span><span class="n">unique_patients_sum</span> <span class="o">==</span> <span class="mi">69987</span><span class="p">)</span>
+<span class="n">chk_no_patient_overlap</span> <span class="o">=</span> <span class="p">(</span><span class="n">unique_patients_sum</span> <span class="o">==</span> <span class="n">eligible_cohort_patients</span> <span class="o">==</span> <span class="mi">69987</span><span class="p">)</span>
 <span class="n">det_no_patient_overlap</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Train (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'train'</span><span class="p">][</span><span class="s1">'unique_patients'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) + Val (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'val'</span><span class="p">][</span><span class="s1">'unique_patients'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) + Test (</span><span class="si">{</span><span class="n">feat_meta</span><span class="p">[</span><span class="s1">'splits'</span><span class="p">][</span><span class="s1">'test'</span><span class="p">][</span><span class="s1">'unique_patients'</span><span class="p">]</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">) = </span><span class="si">{</span><span class="n">unique_patients_sum</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> unique patients (disjoint by StratifiedGroupKFold)"</span>
 
 <span class="c1"># 4. Feature List Excludes IDs and Labels Check</span>
@@ -9737,13 +9756,13 @@ Takeaway: The 5-minute presentation plan allocates distinct ownership across all
 <th>0</th>
 <td>1. Dataset Loaded &amp; Validated</td>
 <td>PASS</td>
-<td>Loaded metadata from data/processed/feature_me...</td>
+<td>Loaded raw dataset from data/raw/diabetic_data...</td>
 </tr>
 <tr>
 <th>1</th>
 <td>2. Counts Consistent Between Funnel &amp; Splits</td>
 <td>PASS</td>
-<td>Train (69,535) + Val (14,902) + Test (14,903) ...</td>
+<td>Raw (101,766) - Expired (2,423) - Invalid Sex ...</td>
 </tr>
 <tr>
 <th>2</th>
@@ -9779,7 +9798,7 @@ Stage 1 Checklist Result: ALL CHECKS PASSED
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=43f91491">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=0d5fbe35">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -9787,8 +9806,8 @@ Stage 1 Checklist Result: ALL CHECKS PASSED
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="9.-Next-Stage-Pointer">9. Next Stage Pointer<a class="anchor-link" href="#9.-Next-Stage-Pointer">¶</a></h2><p><strong>Stage 1 Completed Successfully.</strong></p>
 <ul>
-<li><strong>Summary</strong>: We have framed the 30-day readmission decision problem within hospital capacity bounds, traced the 99,340-encounter clinical cohort, cataloged the 42 clinical features, documented the 4 leakage traps, generated the 13-stage system architecture diagrams, and specified the component contracts.</li>
-<li><strong>Next Stage</strong>: Proceed to <code>notebooks/stages/stage2.ipynb</code> (<strong>Stage 2: Data Cleaning and Preprocessing</strong>), which will demonstrate the ICD-9 clinical groupings, outlier capping fit strictly on train, patient-level split equivalence, and empirical demonstration of random vs. patient-grouped data splitting.</li>
+<li><strong>Summary</strong>: We have framed the 30-day readmission decision problem within hospital capacity bounds, ingested and traced the 101,766 raw records to 99,340 eligible encounters, cataloged the 42 clinical features, documented the 4 leakage traps, generated the 13-stage system architecture diagrams, and specified the component contracts.</li>
+<li><strong>Next Stage</strong>: Proceed to <code>notebooks/stages/stage2.ipynb</code> (<strong>Stage 2: Data Cleaning and Preprocessing</strong>), which will demonstrate missing values, duplicate records, ICD-9 clinical groupings, outlier capping fit strictly on train, patient-level split equivalence, and empirical demonstration of random vs. patient-grouped data splitting.</li>
 </ul>
 </div>
 </div>
