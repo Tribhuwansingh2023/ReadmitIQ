@@ -33,19 +33,17 @@ npm run preview -- --port 5173
 
 ---
 
-## 3. Tier 2: Static Screenshot Presentation Guide
+## 3. Tier 2: Presentation & Demonstration Guide
 
-If no local server can be launched, use this curated sequence of high-resolution offline captures stored in `docs/screenshots/`:
+To present or demonstrate the application offline or in air-gapped settings, use the live local interface or presentation mode at `http://localhost:5173`:
 
-| Slide # | Screenshot File | Feature Demonstrated | Judge Question Addressed |
+| View | Target URL / View | Feature Demonstrated | Judge Question Addressed |
 |:---:|:---|:---|:---|
-| **1** | [`cohort_triage_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/cohort_triage_desktop.png) | Cohort Command Center, 10% Capacity, 2.09x Lift, What-If ROI Calculator | "How does a hospital prioritize discharge follow-ups with limited staff?" |
-| **2** | [`cohort_triage_light_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/cohort_triage_light_desktop.png) | High-contrast clinical light mode | "Is the UI accessible in brightly lit hospital wards?" |
-| **3** | [`patient_risk_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/patient_risk_desktop.png) | Patient Risk Gauge, Top SHAP drivers, Peer Precedents, Deterministic Interventions | "Why is this patient high risk and what should the nurse actually do?" |
-| **4** | [`model_lab_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/model_lab_desktop.png) | Model ablation leaderboard with 95% Bootstrap CIs, Paired $\Delta$ AUC, Calibration curve | "Did RAG actually help discrimination, or is this just hype?" |
-| **5** | [`fairness_drift_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/fairness_drift_desktop.png) | Demographic parity audit, Demographic-blinded model comparison, 42-feature PSI monitor | "Does your model discriminate against underserved demographic groups?" |
-| **6** | [`how_it_works_desktop.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/how_it_works_desktop.png) | 7-stage ML pipeline, cryptographic leakage isolation matrix, honest clinical limitations | "How did you prevent target and temporal leakage across encounters?" |
-| **7** | [`patient_risk_mobile.png`](file:///C:/Users/tribh/.gemini/antigravity-ide/scratch/readmitt-iq/docs/screenshots/patient_risk_mobile.png) | Mobile responsive care-team view | "Can a bedside nurse use this on an iPad or workstation on wheels?" |
+| **1** | `/` (Discharge Desk) | Cohort Worklist, Capacity Mode, 2.09x Lift | "How does a hospital prioritize discharge follow-ups with limited staff?" |
+| **2** | `/` (Theme toggle) | High-contrast clinical light mode | "Is the UI accessible in brightly lit hospital wards?" |
+| **3** | `/` (Encounter Brief) | Calibrated Risk Gauge, SHAP drivers, Peer Precedents, Action Plan | "Why is this patient high risk and what should the care team actually do?" |
+| **4** | `/monitoring` | Live PSI Drift, RAG Vector Store Health, Subgroup Fairness Audit | "Does your model maintain stability and fairness over time?" |
+| **5** | `/intake` | Multi-source intake (Manual, CSV Batch, Simulated Feed) | "How do patient encounters enter the scoring system?" |
 
 ---
 
