@@ -1,22 +1,58 @@
-# Environment and secrets
+# Environment, secrets and credentials
 .env
-.env.local
-*.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.p12
 
-# Python artifacts
+# Python artifacts and caches
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
 .coverage
 htmlcov/
 .ipynb_checkpoints/
 .venv/
 venv/
+env/
 *.egg-info/
 
-# Data artifacts
+# Node / Frontend bundler artifacts
+node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
+web/.tmp/
+.rollup.cache/
+
+# Media, screen recordings and temporary captures
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+*.mp3
+*.wav
+screenshots/
+screen-recordings/
+recordings/
+demo-videos/
+
+# Editor and OS artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Data artifacts (raw/private datasets, local databases)
 data/raw/diabetic_data.csv
 data/interim/
 data/processed/*.parquet
@@ -30,34 +66,36 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 
-# Large binaries & documents
+# Large temporary binary documents & dumps
 *.pptx
 !docs/presentation/*.pptx
-*.pdf
 *.xlsx
 *.zip
 *.npy
+*.dump
 
-# Model artifacts
+# Exploratory / Training Checkpoint Model Artifacts
 models/*.joblib
 models/*.pt
 models/*.index
-models/final/*.joblib
-models/final/*.pt
-models/final/*.index
-models/final/*.parquet
 models/transformer/
 models/faiss_index/
 
-# Node / Web artifacts
-web/node_modules/
-web/dist/
-web/.vite/
+# PRESERVED REQUIRED FROZEN RUNTIME INFERENCE ASSETS (models/final/)
+!models/final/model.joblib
+!models/final/preprocessor.joblib
+!models/final/preprocessor_base.joblib
+!models/final/calibrator.joblib
+!models/final/structured_svd.joblib
+!models/final/retriever_faiss.index
+!models/final/retriever_faiss_lite.index
+!models/final/retriever_meta.parquet
+!models/final/retriever_meta_lite.parquet
+!models/final/feature_list.json
+!models/final/serving_thresholds.json
+!models/FROZEN_SELECTION.json
 
 # Application logs & runtime telemetry
 api/logs/*.jsonl
 *.log
 
-# OS artifacts
-.DS_Store
-Thumbs.db
