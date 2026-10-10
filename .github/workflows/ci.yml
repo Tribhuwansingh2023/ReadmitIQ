@@ -34,7 +34,11 @@ jobs:
         run: |
           python scripts/generate_ci_fixtures.py
 
-      - name: Run Test Suite (Fixture Fallback & Skip Guards)
+      - name: Verify Environment Reproducibility
+        run: |
+          python scripts/verify_reproducibility.py
+
+      - name: Run Test Suite (80 Automated Tests)
         run: |
           pytest tests/ -v
 
@@ -66,12 +70,12 @@ jobs:
         working-directory: ./web
         run: npm run lint
 
-      - name: Build Frontend
+      - name: Build Frontend (Vite)
         working-directory: ./web
         run: npm run build
 
   docker-build-verification:
-    name: Docker Multi-Stage Build Check
+    name: Docker Container Build Verification
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,10 +83,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build API Docker Image
+      - name: Build Backend Docker Image
         run: |
-          docker build -t readmitiq-api:ci .
+          docker build -t readmitiq-backend:ci -f Dockerfile.backend .
 
-      - name: Build Web Docker Image
+      - name: Build Frontend Docker Image
         run: |
-          docker build -t readmitiq-web:ci ./web
+          docker build -t readmitiq-frontend:ci -f Dockerfile.frontend .
