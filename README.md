@@ -1,195 +1,244 @@
-# ReadmitIQ: Care-Team Hospital Readmission Command Center
+# ReadmitIQ: Capacity-Aware Hospital Readmission Decision Support Platform
 
-[![CI Pipeline](https://github.com/readmitt-iq/readmit-iq/actions/workflows/ci.yml/badge.svg)](https://github.com/readmitt-iq/readmit-iq/actions)
-[![FastAPI](https://img.shields.io/badge/FastAPI-1.0.0-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?logo=typescript)](https://www.typescriptlang.org)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-1.0.0-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![LightGBM](https://img.shields.io/badge/LightGBM-4.6-brightgreen.svg)](https://lightgbm.readthedocs.io)
+[![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-orange.svg)](https://github.com/facebookresearch/faiss)
+[![Test Suite](https://img.shields.io/badge/Tests-80_Passed-success.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**ReadmitIQ** is an end-to-end clinical decision support platform for predicting 30-day hospital readmission risk among diabetic inpatients at discharge. It bridges the gap between predictive modeling and clinical operations through **calibrated capacity-based risk tiers**, **SHAP feature attribution**, and **Structured Retrieval-Augmented Generation (RAG)** for explainable precedent case retrieval.
+> **ReadmitIQ** is a clinical decision support system for 30-day all-cause hospital readmission risk prediction among diabetic inpatients. Rather than functioning as a passive predictive dashboard, ReadmitIQ operationalizes risk intelligence into a capacity-aware, evidence-supported discharge coordination workflow: the **ReadmitIQ ActionLoop**.
 
 ---
 
-## Key Highlights
-
-1. **Patient-Level Leakage Prevention:** 99,340 eligible encounters split by `patient_nbr` (70% train / 15% val / 15% test) ensuring **0% patient overlap** across splits.
-2. **Structured RAG Engine:** Fast FAISS Inner Product search ($k=20$) across 69,535 historical training cases via 64-dimensional SVD latent projections.
-3. **Probability Calibration:** Isotonic regression fit on 5-fold Out-Of-Fold Train predictions reduces Test Brier score by 55.6% (0.219 -> **0.0973**) with Expected Calibration Error (ECE) of **0.0039**.
-4. **Honest Scientific Evaluation:** Test set evaluated exactly once under `reports/metrics/test_eval.lock`. Paired bootstrap Delta AUC (+0.0004, 95% CI: [-0.0025, +0.0031]) honestly documents that RAG does not offer statistically significant ranking gains over 41 tabular features, but provides essential case-based clinical explainability.
-5. **Operational Care Triage:** Retrospective cohort replay with adjustable capacity sliders (1% to 30%). At 10% capacity, achieves **23.76% precision** (**2.09x lift** over random 11.37% prevalence).
-6. **Production Full-Stack:** FastAPI REST backend (<15ms inference latency) + React/TypeScript/Vite/Tailwind command center with zero mock data.
-
----
-
-## Project Structure
+## The ReadmitIQ ActionLoop
 
 ```
-readmitt-iq/
-├── api/                        # FastAPI REST service & Pydantic schemas
-│   ├── main.py                 # API router endpoints
-│   ├── schemas.py              # Input/output schemas with derived clinical features
-│   └── service.py              # ModelService orchestrator
-├── configs/
-│   └── config.yaml             # Paths, random seeds, and hyperparameters
-├── data/
-│   ├── raw/                    # diabetic_data.csv (read-only, UCI Diabetes 130)
-│   └── processed/              # train, val, test parquet files
-├── docs/                       # Project documentation, cards, and presentation slides
-│   ├── architecture.md         # Mermaid diagrams of system dataflow
-│   ├── audit_report.md         # Comprehensive leakage and consistency audit
-│   ├── data_card.md            # Dataset provenance and limitations
-│   ├── model_card.md           # Model card with fairness and bootstrap CIs
-│   ├── demo_script.md          # 5-minute live judging demo walkthrough
-│   ├── slide_content.md        # Pitch presentation script
-│   └── DEPLOY_MANUAL_STEPS.md  # Production cloud deployment guide
-├── models/
-│   ├── FROZEN_SELECTION.json   # Winning model selection metadata
-│   └── final/                  # Serialized model, calibrator, preprocessors, FAISS index
-├── notebooks/
-│   ├── 01_eda_and_data_preparation.ipynb # Fully executed clean EDA notebook
-│   └── colab_transformer_training.ipynb  # GPU DistilBERT fine-tuning notebook
-├── reports/
-│   ├── figures/                # ROC, PR, Calibration, and SHAP summary plots
-│   └── metrics/                # Ablation tables, test results, fairness, and drift JSONs
-├── src/                        # Core Python ML library
-│   ├── data.py                 # Preprocessing and patient-level splitting
-│   ├── features.py             # Feature engineering and rare-category handling
-│   ├── rag.py                  # Structured FAISS retriever and OOF generator
-│   ├── train.py                # Model training, hyperparameter tuning, calibration
-│   ├── evaluate.py             # Bootstrap metrics and paired Delta AUC
-│   ├── explain.py              # TreeExplainer SHAP and plain-language formatting
-│   └── drift.py                # Population Stability Index (PSI) monitoring
-├── tests/                      # Automated test suite (24 tests passing)
-├── web/                        # React 19 + TypeScript + Vite + Tailwind SPA
-├── Dockerfile                  # Production container definition
-├── docker-compose.yml          # Local multi-service orchestration
-└── requirements.txt            # Pinned Python dependencies
++---------------------------------------------------------------------------------------------------+
+|                                      READMITIQ ACTIONLOOP                                         |
++---------------------------------------------------------------------------------------------------+
+
+     [ 1. Risk Intelligence ]                       [ 2. Precedent Evidence ]
+     - Frozen LightGBM 42-Feature Score             - FAISS Inner-Product Search (k=20)
+     - Isotonic Calibrated Probability              - 64-dim Clinical SVD Embedding
+     - Top Risk Increasing / Protective SHAP        - Wilson 95% CI & Methodological Disclosure
+                 \                                              /
+                  \                                            /
+                   v                                          v
+                              [ 3. Care Action Plan ]
+                              - Automated Protocol Tasks Triggered by SHAP Drivers
+                              - Status Lifecycle: Pending -> In-Progress -> Completed
+                              - Assignment, Due Dates, and Mandatory Completion Notes
+                                         |
+                                         v
+                         [ 4. Capacity-Aware Triage Queue ]
+                         - Deterministic Ranking: Raw Score DESC -> Arrival DESC -> ID ASC
+                         - Eliminates Isotonic Probability Plateaus
+                         - Nurse Outreach Capacity Thresholding (e.g., Top 15 Shifts)
+                                         |
+                                         v
+                         [ 5. Closed-Loop Follow-up ]
+                         - Coordinator Touchpoints (Phone, Home Visit, Med Rec)
+                         - Unified Chronological Audit Trail & Event History
+                         - Sealed Ground-Truth 30-Day Registry Outcome Surveillance
 ```
+
+1. **Risk Intelligence:** Predicts raw scores and empirical probabilities calibrated via non-parametric isotonic regression. Explains predictions with fast TreeSHAP feature attributions.
+2. **Precedent Evidence:** Retrieves $k = 20$ structurally similar historical encounters from a patient-disjoint reference split ($n = 69,535$) via 64-dimensional SVD vector projections. *Methodological disclosure: Precedent retrieval provides clinical case context; it does not add independent predictive ROC-AUC lift.*
+3. **Care Transition Action Plan:** Automatically seeds evidence-based discharge tasks derived from patient-specific risk drivers (medication reconciliation, glycemic education, 48h cardiology follow-up).
+4. **Capacity-Aware Triage:** Dynamically ranks encounters based on hospital nurse outreach capacity. Enforces strict deterministic tie-breaking (`raw_score DESC`, `received_at DESC`, `id ASC`) to eliminate isotonic calibration ties.
+5. **Closed-Loop Follow-up:** Tracks every coordinator touchpoint, audit event, and sealed 30-day post-discharge outcome into a single chronological timeline.
 
 ---
 
-## Quickstart: Running Locally
+## Signature Differentiators
+
+### 1. What-If Risk Sensitivity Explorer
+Allows multidisciplinary care teams to simulate how hypothetical variations in clinical factors (such as reducing acute length of stay, optimizing medication regimens, or establishing outpatient follow-up) would shift the model's score.
+- **Side-by-side comparison:** Evaluates modified features through the actual, unmocked LightGBM + Isotonic serving pipeline (`POST /v1/what-if`).
+- **Delta analysis:** Computes raw score delta, calibrated probability change, relative risk shift percentage, and serving tier transitions.
+- **Scientific guardrail:** Explicitly disclosed as associative statistical model sensitivity, *not* a causal treatment effect estimate.
+
+### 2. Trust & Safety Surveillance Monitor
+Continuously surveils production pipeline health to protect patient safety:
+- **Population Stability Index (PSI):** Real-time monitoring of raw score distribution drift against frozen training deciles ($\text{PSI} < 0.10$ Stable, $\ge 0.25$ High Drift Alert).
+- **Feature Covariate Drift:** Tracks covariate shifts across individual predictors against training references.
+- **RAG Vector Store Health:** Live health metrics for the FAISS index ($n = 69,535$, 64 dimensions, 0 query errors).
+- **Data Quality & Rejection Audit:** Logs all rejected CSV rows, formatting errors, and schema conformity rates in SQLite.
+- **Small-n Statistical Power Guardrails:** Withholds live empirical discrimination claims until sample sizes reach $n \ge 200$ resolved outcomes with $\ge 20$ positives. Flags demographic subgroups with $n < 100$ encounters with an **Unpowered Small-n Guard** to prevent premature compliance assertions.
+
+---
+
+## Scientific Evaluation & Benchmark Results
+
+Evaluated on strictly partitioned, patient-disjoint held-out data ($N = 101,766$ encounters, split by `patient_nbr` into 69.5k train / 17.3k val / 14.9k test).
+
+| Metric | Primary Frozen Model | Baseline Comparison | Clinical Note |
+| :--- | :--- | :--- | :--- |
+| **Validation ROC-AUC** | **0.6731 [0.6602, 0.6863]** | 0.6552 (Logistic Reg.) | 500-sample bootstrap 95% CI |
+| **Validation Brier Score** | **0.0894** | 0.2190 (Uncalibrated) | 59.2% reduction via Isotonic Calibration |
+| **Paired $\Delta\text{AUC}$ (RAG vs Tabular)** | **0.0000** | 95% CI crosses zero | Retrieval provides context, not lift |
+| **Blinded $\Delta\text{AUC}$ (No Race/Gender)**| **+0.0007** | 0.6738 vs 0.6731 | Demographics omitted without performance penalty |
+| **Top 10% Precision (Capacity)** | **23.76%** | 11.37% (Base Prevalence) | **2.09x enrichment** over random outreach |
+
+---
+
+## Quickstart: Clone and Run on Any Laptop
 
 ### Prerequisites
-- Python 3.10+ (Python 3.11 recommended)
-- Node.js 18+ and npm 9+
+- **Python:** 3.11 or 3.12 (Python 3.12 recommended).
+- **Node.js:** v18, v20, or v22 with `npm`.
+- **Git:** Standard git client.
 
-### 1. Backend Setup & Run
+### 1. Clone the Repository
 ```bash
-# Clone repository
-git clone https://github.com/readmitt-iq/readmit-iq.git
-cd readmitt-iq
+git clone https://github.com/Tribhuwansingh2023/ReadmitIQ.git
+cd ReadmitIQ
+```
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+### 2. Backend Setup
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# On Windows (Command Prompt):
+.venv\Scripts\activate.bat
+# On macOS / Linux:
+source .venv/bin/activate
 
 # Install dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Start FastAPI server (daemon or foreground)
-uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-API docs available at: `http://localhost:8000/docs`
 
-### 2. Frontend Setup & Run
+### 3. Frontend Setup
 ```bash
-# Open new terminal in web directory
 cd web
-
-# Install frontend dependencies
 npm install
-
-# Start Vite dev server
-npm run dev
+cd ..
 ```
-Web app available at: `http://localhost:5173`
 
----
-
-## Reproducing the Pipeline from Scratch
-
-To re-run the full pipeline from raw data to frozen models:
-
+### 4. Verify Reproducibility
+Run the automated environment and asset verifier:
 ```bash
-# 1. Clean data and generate patient-disjoint splits
-python src/data.py
-
-# 2. Build preprocessors and generate 5-fold OOF Structured RAG features
-python src/rag.py
-
-# 3. Train models, perform 5-fold CV tuning, and evaluate validation ablation
-python src/train.py
-
-# 4. Freeze winning model (creates models/FROZEN_SELECTION.json & models/final/)
-python src/freeze.py
-
-# 5. Execute locked held-out test evaluation (once only)
-python src/final_test_eval.py
-
-# 6. Run automated test suite
-pytest tests/ -v
+python scripts/verify_reproducibility.py
 ```
+*Validates Python runtime, all 7 required frozen model assets in `models/final/`, package dependencies, frontend toolchain, and deterministic inference output.*
 
----
+### 5. Start the Application
 
-## Transformer (DistilBERT) Colab Workflow
+#### Option A: Using Platform Launch Scripts
+- **Windows:**
+  - Launch Backend: double-click `scripts\run_backend.bat`
+  - Launch Frontend: double-click `scripts\run_frontend.bat`
+- **macOS / Linux:**
+  - `chmod +x scripts/*.sh`
+  - Backend: `./scripts/run_backend.sh`
+  - Frontend: `./scripts/run_frontend.sh`
 
-DistilBERT is evaluated as an offline, validation-only benchmark comparison on clinical notes using free-tier GPU execution in Google Colab:
-1. Open `notebooks/colab_transformer_training.ipynb` in [Google Colab](https://colab.research.google.com).
-2. Connect to a free T4 GPU runtime (**Runtime -> Change runtime type -> T4 GPU**).
-3. Upload files from `data/processed/colab_upload/`: `colab_train.parquet` (5.6 MB), `colab_val.parquet` (1.2 MB), and `MANIFEST.json`.
-4. Run all cells top to bottom (trains Variant A: Notes Only and Variant B: Notes + RAG for 3 epochs with AdamW and mixed precision).
-5. Download exported `colab_outputs.zip` and extract into `reports/colab/`.
-6. Run local import and documentation sync:
-   ```bash
-   python -m src.transformer_import
-   python scripts/sync_transformer_docs.py
-   ```
-
-<!-- TRANSFORMER:START -->
-*Transformer Benchmark Status:* Pending Google Colab T4 GPU execution (`notebooks/colab_transformer_training.ipynb`). The production model was frozen before the transformer results existed.
-<!-- TRANSFORMER:END -->
-
----
-
-## Verification & Test Suite
-
-All 24 automated tests pass:
+#### Option B: Using Direct Commands
 ```bash
-pytest tests/ -v
+# Terminal 1 - Backend:
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 - Frontend:
+cd web && npm run dev
 ```
-Test suite verifies:
-- Zero patient overlap across splits (`test_data_split.py`)
-- Zero label leakage in notes and tabular features (`test_rag_leakage.py`)
-- FAISS index size, metadata alignment, and OOF cross-validation integrity (`test_rag_leakage.py`)
-- Test evaluation lock enforcement (`test_stage2_phase4.py`)
-- PSI population stability index calculation (`test_stage2_phase4.py`)
-- FastAPI endpoints, validation, and error handling (`test_api.py`)
+
+#### Option C: Using Docker Compose
+```bash
+docker-compose up --build
+```
+
+Access the application:
+- **Web Command Center:** [http://localhost:5173](http://localhost:5173)
+- **FastAPI Interactive Docs (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc API Reference:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Health Check Endpoint:** [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
-## Integration Options
+## Running the Automated Test Suite
 
-ReadmitIQ supports flexible clinical hospital data integration pathways:
+ReadmitIQ includes **80 automated tests** with zero external network dependencies:
+```bash
+# Run all 80 tests
+pytest
 
-### 1. REST Push (`POST /v1/discharges`) — [Implemented]
-- Real-time synchronous HTTP POST from hospital EHR or ADT (Admission-Discharge-Transfer) engines upon patient discharge.
-- Accepts single encounter or vectorized batches (up to 5,000 records).
-- Sub-2s vectorized scoring throughput with immediate ranked risk tier assignment.
+# Run ActionLoop integration tests specifically
+pytest tests/test_actionloop.py -v
 
-### 2. CSV Batch Drop (`POST /v1/discharges/upload`) — [Implemented]
-- Daily or shift-based batch upload by hospital informatics or care coordination teams.
-- Standard downloadable template (`GET /v1/templates/discharge.csv`) with full validation reporting (accepted rows vs. per-row error breakdown).
+# Run frontend type-check & production build
+cd web && npm run build
+```
 
-### 3. FHIR / HL7 v2 Adapter — [Design Only — Not Implemented]
-- **Architecture Specification:** Inbound HL7 v2 `ADT^A03` (Discharge) or FHIR R4 `Encounter` resource subscription trigger.
-- **Resource Mapping:**
-  - `Encounter.period.end` -> `received_at`
-  - `Encounter.length` -> `time_in_hospital`
-  - `Condition` resources where `category=encounter-diagnosis` -> `diag_1_group`, `diag_2_group`, `diag_3_group`
-  - `MedicationRequest` resources -> medication usage and dose change counts
-  - `Observation` where `code=4548-4` (HbA1c) -> `A1Cresult`
-- **Output:** Transformed into ReadmitIQ `PatientEncounterRequest` schema and ingested via internal REST pipeline. Currently specified as architecture design pattern for enterprise integration.
+---
 
+## Repository Structure
+
+```
+ReadmitIQ/
+├── api/                        # FastAPI REST service & schema validation
+│   ├── main.py                 # Core app gateway & middleware
+│   ├── v1.py                   # ActionLoop v1 router (18 endpoints)
+│   ├── service.py              # ModelService inference orchestrator
+│   ├── database.py             # SQLite WAL persistence & audit logger
+│   ├── schemas.py              # Pydantic clinical feature contracts
+│   └── feed.py                 # Simulation engine & Time Machine
+├── models/
+│   └── final/                  # Frozen runtime model assets (tracked)
+│       ├── model.joblib        # Frozen LightGBM model (42 features)
+│       ├── calibrator.joblib   # Isotonic probability calibrator
+│       ├── preprocessor.joblib # Feature transformer pipeline
+│       ├── structured_svd.joblib # 64-dim latent vector projection
+│       ├── retriever_faiss.index # FAISS IndexFlatIP vector store (17.8 MB)
+│       └── retriever_meta.parquet# 69.5k disjoint reference cohort
+├── web/                        # React 19 + TypeScript + Vite frontend
+│   ├── src/components/         # ActionPlanBoard, PrecedentOrbit, WhatIfExplorer, etc.
+│   ├── src/pages/              # DeskPage, DischargeBriefModal, MonitoringPage
+│   └── src/api/client.ts       # Typed API client
+├── docs/                       # Comprehensive documentation suite
+│   ├── architecture.md         # System architecture & component data flows
+│   ├── actionloop_specification.md # Detailed specification of ActionLoop Stages 1-5
+│   ├── differentiators.md      # What-If Explorer & Trust & Safety deep-dive
+│   ├── portability_guide.md    # Multi-platform setup & clone runbook
+│   ├── api_reference.md        # Full REST API endpoint reference
+│   ├── clinical_guardrails.md  # Research limitations & methodological boundaries
+│   ├── evaluation_and_scientific_results.md # Frozen validation benchmarks
+│   ├── fairness_and_subgroup_audit.md # Demographic parity & small-n power
+│   ├── data_dictionary.md      # The 42 clinical features & mappings
+│   ├── rag_retrieval_architecture.md # FAISS latent space & SVD design
+│   ├── monitoring_and_drift_surveillance.md # PSI math & surveillance rules
+│   └── troubleshooting.md      # Common setup issues & solutions
+├── scripts/                    # Launchers & verification utilities
+│   ├── verify_reproducibility.py# System verification CLI
+│   ├── run_backend.bat / .sh   # Cross-platform backend launchers
+│   ├── run_frontend.bat / .sh  # Cross-platform frontend launchers
+│   ├── check_system_health.py  # Health check utility
+│   └── export_demo_encounters.py # Demo CSV generator
+├── tests/                      # Automated test suite (80 passing tests)
+│   ├── test_actionloop.py      # ActionLoop end-to-end integration tests
+│   ├── test_v1_workflow.py     # Worklist, tasks, and audit trail tests
+│   ├── test_audit_leakage.py   # Zero patient leakage audit
+│   └── test_rag_leakage.py     # RAG split isolation verification
+├── Dockerfile.backend          # Production backend containerfile
+├── Dockerfile.frontend         # Multi-stage frontend containerfile
+├── docker-compose.yml          # Container orchestration configuration
+├── requirements.txt            # Python dependencies
+├── pyproject.toml              # Toolchain configuration
+└── .env.example                # Safe environment configuration template
+```
+
+---
+
+## Ethical & Regulatory Disclaimer
+ReadmitIQ is an investigational research prototype designed to demonstrate capacity-aware discharge coordination and transparent model surveillance. It has **not** received FDA 510(k), De Novo clearance, or CE mark approval as a medical device (SaMD). It is **not** intended to replace clinical judgment. All clinical decisions regarding discharge readiness, patient outreach, and treatment interventions must be made by qualified healthcare professionals.
+
+---
+
+## License
+Distributed under the [MIT License](LICENSE).
