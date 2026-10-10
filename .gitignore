@@ -40,6 +40,7 @@ web/.tmp/
 *.mp3
 *.wav
 screenshots/
+docs/screenshots/
 screen-recordings/
 recordings/
 demo-videos/
