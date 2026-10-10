@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import {
   CheckCircle2,
-  Clock,
   Play,
   XCircle,
   Plus,
   UserCheck,
   Calendar,
-  AlertCircle,
   ShieldAlert,
-  ChevronDown,
 } from "lucide-react";
 import { apiClient } from "../api/client";
 import type { TaskItem, TaskPriority, TaskStatus } from "../types";
