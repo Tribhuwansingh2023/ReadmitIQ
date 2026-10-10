@@ -152,6 +152,8 @@ class PredictResponse(BaseModel):
     top_risk_reducing_factors: List[FactorExplanation]
     similar_patients_summary: Dict[str, Any]
     suggested_interventions: Optional[SuggestedInterventionsSummary] = None
+    degraded_mode: Optional[bool] = False
+    degraded_reason: Optional[str] = None
 
 
 class SimilarEncounter(BaseModel):
@@ -175,6 +177,8 @@ class ExplainResponse(BaseModel):
     top_risk_increasing: List[FactorExplanation]
     top_risk_reducing: List[FactorExplanation]
     all_attributions: Dict[str, float]
+    degraded_mode: Optional[bool] = False
+    degraded_reason: Optional[str] = None
 
 
 class CohortPatient(BaseModel):

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -19,6 +20,9 @@ from api.schemas import (
 from api.service import get_service
 from api.v1 import router as v1_router
 from src.config import METRICS_DIR, MODELS_DIR
+from src.explain import ExplainerError
+
+logger = logging.getLogger("readmitiq.api")
 
 app = FastAPI(
     title="ReadmitIQ Decision Support API",
@@ -86,15 +90,25 @@ def health_check():
 
 
 @app.post("/predict", response_model=PredictResponse, status_code=status.HTTP_200_OK)
-def predict_readmission(encounter: PatientEncounterRequest):
+def predict_readmission(
+    encounter: PatientEncounterRequest,
+    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
+):
     """Predict calibrated 30-day readmission risk, risk tier, SHAP explanations, and similar encounters."""
     svc = get_service()
     try:
         patient_dict = encounter.model_dump()
-        result = svc.predict(patient_dict)
+        result = svc.predict(patient_dict, allow_degraded=allow_degraded)
         return result
+    except (ValueError, TypeError) as ve:
+        logger.warning("Inference input validation error: %s", ve, exc_info=True)
+        raise HTTPException(status_code=422, detail="Invalid encounter input data.")
+    except ExplainerError as ee:
+        logger.warning("Inference explainer/retrieval error: %s", ee, exc_info=True)
+        raise HTTPException(status_code=422, detail="Inference processing failed due to missing retrieval context.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
+        logger.error("Inference processing error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Inference processing error. Please verify encounter inputs.")
 
 
 @app.post("/similar", response_model=SimilarResponse, status_code=status.HTTP_200_OK)
@@ -109,26 +123,38 @@ def find_similar_patients(req: SimilarRequest):
             "neighbor_readmission_rate": round(rate, 4),
             "similar_encounters": similar_list,
         }
+    except (ValueError, TypeError) as ve:
+        logger.warning("Retrieval input error: %s", ve, exc_info=True)
+        raise HTTPException(status_code=422, detail="Invalid retrieval input parameters.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Retrieval error: {str(e)}")
+        logger.error("Retrieval processing error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Retrieval processing error. Please verify request inputs.")
 
 
 @app.post("/explain", response_model=ExplainResponse, status_code=status.HTTP_200_OK)
 def explain_patient_risk(
-    encounter: PatientEncounterRequest, top_k: int = Query(default=3, ge=1, le=10)
+    encounter: PatientEncounterRequest,
+    top_k: int = Query(default=3, ge=1, le=10),
+    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
 ):
     """Generate fine-grained SHAP factor attributions for a single encounter."""
     svc = get_service()
     try:
         patient_dict = encounter.model_dump()
-        explanation = svc.explain(patient_dict, top_k=top_k)
+        explanation = svc.explain(patient_dict, top_k=top_k, allow_degraded=allow_degraded)
         return {
             "top_risk_increasing": explanation["top_risk_increasing"],
             "top_risk_reducing": explanation["top_risk_reducing"],
             "all_attributions": explanation["all_attributions"],
+            "degraded_mode": explanation.get("degraded_mode", False),
+            "degraded_reason": explanation.get("degraded_reason"),
         }
+    except (ValueError, TypeError, ExplainerError) as ve:
+        logger.warning("Explainability input/calculation error: %s", ve, exc_info=True)
+        raise HTTPException(status_code=422, detail="Invalid encounter input data for explainability.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Explainability error: {str(e)}")
+        logger.error("Explainability processing error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Explainability processing error. Please verify encounter inputs.")
 
 
 @app.get("/cohort", response_model=CohortResponse, status_code=status.HTTP_200_OK)

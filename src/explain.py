@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Optional, Union
@@ -8,7 +9,14 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shap
+
+# Safe SHAP import with fallback to native LightGBM booster_.predict(..., pred_contrib=True)
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except (ImportError, OSError, Exception):
+    shap = None
+    SHAP_AVAILABLE = False
 
 from src.config import (
     FIGURES_DIR,
@@ -16,6 +24,12 @@ from src.config import (
     MODELS_DIR,
     VAL_RAG_PARQUET,
 )
+
+
+class ExplainerError(RuntimeError):
+    """Raised when model explainability calculation fails or input is malformed."""
+    pass
+
 
 FEATURE_HUMAN_NAMES = {
     "number_inpatient": "prior inpatient visits",
@@ -106,13 +120,23 @@ def format_clinical_reason(feature: str, value: Union[int, float, str], shap_val
 
 
 class ModelExplainer:
-    """SHAP explainer for the frozen final serving model."""
+    """SHAP explainer for the frozen final serving model with dual backends (SHAP or native LightGBM)."""
 
-    def __init__(self, model_path: Optional[Path] = None, feature_list_path: Optional[Path] = None):
+    def __init__(
+        self,
+        model_path: Optional[Path] = None,
+        feature_list_path: Optional[Path] = None,
+        force_backend: Optional[str] = None,
+    ):
         if model_path is None:
             model_path = MODELS_DIR / "final" / "model.joblib"
         if feature_list_path is None:
             feature_list_path = MODELS_DIR / "final" / "feature_list.json"
+
+        if not model_path.exists():
+            raise ExplainerError(f"Model file not found at: {model_path}")
+        if not feature_list_path.exists():
+            raise ExplainerError(f"Feature list file not found at: {feature_list_path}")
 
         self.model = joblib.load(model_path)
         with open(feature_list_path, "r", encoding="utf-8") as f:
@@ -120,16 +144,56 @@ class ModelExplainer:
         self.num_cols = meta["numeric_features"]
         self.cat_cols = meta["categorical_features"]
         self.all_cols = meta["all_features"]
+
+        self.backend: str = "lightgbm_native"
+        self.explainer = None
+
+        requested_backend = (
+            force_backend or os.getenv("READMITIQ_EXPLAINER_BACKEND", "").lower().strip()
+        )
+
+        if requested_backend == "lightgbm_native":
+            self._init_native_backend()
+        elif requested_backend == "shap":
+            if not SHAP_AVAILABLE or shap is None:
+                raise ExplainerError("SHAP backend explicitly requested but 'shap' library is not available.")
+            self._init_shap_backend()
+        else:
+            # Auto-negotiate: prefer TreeExplainer if SHAP loads cleanly; fallback to native booster
+            if SHAP_AVAILABLE and shap is not None:
+                try:
+                    self._init_shap_backend()
+                except Exception:
+                    self._init_native_backend()
+            else:
+                self._init_native_backend()
+
+    def _init_shap_backend(self):
+        if not SHAP_AVAILABLE or shap is None:
+            raise ExplainerError("SHAP library is not available.")
         self.explainer = shap.TreeExplainer(self.model)
+        self.backend = "shap"
+
+    def _init_native_backend(self):
+        if not hasattr(self.model, "booster_"):
+            raise ExplainerError("Model does not have a native LightGBM booster_ attribute.")
+        self.explainer = None
+        self.backend = "lightgbm_native"
 
     def prepare_row(self, row: Union[Dict, pd.Series, pd.DataFrame]) -> pd.DataFrame:
         """Ensure input row matches model schema and categorical types."""
+        if row is None:
+            raise ExplainerError("Input encounter data cannot be None")
         if isinstance(row, dict):
             df = pd.DataFrame([row])
         elif isinstance(row, pd.Series):
             df = pd.DataFrame([row.to_dict()])
-        else:
+        elif isinstance(row, pd.DataFrame):
+            if row.empty:
+                raise ExplainerError("Input DataFrame cannot be empty")
             df = row.copy()
+        else:
+            raise ExplainerError(f"Unsupported encounter data type: {type(row).__name__}")
 
         # Rename backwards-compatible column if needed
         if "rag_readmit_rate_k20" in df.columns and "rag_struct_rate_k20" not in df.columns:
@@ -153,15 +217,30 @@ class ModelExplainer:
 
     def explain_patient(self, patient_data: Union[Dict, pd.Series], top_k: int = 3) -> Dict:
         """Compute patient-level SHAP attribution and return human-readable clinical reasons."""
-        X = self.prepare_row(patient_data)
-        shap_vals = self.explainer.shap_values(X)
+        if patient_data is None:
+            raise ExplainerError("patient_data cannot be None")
+        if not isinstance(patient_data, (dict, pd.Series, pd.DataFrame)):
+            raise ExplainerError(f"Unsupported patient_data type: {type(patient_data).__name__}")
 
-        if isinstance(shap_vals, list):
-            sv = shap_vals[1][0] if len(shap_vals) > 1 else shap_vals[0][0]
-        elif shap_vals.ndim == 3:
-            sv = shap_vals[0, :, 1]
-        else:
-            sv = shap_vals[0]
+        X = self.prepare_row(patient_data)
+
+        try:
+            if self.backend == "shap" and self.explainer is not None:
+                shap_vals = self.explainer.shap_values(X)
+                if isinstance(shap_vals, list):
+                    sv = shap_vals[1][0] if len(shap_vals) > 1 else shap_vals[0][0]
+                elif shap_vals.ndim == 3:
+                    sv = shap_vals[0, :, 1]
+                else:
+                    sv = shap_vals[0]
+            elif self.backend == "lightgbm_native":
+                contribs = self.model.booster_.predict(X, pred_contrib=True)
+                # First n_features columns are feature attributions, last column is bias
+                sv = contribs[0, :-1]
+            else:
+                raise ExplainerError(f"Unknown or uninitialized explainer backend: {self.backend}")
+        except Exception as e:
+            raise ExplainerError(f"Attribution calculation failed ({self.backend}): {e}") from e
 
         impacts = []
         for col, s_val in zip(self.all_cols, sv):
@@ -196,33 +275,54 @@ class ModelExplainer:
             "top_risk_increasing": pos[:top_k],
             "top_risk_reducing": neg[:top_k],
             "all_attributions": {item["feature"]: item["shap_value"] for item in impacts},
+            "backend": self.backend,
         }
 
     def generate_global_summary_plot(
         self, val_df: pd.DataFrame, output_path: Path, max_display: int = 15
     ):
-        """Generate and save global SHAP summary beeswarm plot."""
+        """Generate and save global SHAP summary plot."""
         X_val = self.prepare_row(val_df.head(1000))
-        shap_vals = self.explainer.shap_values(X_val)
-        if isinstance(shap_vals, list):
-            sv = shap_vals[1] if len(shap_vals) > 1 else shap_vals[0]
-        elif shap_vals.ndim == 3:
-            sv = shap_vals[:, :, 1]
-        else:
-            sv = shap_vals
+        if self.backend == "shap" and self.explainer is not None and SHAP_AVAILABLE:
+            shap_vals = self.explainer.shap_values(X_val)
+            if isinstance(shap_vals, list):
+                sv = shap_vals[1] if len(shap_vals) > 1 else shap_vals[0]
+            elif shap_vals.ndim == 3:
+                sv = shap_vals[:, :, 1]
+            else:
+                sv = shap_vals
 
-        plt.figure(figsize=(10, 7))
-        shap.summary_plot(
-            sv,
-            X_val,
-            max_display=max_display,
-            show=False,
-            feature_names=[FEATURE_HUMAN_NAMES.get(c, c) for c in self.all_cols],
-        )
-        plt.title("ReadmitIQ: Global Feature Impact (SHAP Values)", fontsize=13, pad=15)
-        plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
-        plt.close()
+            plt.figure(figsize=(10, 7))
+            shap.summary_plot(
+                sv,
+                X_val,
+                max_display=max_display,
+                show=False,
+                feature_names=[FEATURE_HUMAN_NAMES.get(c, c) for c in self.all_cols],
+            )
+            plt.title("ReadmitIQ: Global Feature Impact (SHAP Values)", fontsize=13, pad=15)
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.close()
+        else:
+            # Native LightGBM TreeSHAP summary bar plot
+            contribs = self.model.booster_.predict(X_val, pred_contrib=True)[:, :-1]
+            mean_abs = np.mean(np.abs(contribs), axis=0)
+            sorted_idx = np.argsort(mean_abs)[::-1][:max_display]
+            sorted_idx = sorted_idx[::-1]  # Bottom to top for horizontal bar
+
+            top_features = [self.all_cols[i] for i in sorted_idx]
+            top_names = [FEATURE_HUMAN_NAMES.get(f, f) for f in top_features]
+            top_vals = [mean_abs[i] for i in sorted_idx]
+
+            plt.figure(figsize=(10, 7))
+            plt.barh(range(len(top_names)), top_vals, color="#2563EB", alpha=0.85)
+            plt.yticks(range(len(top_names)), top_names)
+            plt.xlabel("Mean |SHAP Value| (Average Impact on Model Output)")
+            plt.title("ReadmitIQ: Global Feature Impact (Native TreeSHAP)", fontsize=13, pad=15)
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.close()
         print(f"Global SHAP summary figure saved to {output_path}")
 
 
