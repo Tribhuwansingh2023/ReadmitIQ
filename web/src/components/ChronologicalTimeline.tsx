@@ -100,9 +100,24 @@ export const ChronologicalTimeline: React.FC<ChronologicalTimelineProps> = ({
             Closed-Loop Follow-up & Audit Trail
           </h3>
         </div>
-        <span className="text-[11px] font-mono text-muted">
-          {events.length} chronological events
-        </span>
+        <div className="flex items-center gap-2">
+          {outcomeReadmitted !== undefined && outcomeReadmitted !== null && (
+            <span
+              className={`px-2 py-0.5 rounded font-mono text-[10px] font-bold ${
+                outcomeReadmitted === 1
+                  ? "bg-critical/10 text-critical"
+                  : "bg-protective/10 text-protective"
+              }`}
+            >
+              {outcomeReadmitted === 1
+                ? "30d Readmission Confirmed"
+                : "Discharged Safely (No Readmit)"}
+            </span>
+          )}
+          <span className="text-[11px] font-mono text-muted">
+            {events.length} chronological events
+          </span>
+        </div>
       </div>
 
       <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-hairline">

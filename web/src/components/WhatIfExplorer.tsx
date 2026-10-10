@@ -4,10 +4,7 @@ import {
   RotateCcw,
   TrendingDown,
   TrendingUp,
-  AlertTriangle,
   Info,
-  CheckCircle2,
-  ArrowRight,
 } from "lucide-react";
 import { apiClient } from "../api/client";
 import type { PatientFormInput, WhatIfResponse } from "../types";
@@ -104,8 +101,9 @@ export const WhatIfExplorer: React.FC<WhatIfExplorerProps> = ({
   const modCalibrated = simulation?.modified?.calibrated_prob ?? baselineCalibratedProb;
   const modRaw = simulation?.modified?.raw_score ?? baselineRawScore;
   const modTier = simulation?.modified?.tier ?? (simulation?.modified as any)?.risk_tier ?? baselineTier;
-  const isReduced = delta?.probability_change !== undefined ? delta.probability_change < 0 : false;
-  const isIncreased = delta?.probability_change !== undefined ? delta.probability_change > 0 : false;
+  const probChange = delta ? (delta.probability_change ?? delta.calibrated_prob) : 0;
+  const isReduced = probChange < 0;
+  const isIncreased = probChange > 0;
 
   return (
     <div className="space-y-4 font-sans">
@@ -204,23 +202,12 @@ export const WhatIfExplorer: React.FC<WhatIfExplorerProps> = ({
             {isReduced ? (
               <div className="flex items-center gap-1 text-protective font-mono text-xl font-bold">
                 <TrendingDown className="w-5 h-5" />
-                <span>
-                  {delta?.probability_change
-                    ? (delta.probability_change * 100).toFixed(1)
-                    : "0.0"}
-                  %
-                </span>
+                <span>{(probChange * 100).toFixed(1)}%</span>
               </div>
             ) : isIncreased ? (
               <div className="flex items-center gap-1 text-critical font-mono text-xl font-bold">
                 <TrendingUp className="w-5 h-5" />
-                <span>
-                  +
-                  {delta?.probability_change
-                    ? (delta.probability_change * 100).toFixed(1)
-                    : "0.0"}
-                  %
-                </span>
+                <span>+{(probChange * 100).toFixed(1)}%</span>
               </div>
             ) : (
               <span className="font-mono text-xl font-bold text-muted">
@@ -229,11 +216,9 @@ export const WhatIfExplorer: React.FC<WhatIfExplorerProps> = ({
             )}
           </div>
           <div className="text-[10px] font-mono text-muted pt-1 border-t border-hairline/60">
-            {delta?.relative_risk_change_pct
-              ? `${delta.relative_risk_change_pct > 0 ? "+" : ""}${
-                  delta.relative_risk_change_pct
-                }% relative change`
-              : "No relative change"}
+            {delta?.relative_risk_change_pct !== undefined
+              ? `${delta.relative_risk_change_pct > 0 ? "+" : ""}${delta.relative_risk_change_pct}% relative change`
+              : `${((probChange / (baselineCalibratedProb || 1)) * 100).toFixed(1)}% relative change`}
           </div>
         </div>
       </div>
