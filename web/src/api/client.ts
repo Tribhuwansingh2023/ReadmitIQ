@@ -10,6 +10,10 @@ import type {
   PatientFormInput,
   PredictResponse,
   SimilarResponse,
+  TaskCreateInput,
+  TaskItem,
+  TaskPatchInput,
+  WhatIfResponse,
   WorklistResponse,
 } from "../types";
 
@@ -136,6 +140,56 @@ export const apiClient = {
       body: JSON.stringify(outcome),
     });
     return handleResponse<any>(res);
+  },
+
+  // --- Care Transition Tasks ---
+
+  async getTasks(dischargeId: number): Promise<TaskItem[]> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${dischargeId}/tasks`);
+    return handleResponse<TaskItem[]>(res);
+  },
+
+  async createTask(
+    dischargeId: number,
+    task: TaskCreateInput,
+  ): Promise<TaskItem> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${dischargeId}/tasks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(task),
+    });
+    return handleResponse<TaskItem>(res);
+  },
+
+  async updateTask(
+    dischargeId: number,
+    taskId: number,
+    data: TaskPatchInput,
+  ): Promise<any> {
+    const res = await fetch(
+      `${API_BASE_URL}/v1/discharges/${dischargeId}/tasks/${taskId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      },
+    );
+    return handleResponse<any>(res);
+  },
+
+  // --- What-If Risk Sensitivity ---
+
+  async whatIfSensitivity(data: {
+    discharge_id?: number;
+    original_features?: Record<string, any>;
+    modified_features: Record<string, any>;
+  }): Promise<WhatIfResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/what-if`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<WhatIfResponse>(res);
   },
 
   // --- v1 Simulated Feed & Time Machine ---
