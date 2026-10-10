@@ -144,7 +144,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Top Header */}
-      <header className="border-b border-hairline bg-surface/90 backdrop-blur-xs sticky top-0 z-40 px-4 sm:px-6 py-3 transition-colors">
+      <header className="border-b border-hairline bg-surface/90 backdrop-blur-xl sticky top-0 z-40 px-4 sm:px-6 py-3 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo & Clinical Brand */}
           <div className="flex items-center gap-3">
