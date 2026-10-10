@@ -9,9 +9,12 @@ export interface HealthResponse {
 
 export interface FactorExplanation {
   feature: string;
-  value: string | number;
+  value?: string | number;
   shap_value: number;
   explanation: string;
+  feature_name?: string;
+  attribution?: number;
+  clinical_meaning?: string;
 }
 
 export interface SimilarEncounter {
@@ -47,6 +50,9 @@ export interface PredictResponse {
   risk_tier: "Critical" | "High" | "Medium" | "Low";
   decision_threshold: number;
   predicted_readmission: boolean;
+  raw_score?: number;
+  calibrated_prob?: number;
+  tier?: "Critical" | "High" | "Medium" | "Low";
   capacity_thresholds: {
     top_5pct_critical: number;
     top_10pct_high: number;
@@ -101,128 +107,77 @@ export interface CohortResponse {
   top_patients: CohortPatient[];
 }
 
+export interface ValidationModelItem {
+  model: string;
+  feature_set: string;
+  auc: number;
+  auc_ci_lower?: number;
+  auc_ci_upper?: number;
+  brier_score?: number;
+  ece?: number;
+  precision_at_top10?: number;
+  lift_at_top10?: number;
+  optimal_threshold?: number;
+  f1_at_optimal_threshold?: number;
+  paired_delta_auc?: number;
+  paired_ci_95?: [number, number];
+  ci_crosses_zero?: boolean;
+}
+
 export interface MetricsResponse {
   ablation_table?: {
-    transformer_status?: "pending" | "completed";
+    transformer_status?: string;
     transformer_pending_message?: string;
-    transformer_comparisons?: Record<string, unknown>;
-    validation_models: Array<{
-      model: string;
-      feature_set: string;
-      auc: number;
-      auc_ci_lower?: number;
-      auc_ci_upper?: number;
-      brier_score?: number | null;
-      ece?: number | null;
-      precision_at_top10?: number;
-      lift_at_top10?: number;
-      optimal_threshold?: number;
-      f1_at_optimal_threshold?: number;
-      paired_delta_auc?: number;
-      paired_ci_95?: [number, number];
-      ci_crosses_zero?: boolean;
-      train_samples?: number;
-      val_samples?: number;
-    }>;
-    paired_rag_difference?: {
-      delta_auc: number;
-      ci_lower: number;
-      ci_upper: number;
-      crosses_zero: boolean;
-    };
+    validation_models?: ValidationModelItem[];
+    ablation_results?: any[];
+    paired_rag_difference?: any;
+    paired_bootstrap_differences?: any;
+    calibration_report?: any;
   };
   test_results?: {
-    model_name: string;
+    model_name?: string;
     eval_timestamp?: string;
     git_commit_hash?: string;
-    test_cohort_size: number;
+    test_cohort_size?: number;
     test_positive_prevalence?: number;
-    auc_roc: number;
-    auc_ci_95: [number, number];
-    frozen_decision_threshold: number;
-    f1: number;
-    precision: number;
-    recall: number;
-    brier_score: number;
-    ece: number;
-    capacity_metrics: {
-      top_5pct?: {
-        threshold: number;
-        precision: number;
-        lift: number;
-        recall: number;
-      };
-      top_10pct: {
-        threshold: number;
-        precision: number;
-        lift: number;
-        recall: number;
-      };
-      top_20pct?: {
-        threshold: number;
-        precision: number;
-        lift: number;
-        recall: number;
-      };
+    auc_roc?: number;
+    auc_ci_95?: [number, number];
+    frozen_decision_threshold?: number;
+    f1?: number;
+    precision?: number;
+    recall?: number;
+    brier_score?: number;
+    ece?: number;
+    paired_rag_difference_test?: any;
+    validation_comparison?: any;
+    test_metrics?: {
+      auc_roc: number;
+      auc_ci_95: [number, number];
+      brier_score: number;
+      ece: number;
+      constant_prevalence_brier?: number;
     };
-    paired_rag_difference_test?: {
-      observed_delta_auc: number;
-      ci_95: [number, number];
-      crosses_zero: boolean;
+    capacity_metrics?: {
+      top_5pct?: { threshold: number; precision: number; lift: number; recall: number };
+      top_10pct?: { threshold: number; precision: number; lift: number; recall: number };
+      top_20pct?: { threshold: number; precision: number; lift: number; recall: number };
     };
-    validation_comparison?: {
-      val_auc: number;
-      val_auc_ci: [number, number];
-      auc_generalization_gap: number;
+    calibration_curve?: {
+      prob_true: number[];
+      prob_pred: number[];
+      counts: number[];
     };
   };
   fairness_audit?: {
-    evaluation_split?: string;
-    sample_size?: number;
-    capacity_threshold_evaluated?: number;
-    primary_model_test_auc?: number;
-    blinded_model_test_auc?: number;
-    auc_delta_blinded_vs_primary?: number;
-    audits?: Record<
-      string,
-      {
-        reference_group: string;
-        subgroups: Record<
-          string,
-          {
-            sample_size: number;
-            reliable: boolean;
-            prevalence: number;
-            auc_roc: number;
-            auc_ci_95: [number, number];
-            selection_rate: number;
-            tpr: number;
-            fpr: number;
-            ratio_selection_rate_vs_ref: number;
-            ratio_tpr_vs_ref: number;
-          }
-        >;
-      }
-    >;
+    demographic_parity?: Record<string, any>;
+    equalized_odds?: Record<string, any>;
+    audits?: Record<string, any>;
+    [key: string]: any;
   };
   drift_metrics?: {
-    features: Record<
-      string,
-      {
-        psi_train_vs_val: number;
-        status_train_vs_val: string;
-        psi_train_vs_test: number;
-        status_train_vs_test: string;
-      }
-    >;
+    features?: Record<string, any>;
     scores?: Record<string, any>;
-    summary?: {
-      total_features_monitored: number;
-      val_moderate_drift_count: number;
-      val_high_drift_count: number;
-      test_moderate_drift_count: number;
-      test_high_drift_count: number;
-    };
+    summary?: Record<string, any>;
   };
   frozen_selection?: any;
 }
@@ -253,4 +208,170 @@ export interface PatientFormInput {
   change: string;
   insulin: string;
   metformin: string;
+  glipizide?: string;
+  glyburide?: string;
+  glimepiride?: string;
+  pioglitazone?: string;
+  rosiglitazone?: string;
+  acarbose?: string;
+  repaglinide?: string;
+  nateglinide?: string;
+  "glyburide-metformin"?: string;
+  external_ref?: string;
+  source?: string;
+}
+
+// ---------------------------------------------------------------------------
+// v1 Clinical Workflow & Desk Types
+// ---------------------------------------------------------------------------
+
+export type RiskTier = "Critical" | "High" | "Medium" | "Low";
+export type EncounterStatus = "new" | "assigned" | "contacted" | "followup_scheduled" | "closed";
+
+export interface WorklistItem {
+  id: number;
+  received_at: string;
+  source: "manual" | "csv" | "api" | "simulated_feed";
+  external_ref?: string;
+  raw_score: number;
+  calibrated_prob: number;
+  tier: RiskTier;
+  status: EncounterStatus;
+  assignee?: string;
+  updated_at: string;
+  outcome_readmitted_30d?: number | null;
+  patient_summary: {
+    age: string;
+    gender: string;
+    time_in_hospital: number;
+    primary_diagnosis: string;
+    number_inpatient: number;
+  };
+}
+
+export interface WorklistResponse {
+  mode: "standard" | "capacity_mode";
+  capacity_limit?: number;
+  total_count: number;
+  tier_counts: Record<string, number>;
+  page?: number;
+  page_size?: number;
+  items: WorklistItem[];
+}
+
+export interface DischargeDetailResponse {
+  id: number;
+  received_at: string;
+  source: string;
+  external_ref?: string;
+  raw_score: number;
+  calibrated_prob: number;
+  tier: RiskTier;
+  status: EncounterStatus;
+  assignee?: string;
+  model_version: string;
+  outcome_readmitted_30d?: number | null;
+  outcome_at?: string | null;
+  features: PatientFormInput;
+  shap_explanation: {
+    top_risk_increasing: FactorExplanation[];
+    top_risk_reducing: FactorExplanation[];
+    all_attributions: Record<string, number>;
+  };
+  similar_patients_summary?: {
+    k_neighbors: number;
+    neighbor_readmission_rate: number;
+    top_neighbors: SimilarEncounter[];
+  };
+  suggested_interventions?: SuggestedInterventionsSummary;
+  action_history: {
+    id: number;
+    type: string;
+    note: string;
+    created_at: string;
+    actor: string;
+  }[];
+  audit_trail: {
+    id: number;
+    ts: string;
+    actor: string;
+    event: string;
+    payload?: any;
+  }[];
+}
+
+export interface FeedStatusResponse {
+  is_running: boolean;
+  rate_per_minute: number;
+  seed: number;
+  total_emitted: number;
+  simulated_time: string;
+  feed_source: string;
+}
+
+export interface MonitoringResponse {
+  timestamp: string;
+  counts: {
+    total_discharges: number;
+    simulated_feed_count: number;
+    api_count: number;
+    csv_count: number;
+    open_worklist_count: number;
+    resolved_outcomes_count: number;
+    positive_readmissions_count: number;
+  };
+  tier_mix: Record<
+    string,
+    { count: number; share: number; expected_share: number; delta: number }
+  >;
+  score_drift: {
+    metric: string;
+    raw_score_psi: number;
+    severity: string;
+    sample_size: number;
+    thresholds: Record<string, string>;
+  };
+  data_quality: {
+    conformity_rate: number;
+    missing_rate: number;
+    status: string;
+  };
+  outcomes_evaluation: {
+    insufficient_outcomes: boolean;
+    sample_size_outcomes: number;
+    positive_readmissions: number;
+    minimum_required_outcomes: number;
+    minimum_required_positives: number;
+    status_message?: string;
+    auc_roc?: number;
+    auc_ci_95?: [number, number];
+    frozen_val_auc_ci?: [number, number];
+    precision_at_capacity?: Record<
+      string,
+      { k_encounters: number; caught_readmissions: number; precision: number }
+    >;
+    calibration_deciles?: {
+      bin_range: string;
+      count: number;
+      predicted_prob_mean: number;
+      observed_readmission_rate: number;
+    }[];
+  };
+  alerts: { severity: string; type: string; message: string }[];
+}
+
+export interface ModelInfoResponse {
+  model_name: string;
+  model_version: string;
+  git_commit_hash: string;
+  frozen_timestamp?: string;
+  serving_thresholds?: {
+    top_5pct: number;
+    top_10pct: number;
+    top_20pct: number;
+  };
+  tier_definitions?: Record<string, string>;
+  splits_summary?: Record<string, { encounters: number; strategy: string }>;
+  model_card_url: string;
+  api_contract_url: string;
 }

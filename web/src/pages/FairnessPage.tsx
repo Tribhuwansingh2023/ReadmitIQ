@@ -195,7 +195,7 @@ export const FairnessPage: React.FC = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {currentAttributeAudit &&
                   Object.entries(currentAttributeAudit.subgroups).map(
-                    ([groupName, g]) => {
+                    ([groupName, g]: [string, any]) => {
                       const isRef =
                         groupName === currentAttributeAudit.reference_group;
                       return (
