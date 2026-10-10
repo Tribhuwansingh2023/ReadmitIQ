@@ -773,8 +773,14 @@ def get_discharge_detail(discharge_id: int):
             "status": row["status"],
             "assignee": row["assignee"],
             "model_version": row["model_version"],
+            "scoring_status": "Scored (Frozen Pipeline Validated)",
             "outcome_readmitted_30d": row["outcome_readmitted_30d"],
             "outcome_at": row["outcome_at"],
+            "outcome_status": (
+                "Verified 30-Day Readmission" if row["outcome_readmitted_30d"] == 1
+                else "No Readmission Observed (Verified)" if row["outcome_readmitted_30d"] == 0
+                else "30-Day Surveillance Active (Outcome Pending)"
+            ),
             "features": feats,
             "shap_explanation": explanation,
             "similar_patients_summary": neighbor_summary,
@@ -785,9 +791,19 @@ def get_discharge_detail(discharge_id: int):
                 "is_in_capacity": cap_rank <= 15 if cap_rank else False,
                 "active_open_count": active_open_count,
             },
+            "capacity_triage": {
+                "priority_rank": cap_rank,
+                "priority_score": row["raw_score"],
+                "is_in_capacity": cap_rank <= 15 if cap_rank else False,
+                "capacity_limit": 15,
+                "active_backlog_total": active_open_count,
+                "tie_breaker_rule": "Deterministic: raw_score DESC, received_at DESC, id ASC",
+                "clinical_disclaimer": "Resource triage allocation only. Does NOT claim or guarantee preventable readmissions without randomized clinical validation.",
+            },
             "action_history": actions,
             "audit_trail": audit_trail,
             "chronological_timeline": timeline_events,
+            "timeline": timeline_events,
         }
 
 
@@ -969,31 +985,49 @@ def what_if_sensitivity(req: WhatIfRequest):
     mod_prob = mod_pred["calibrated_risk_probability"]
     delta_prob = round(mod_prob - base_prob, 4)
 
+    base_raw = float(base_pred.get("raw_score", base_pred.get("raw_lgbm_score", base_prob)))
+    mod_raw = float(mod_pred.get("raw_score", mod_pred.get("raw_lgbm_score", mod_prob)))
+    delta_raw = round(mod_raw - base_raw, 4)
+
+    changed_features = {}
+    for k, v in req.modified_features.items():
+        changed_features[k] = {"from": base_req.get(k), "to": v}
+
     return {
         "disclaimer": (
             "Model Sensitivity Analysis: Simulates frozen model response to hypothetical input variations. "
             "This is NOT a causal estimate, clinical treatment effect, or guarantee of reduced readmission risk."
         ),
         "baseline": {
+            "tier": base_pred["risk_tier"],
             "risk_tier": base_pred["risk_tier"],
+            "raw_score": base_raw,
             "calibrated_prob": base_prob,
             "decision_threshold": base_pred["decision_threshold"],
+            "top_drivers": base_pred["top_risk_increasing_factors"],
             "top_risk_drivers": base_pred["top_risk_increasing_factors"],
             "inputs": {k: base_req.get(k) for k in req.modified_features.keys()},
         },
         "modified": {
+            "tier": mod_pred["risk_tier"],
             "risk_tier": mod_pred["risk_tier"],
+            "raw_score": mod_raw,
             "calibrated_prob": mod_prob,
             "decision_threshold": mod_pred["decision_threshold"],
+            "top_drivers": mod_pred["top_risk_increasing_factors"],
             "top_risk_drivers": mod_pred["top_risk_increasing_factors"],
             "inputs": req.modified_features,
         },
         "delta": {
+            "raw_score": delta_raw,
+            "calibrated_prob": delta_prob,
             "probability_change": delta_prob,
             "relative_risk_change_pct": round(((mod_prob - base_prob) / max(1e-4, base_prob)) * 100, 1),
             "tier_transition": f"{base_pred['risk_tier']} -> {mod_pred['risk_tier']}",
             "tier_changed": base_pred["risk_tier"] != mod_pred["risk_tier"],
+            "increased_risk": mod_prob > base_prob,
         },
+        "changed_features": changed_features,
     }
 
 
