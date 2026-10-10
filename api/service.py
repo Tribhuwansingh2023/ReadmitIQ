@@ -432,6 +432,8 @@ class ModelService:
         top_reducing = explanation["top_risk_reducing"]
 
         return {
+            "raw_score": round(raw_prob, 6),
+            "raw_lgbm_score": round(raw_prob, 6),
             "calibrated_risk_probability": round(cal_prob, 4),
             "risk_tier": tier,
             "decision_threshold": round(f1_th, 4),
