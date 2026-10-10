@@ -150,19 +150,27 @@ class ModelService:
         neighbor_sims = None
 
         if missing_rag:
-            dense_feats = self.base_preprocessor.transform(df[self.base_num_cols + self.cat_cols])
-            if hasattr(dense_feats, "toarray"):
-                dense_feats = dense_feats.toarray()
-            query_vecs = self.svd.transform(dense_feats).astype(np.float32)
-            faiss.normalize_L2(query_vecs)
-            scores, indices = self.faiss_index.search(query_vecs, 20)
-            neighbor_indices = indices
-            neighbor_sims = scores
-            # Vectorized neighbor readmission rate across top 20 train neighbors
-            rag_rates = self.train_meta["readmitted_30d"].values[indices].mean(axis=1)
-            df["rag_struct_rate_k20"] = rag_rates
+            try:
+                dense_feats = self.base_preprocessor.transform(df[self.base_num_cols + self.cat_cols])
+                if hasattr(dense_feats, "toarray"):
+                    dense_feats = dense_feats.toarray()
+                query_vecs = self.svd.transform(dense_feats).astype(np.float32)
+                faiss.normalize_L2(query_vecs)
+                scores, indices = self.faiss_index.search(query_vecs, 20)
+                neighbor_indices = indices
+                neighbor_sims = scores
+                # Vectorized neighbor readmission rate across top 20 train neighbors
+                rag_rates = self.train_meta["readmitted_30d"].values[indices].mean(axis=1)
+                df["rag_struct_rate_k20"] = rag_rates
+            except Exception as e:
+                logger.error("Vectorized FAISS retrieval failed: %s", e, exc_info=True)
+                raise RuntimeError(
+                    f"RAG retrieval failed for batch scoring: {e}. Model requires valid peer context."
+                ) from e
         else:
-            df["rag_struct_rate_k20"] = pd.to_numeric(df["rag_struct_rate_k20"], errors="coerce").fillna(0.0)
+            if df["rag_struct_rate_k20"].isna().any():
+                raise ValueError("Batch scoring contains invalid or missing rag_struct_rate_k20 values.")
+            df["rag_struct_rate_k20"] = pd.to_numeric(df["rag_struct_rate_k20"], errors="raise").astype(float)
 
         # 2. Vectorized LightGBM feature prep & inference
         X_lgbm = prepare_lgbm_data(df, self.num_cols, self.cat_cols)
@@ -313,60 +321,30 @@ class ModelService:
     ) -> Dict[str, Any]:
         """Explain patient risk attributions, retrieving RAG neighborhood if needed.
 
-        In strict mode (allow_degraded=False):
-            If RAG retrieval fails, raises ExplainerError to prevent misleading clinical rationale.
-        In degraded mode (allow_degraded=True):
-            If RAG retrieval fails, marks degraded_mode=True with explanation reason,
-            and excludes peer-based factors (rag_struct_rate_k20) from top clinical drivers.
+        The frozen serving model requires valid peer context (rag_struct_rate_k20).
+        If RAG retrieval fails and no precomputed rag_struct_rate_k20 is provided:
+        - Raises ExplainerError to fail safely.
+        - Strictly prohibits fabrications (such as 0.0 or population mean) which corrupt model attributions.
         """
         if not isinstance(patient_dict, dict):
             raise ExplainerError("patient_dict must be a dictionary")
         patient_copy = dict(patient_dict)
-        degraded = force_degraded or bool(patient_copy.get("_rag_degraded", False))
-        degraded_reason = (
-            "RAG neighborhood retrieval unavailable; peer-based attribution excluded from clinical rationale."
-            if degraded
-            else None
-        )
 
-        if not degraded and ("rag_struct_rate_k20" not in patient_copy or patient_copy["rag_struct_rate_k20"] is None):
+        if "rag_struct_rate_k20" not in patient_copy or patient_copy["rag_struct_rate_k20"] is None:
             try:
                 rag_rate, _ = self.retrieve_similar(patient_copy, k=20)
                 patient_copy["rag_struct_rate_k20"] = rag_rate
             except Exception as e:
-                logger.warning("RAG retrieval failed during explain: %s", e, exc_info=True)
-                if not allow_degraded:
-                    raise ExplainerError(
-                        f"RAG neighborhood retrieval failed and degraded mode is disabled: {e}"
-                    ) from e
-                degraded = True
-                degraded_reason = (
-                    "RAG neighborhood retrieval unavailable; peer-based attribution excluded from clinical rationale."
-                )
-                patient_copy["rag_struct_rate_k20"] = 0.0
-        elif degraded:
-            patient_copy["rag_struct_rate_k20"] = 0.0
+                logger.error("RAG retrieval failed during explain: %s", e, exc_info=True)
+                raise ExplainerError(
+                    f"RAG neighborhood retrieval failed: {e}. "
+                    "Explainability requires valid peer context (rag_struct_rate_k20) "
+                    "and cannot safely generate attributions using fabricated peer evidence."
+                ) from e
 
         explanation = self.explainer.explain_patient(patient_copy, top_k=top_k)
-
-        if degraded:
-            # Exclude RAG features from top risk increasing and decreasing factors to prevent
-            # fabricating misleading clinical explanations about historical peer patients.
-            explanation["top_risk_increasing"] = [
-                f
-                for f in explanation["top_risk_increasing"]
-                if f["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-            ][:top_k]
-            explanation["top_risk_reducing"] = [
-                f
-                for f in explanation["top_risk_reducing"]
-                if f["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-            ][:top_k]
-            if "rag_struct_rate_k20" in explanation["all_attributions"]:
-                explanation["all_attributions"]["rag_struct_rate_k20"] = 0.0
-
-        explanation["degraded_mode"] = degraded
-        explanation["degraded_reason"] = degraded_reason
+        explanation["degraded_mode"] = False
+        explanation["degraded_reason"] = None
         return explanation
 
     def predict(
@@ -374,14 +352,12 @@ class ModelService:
     ) -> Dict[str, Any]:
         """Perform end-to-end calibrated prediction, RAG retrieval, and SHAP explanation.
 
-        If RAG retrieval fails:
-        - In strict mode (allow_degraded=False): raises ExplainerError to avoid ungrounded CDS.
-        - In degraded mode (allow_degraded=True): computes prediction with missing RAG imputed to 0.0,
-          omits peer summaries, excludes peer factors from explanations, and clearly discloses degraded_mode.
+        The frozen serving model requires valid peer context (rag_struct_rate_k20).
+        Because no separately validated non-RAG serving model exists in models/final,
+        if RAG retrieval fails and no valid precomputed rag_struct_rate_k20 is provided:
+        - The prediction fails safely by raising ExplainerError.
+        - Never fabricates a feature value (such as 0.0 or 0.1139) to prevent ungrounded clinical inference.
         """
-        # 1. Retrieve RAG neighborhood rate if not already provided
-        degraded = False
-        degraded_reason = None
         rag_rate = patient_dict.get("rag_struct_rate_k20")
         similar_list = []
 
@@ -390,20 +366,18 @@ class ModelService:
                 rag_rate, similar_list = self.retrieve_similar(patient_dict, k=20)
                 patient_dict["rag_struct_rate_k20"] = rag_rate
             except Exception as e:
-                logger.warning("RAG retrieval failed during predict: %s", e, exc_info=True)
-                if not allow_degraded:
-                    raise ExplainerError(
-                        f"RAG neighborhood retrieval failed and degraded mode is disabled: {e}"
-                    ) from e
-                degraded = True
-                degraded_reason = (
-                    "RAG neighborhood retrieval unavailable; peer evidence omitted from prediction and clinical explanation."
-                )
-                patient_dict["rag_struct_rate_k20"] = 0.0
+                logger.error("RAG retrieval failed during predict: %s", e, exc_info=True)
+                raise ExplainerError(
+                    f"RAG neighborhood retrieval failed: {e}. "
+                    "The frozen serving model requires valid peer context (rag_struct_rate_k20) "
+                    "and no separately validated non-RAG model exists. "
+                    "Prediction fails safely to prevent clinical scoring on fabricated peer evidence."
+                ) from e
         else:
             try:
                 _, similar_list = self.retrieve_similar(patient_dict, k=20)
-            except Exception:
+            except Exception as e:
+                logger.warning("Neighbor detail retrieval failed: %s", e)
                 similar_list = []
 
         # 2. Format for LightGBM
@@ -436,9 +410,7 @@ class ModelService:
             tier = "Low"
 
         # 4. SHAP Explanation
-        explanation = self.explain(
-            patient_dict, top_k=3, allow_degraded=allow_degraded, force_degraded=degraded
-        )
+        explanation = self.explain(patient_dict, top_k=3)
 
         # 5. Deterministic Decision Support Interventions
         interventions = generate_suggested_interventions(
@@ -451,23 +423,13 @@ class ModelService:
         self.log_prediction(patient_dict, cal_prob, tier)
 
         similar_summary: Dict[str, Any] = {
-            "k_neighbors": 20 if not degraded else 0,
-            "neighbor_readmission_rate": round(rag_rate, 4) if not degraded and rag_rate is not None else 0.0,
-            "top_neighbors": similar_list[:5] if not degraded else [],
+            "k_neighbors": 20,
+            "neighbor_readmission_rate": round(float(rag_rate), 4),
+            "top_neighbors": similar_list[:5],
         }
-        if degraded:
-            similar_summary["degraded"] = True
-            similar_summary["degraded_reason"] = degraded_reason
 
         top_increasing = explanation["top_risk_increasing"]
         top_reducing = explanation["top_risk_reducing"]
-        if degraded:
-            top_increasing = [
-                f for f in top_increasing if f["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-            ][:3]
-            top_reducing = [
-                f for f in top_reducing if f["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-            ][:3]
 
         return {
             "calibrated_risk_probability": round(cal_prob, 4),
@@ -483,8 +445,8 @@ class ModelService:
             "top_risk_reducing_factors": top_reducing,
             "similar_patients_summary": similar_summary,
             "suggested_interventions": interventions,
-            "degraded_mode": degraded,
-            "degraded_reason": degraded_reason,
+            "degraded_mode": False,
+            "degraded_reason": None,
         }
 
     def log_prediction(self, patient_dict: Dict[str, Any], prob: float, tier: str):

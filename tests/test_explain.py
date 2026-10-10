@@ -179,8 +179,8 @@ def test_api_explain_endpoint_error_safety(sample_valid_patient):
     assert "ValueError" not in str(err_body)
 
 
-def test_service_explain_rag_failure_strict_mode(sample_valid_patient, monkeypatch):
-    """Verify ModelService.explain raises ExplainerError in strict mode when RAG retrieval fails."""
+def test_service_explain_rag_failure_safe_rejection(sample_valid_patient, monkeypatch):
+    """Verify ModelService.explain fails safely when RAG retrieval fails and peer context is missing."""
     from api.service import get_service
     svc = get_service()
 
@@ -192,37 +192,17 @@ def test_service_explain_rag_failure_strict_mode(sample_valid_patient, monkeypat
 
     monkeypatch.setattr(svc, "retrieve_similar", failing_retriever)
 
-    # In strict mode (allow_degraded=False), must raise ExplainerError rather than inventing 0.1139
-    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed and degraded mode is disabled"):
+    # Must raise ExplainerError rather than fabricating 0.0 or 0.1139
+    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed"):
         svc.explain(patient_no_rag, top_k=3, allow_degraded=False)
 
-
-def test_service_explain_rag_failure_degraded_mode(sample_valid_patient, monkeypatch):
-    """Verify ModelService.explain safely excludes peer factors and discloses degraded mode when RAG fails."""
-    from api.service import get_service
-    svc = get_service()
-
-    patient_no_rag = dict(sample_valid_patient)
-    patient_no_rag.pop("rag_struct_rate_k20", None)
-
-    def failing_retriever(*args, **kwargs):
-        raise RuntimeError("Simulated FAISS retrieval index corrupt")
-
-    monkeypatch.setattr(svc, "retrieve_similar", failing_retriever)
-
-    # In degraded mode (allow_degraded=True), succeeds with explicit disclosure
-    res = svc.explain(patient_no_rag, top_k=3, allow_degraded=True)
-    assert res["degraded_mode"] is True
-    assert "peer-based attribution excluded" in res["degraded_reason"]
-
-    # Verify RAG features are strictly stripped from clinical drivers
-    for factor in res["top_risk_increasing"] + res["top_risk_reducing"]:
-        assert factor["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-        assert "similar historical patients" not in factor["explanation"].lower()
+    # Even with allow_degraded=True, must fail safely because no non-RAG model exists
+    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed"):
+        svc.explain(patient_no_rag, top_k=3, allow_degraded=True)
 
 
-def test_api_explain_endpoint_degraded_mode_flow(sample_valid_patient, monkeypatch):
-    """Verify /explain endpoint honors allow_degraded query flag when RAG retrieval fails."""
+def test_api_explain_endpoint_rag_failure_returns_422(sample_valid_patient, monkeypatch):
+    """Verify /explain endpoint returns safe HTTP 422 error when RAG retrieval fails."""
     from api.service import get_service
     svc = get_service()
 
@@ -235,22 +215,20 @@ def test_api_explain_endpoint_degraded_mode_flow(sample_valid_patient, monkeypat
     patient_no_rag = dict(sample_valid_patient)
     patient_no_rag["rag_struct_rate_k20"] = None
 
-    # Strict mode defaults to False -> returns safe 422 error
+    # Strict mode -> returns safe 422 error
     resp_strict = client.post("/explain?allow_degraded=false", json=patient_no_rag)
     assert resp_strict.status_code == 422
     err_body = resp_strict.json()
-    assert "Invalid encounter input data for explainability" in err_body["detail"]
+    assert "Explainability unavailable" in err_body["detail"]
     assert "Traceback" not in str(err_body)
     assert "RuntimeError" not in str(err_body)
 
-    # Degraded mode allowed -> returns 200 with degraded disclosure
+    # Degraded query param -> also returns safe 422 error without fabricated explanations
     resp_degraded = client.post("/explain?allow_degraded=true", json=patient_no_rag)
-    assert resp_degraded.status_code == 200
-    data = resp_degraded.json()
-    assert data["degraded_mode"] is True
-    assert "peer-based attribution excluded" in data["degraded_reason"]
-    for factor in data["top_risk_increasing"] + data["top_risk_reducing"]:
-        assert factor["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
+    assert resp_degraded.status_code == 422
+    err_body2 = resp_degraded.json()
+    assert "Explainability unavailable" in err_body2["detail"]
+    assert "Traceback" not in str(err_body2)
 
 
 def test_api_predict_and_similar_sanitized_errors():
@@ -272,8 +250,8 @@ def test_api_predict_and_similar_sanitized_errors():
     assert "TypeError" not in str(sim_err)
 
 
-def test_service_predict_rag_failure_strict_mode(sample_valid_patient, monkeypatch):
-    """Verify ModelService.predict raises ExplainerError in strict mode when RAG fails."""
+def test_service_predict_rag_failure_safe_rejection(sample_valid_patient, monkeypatch):
+    """Verify ModelService.predict fails safely without calling model inference on fabricated values."""
     from api.service import get_service
     svc = get_service()
 
@@ -283,40 +261,29 @@ def test_service_predict_rag_failure_strict_mode(sample_valid_patient, monkeypat
     def failing_retriever(*args, **kwargs):
         raise RuntimeError("FAISS cluster connection timeout")
 
-    monkeypatch.setattr(svc, "retrieve_similar", failing_retriever)
+    # Spy to ensure predict_proba is NEVER called with fabricated peer inputs
+    predict_proba_called = []
 
-    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed and degraded mode is disabled"):
+    def spy_predict_proba(X):
+        predict_proba_called.append(X)
+        return svc.model.predict_proba(X)
+
+    monkeypatch.setattr(svc, "retrieve_similar", failing_retriever)
+    monkeypatch.setattr(svc.model, "predict_proba", spy_predict_proba)
+
+    # In strict mode: must raise ExplainerError
+    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed"):
         svc.predict(patient_no_rag, allow_degraded=False)
+    assert len(predict_proba_called) == 0, "model.predict_proba must NEVER be called when RAG retrieval fails"
+
+    # In degraded mode: must also raise ExplainerError rather than scoring with 0.0 or 0.1139
+    with pytest.raises(ExplainerError, match="RAG neighborhood retrieval failed"):
+        svc.predict(patient_no_rag, allow_degraded=True)
+    assert len(predict_proba_called) == 0, "model.predict_proba must NEVER be called with fabricated peer input"
 
 
-def test_service_predict_rag_failure_degraded_mode(sample_valid_patient, monkeypatch):
-    """Verify ModelService.predict safely operates in degraded mode without fabricating peers."""
-    from api.service import get_service
-    svc = get_service()
-
-    patient_no_rag = dict(sample_valid_patient)
-    patient_no_rag.pop("rag_struct_rate_k20", None)
-
-    def failing_retriever(*args, **kwargs):
-        raise RuntimeError("Simulated FAISS retrieval index corrupt")
-
-    monkeypatch.setattr(svc, "retrieve_similar", failing_retriever)
-
-    res = svc.predict(patient_no_rag, allow_degraded=True)
-    assert res["degraded_mode"] is True
-    assert "RAG neighborhood retrieval unavailable" in res["degraded_reason"]
-    assert res["similar_patients_summary"]["degraded"] is True
-    assert res["similar_patients_summary"]["k_neighbors"] == 0
-    assert res["similar_patients_summary"]["top_neighbors"] == []
-
-    # Peer factors must NOT be in clinical drivers
-    for factor in res["top_risk_increasing_factors"] + res["top_risk_reducing_factors"]:
-        assert factor["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
-        assert "similar historical patients" not in factor["explanation"].lower()
-
-
-def test_api_predict_endpoint_degraded_mode_flow(sample_valid_patient, monkeypatch):
-    """Verify /predict endpoint handles retrieval failure in strict and degraded modes."""
+def test_api_predict_endpoint_rag_failure_returns_422(sample_valid_patient, monkeypatch):
+    """Verify /predict endpoint returns safe HTTP 422 error when RAG retrieval fails."""
     from api.service import get_service
     svc = get_service()
 
@@ -329,24 +296,43 @@ def test_api_predict_endpoint_degraded_mode_flow(sample_valid_patient, monkeypat
     patient_no_rag = dict(sample_valid_patient)
     patient_no_rag["rag_struct_rate_k20"] = None
 
-    # Strict mode defaults to False -> returns safe 422 error
+    # Strict mode -> returns safe 422 error
     resp_strict = client.post("/predict?allow_degraded=false", json=patient_no_rag)
     assert resp_strict.status_code == 422
     err_body = resp_strict.json()
-    assert "Inference processing failed due to missing retrieval context" in err_body["detail"]
+    assert "Inference unavailable" in err_body["detail"]
     assert "Traceback" not in str(err_body)
     assert "RuntimeError" not in str(err_body)
 
-    # Degraded mode allowed -> returns 200 with degraded disclosure
+    # Degraded query param -> also safely rejected with HTTP 422
     resp_degraded = client.post("/predict?allow_degraded=true", json=patient_no_rag)
-    assert resp_degraded.status_code == 200
-    data = resp_degraded.json()
-    assert data["degraded_mode"] is True
-    assert "RAG neighborhood retrieval unavailable" in data["degraded_reason"]
-    assert data["similar_patients_summary"]["k_neighbors"] == 0
-    assert data["similar_patients_summary"]["top_neighbors"] == []
-    for factor in data["top_risk_increasing_factors"] + data["top_risk_reducing_factors"]:
-        assert factor["feature"] not in ("rag_struct_rate_k20", "rag_readmit_rate_k20")
+    assert resp_degraded.status_code == 422
+    err_body2 = resp_degraded.json()
+    assert "Inference unavailable" in err_body2["detail"]
+    assert "Traceback" not in str(err_body2)
+
+
+def test_predict_with_valid_precomputed_rag_rate(sample_valid_patient, monkeypatch):
+    """Verify prediction succeeds using genuine precomputed peer rate without calling retriever."""
+    from api.service import get_service
+    svc = get_service()
+
+    retriever_called = []
+
+    def spy_retriever(*args, **kwargs):
+        retriever_called.append(True)
+        return 0.18, []
+
+    monkeypatch.setattr(svc, "retrieve_similar", spy_retriever)
+
+    # When rag_struct_rate_k20 is already supplied
+    patient_with_rag = dict(sample_valid_patient)
+    patient_with_rag["rag_struct_rate_k20"] = 0.25
+
+    res = svc.predict(patient_with_rag)
+    assert res["degraded_mode"] is False
+    assert res["similar_patients_summary"]["neighbor_readmission_rate"] == 0.25
+    assert 0.0 <= res["calibrated_risk_probability"] <= 1.0
 
 
 def test_successful_rag_retrieval_flow(sample_valid_patient):

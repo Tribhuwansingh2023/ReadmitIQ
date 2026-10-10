@@ -105,7 +105,10 @@ def predict_readmission(
         raise HTTPException(status_code=422, detail="Invalid encounter input data.")
     except ExplainerError as ee:
         logger.warning("Inference explainer/retrieval error: %s", ee, exc_info=True)
-        raise HTTPException(status_code=422, detail="Inference processing failed due to missing retrieval context.")
+        raise HTTPException(
+            status_code=422,
+            detail="Inference unavailable: RAG retrieval failed and model requires valid peer context. Degraded scoring cannot use fabricated peer evidence.",
+        )
     except Exception as e:
         logger.error("Inference processing error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Inference processing error. Please verify encounter inputs.")
@@ -149,9 +152,15 @@ def explain_patient_risk(
             "degraded_mode": explanation.get("degraded_mode", False),
             "degraded_reason": explanation.get("degraded_reason"),
         }
-    except (ValueError, TypeError, ExplainerError) as ve:
-        logger.warning("Explainability input/calculation error: %s", ve, exc_info=True)
+    except (ValueError, TypeError) as ve:
+        logger.warning("Explainability input validation error: %s", ve, exc_info=True)
         raise HTTPException(status_code=422, detail="Invalid encounter input data for explainability.")
+    except ExplainerError as ee:
+        logger.warning("Explainability explainer/retrieval error: %s", ee, exc_info=True)
+        raise HTTPException(
+            status_code=422,
+            detail="Explainability unavailable: RAG retrieval failed and model requires valid peer context. Degraded explanations cannot use fabricated peer evidence.",
+        )
     except Exception as e:
         logger.error("Explainability processing error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail="Explainability processing error. Please verify encounter inputs.")

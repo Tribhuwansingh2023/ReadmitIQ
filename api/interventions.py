@@ -5,6 +5,7 @@ to prioritized care-transition actions. Zero generative LLMs, strictly determini
 clinical pathways with clear trigger driver attribution.
 """
 
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 DISCLAIMER_TEXT = "Decision-support suggestions, not clinical advice"
@@ -223,3 +224,119 @@ def generate_suggested_interventions(
         "suggestions_count": len(suggestions),
         "suggestions": suggestions,
     }
+
+
+def _timeline_to_days(timeline: str) -> int:
+    """Map human timeline string to approximate calendar days."""
+    tl = timeline.lower()
+    if "48 hours" in tl:
+        return 2
+    elif "72 hours" in tl:
+        return 3
+    elif "day 3" in tl:
+        return 3
+    elif "7" in tl:
+        return 7
+    elif "day of discharge" in tl:
+        return 1
+    return 3
+
+
+def seed_tasks_for_discharge(
+    conn: Any,
+    discharge_id: int,
+    patient_data: Dict[str, Any],
+    risk_tier: str,
+    top_risk_drivers: Optional[List[Dict[str, Any]]] = None,
+    default_assignee: str = "Unassigned",
+) -> List[Dict[str, Any]]:
+    """Generate and persist default care-transition tasks for an encounter if none exist."""
+    cur = conn.execute("SELECT COUNT(*) FROM tasks WHERE discharge_id = ?", (discharge_id,))
+    if cur.fetchone()[0] > 0:
+        return fetch_discharge_tasks(conn, discharge_id)
+
+    suggested = generate_suggested_interventions(patient_data, risk_tier, top_risk_drivers)
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
+    tasks_out = []
+    for s in suggested["suggestions"]:
+        days = _timeline_to_days(s.get("target_timeline", "3 days"))
+        due_iso = (now + timedelta(days=days)).date().isoformat()
+
+        cursor = conn.execute(
+            """INSERT INTO tasks (
+                discharge_id, title, category, priority, trigger_driver,
+                rationale, due_date, owner, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)""",
+            (
+                discharge_id,
+                s["action"],
+                s["category"],
+                s["priority"],
+                s.get("trigger_driver", ""),
+                s["rationale"],
+                due_iso,
+                default_assignee,
+                now_iso,
+                now_iso,
+            ),
+        )
+        task_id = cursor.lastrowid
+        tasks_out.append(
+            {
+                "id": task_id,
+                "discharge_id": discharge_id,
+                "title": s["action"],
+                "category": s["category"],
+                "priority": s["priority"],
+                "trigger_driver": s.get("trigger_driver", ""),
+                "rationale": s["rationale"],
+                "due_date": due_iso,
+                "owner": default_assignee,
+                "status": "pending",
+                "completed_at": None,
+                "completed_by": None,
+                "completion_note": None,
+                "created_at": now_iso,
+                "updated_at": now_iso,
+            }
+        )
+
+    return tasks_out
+
+
+def fetch_discharge_tasks(conn: Any, discharge_id: int) -> List[Dict[str, Any]]:
+    """Retrieve all persisted tasks for a discharge encounter."""
+    cur = conn.execute(
+        """SELECT id, discharge_id, title, category, priority, trigger_driver,
+                  rationale, due_date, owner, status, completed_at, completed_by,
+                  completion_note, created_at, updated_at
+           FROM tasks
+           WHERE discharge_id = ?
+           ORDER BY
+               CASE priority WHEN 'Critical' THEN 0 WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END,
+               id ASC""",
+        (discharge_id,),
+    )
+    rows = cur.fetchall()
+    return [
+        {
+            "id": r["id"],
+            "discharge_id": r["discharge_id"],
+            "title": r["title"],
+            "category": r["category"],
+            "priority": r["priority"],
+            "trigger_driver": r["trigger_driver"],
+            "rationale": r["rationale"],
+            "due_date": r["due_date"],
+            "owner": r["owner"],
+            "status": r["status"],
+            "completed_at": r["completed_at"],
+            "completed_by": r["completed_by"],
+            "completion_note": r["completion_note"],
+            "created_at": r["created_at"],
+            "updated_at": r["updated_at"],
+        }
+        for r in rows
+    ]

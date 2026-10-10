@@ -141,6 +141,40 @@ def init_db(db_path: Optional[Path] = None) -> None:
                 metrics_json TEXT,
                 alerts_json TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                discharge_id INTEGER NOT NULL REFERENCES discharges(id) ON DELETE CASCADE,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL,
+                priority TEXT NOT NULL CHECK(priority IN ('Critical', 'High', 'Medium', 'Low')),
+                trigger_driver TEXT,
+                rationale TEXT NOT NULL,
+                due_date TEXT,
+                owner TEXT,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'completed', 'cancelled')),
+                completed_at TEXT,
+                completed_by TEXT,
+                completion_note TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_tasks_discharge_id ON tasks(discharge_id);
+            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+            CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+
+            CREATE TABLE IF NOT EXISTS data_quality_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT NOT NULL,
+                source TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                error_message TEXT NOT NULL,
+                payload_json TEXT
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_data_quality_events_ts ON data_quality_events(ts);
+            CREATE INDEX IF NOT EXISTS idx_data_quality_events_type ON data_quality_events(event_type);
             """
         )
 
@@ -158,5 +192,23 @@ def log_audit(
     cursor = conn.execute(
         "INSERT INTO audit_log (ts, actor, event, payload_json) VALUES (?, ?, ?, ?)",
         (now_ts, actor or "system", event, payload_str),
+    )
+    return cursor.lastrowid
+
+
+def log_data_quality_event(
+    conn: sqlite3.Connection,
+    source: str,
+    event_type: str,
+    error_message: str,
+    payload: Optional[Dict[str, Any]] = None,
+    ts: Optional[str] = None,
+) -> int:
+    """Record a data-quality failure, validation error, or RAG availability event."""
+    now_ts = ts or datetime.now(timezone.utc).isoformat()
+    payload_str = json.dumps(payload, default=str) if payload is not None else None
+    cursor = conn.execute(
+        "INSERT INTO data_quality_events (ts, source, event_type, error_message, payload_json) VALUES (?, ?, ?, ?, ?)",
+        (now_ts, source, event_type, error_message, payload_str),
     )
     return cursor.lastrowid

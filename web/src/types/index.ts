@@ -228,6 +228,89 @@ export interface PatientFormInput {
 export type RiskTier = "Critical" | "High" | "Medium" | "Low";
 export type EncounterStatus = "new" | "assigned" | "contacted" | "followup_scheduled" | "closed";
 
+export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
+export type TaskPriority = "High" | "Medium" | "Low";
+
+export interface TaskItem {
+  id: number;
+  discharge_id: number;
+  title: string;
+  category: string;
+  priority: TaskPriority;
+  trigger_driver?: string;
+  rationale?: string;
+  due_date?: string;
+  owner?: string;
+  status: TaskStatus;
+  completed_at?: string;
+  completed_by?: string;
+  completion_note?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCreateInput {
+  title: string;
+  category?: string;
+  priority?: TaskPriority;
+  trigger_driver?: string;
+  rationale?: string;
+  due_date?: string;
+  owner?: string;
+  status?: TaskStatus;
+  actor?: string;
+}
+
+export interface TaskPatchInput {
+  status?: TaskStatus;
+  owner?: string;
+  completion_note?: string;
+  actor?: string;
+}
+
+export interface TaskSummary {
+  total: number;
+  completed: number;
+  pending: number;
+}
+
+export interface TimelineEvent {
+  ts: string;
+  type: "intake" | "action" | "task_completed" | "status_change" | "outcome";
+  title: string;
+  actor: string;
+  note?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface WhatIfRequest {
+  baseline_features: Record<string, any>;
+  modified_features: Record<string, any>;
+}
+
+export interface WhatIfResponse {
+  disclaimer: string;
+  baseline: {
+    raw_score: number;
+    calibrated_prob: number;
+    tier: RiskTier;
+    top_drivers: FactorExplanation[];
+  };
+  modified: {
+    raw_score: number;
+    calibrated_prob: number;
+    tier: RiskTier;
+    top_drivers: FactorExplanation[];
+  };
+  delta: {
+    raw_score: number;
+    calibrated_prob: number;
+    tier_changed: boolean;
+    increased_risk: boolean;
+  };
+  changed_features: Record<string, { from: any; to: any }>;
+}
+
 export interface WorklistItem {
   id: number;
   received_at: string;
@@ -240,6 +323,11 @@ export interface WorklistItem {
   assignee?: string;
   updated_at: string;
   outcome_readmitted_30d?: number | null;
+  priority_rank?: number;
+  is_in_capacity?: boolean;
+  tie_breaker_info?: string;
+  priority_reason?: string;
+  task_summary?: TaskSummary;
   patient_summary: {
     age: string;
     gender: string;
@@ -270,8 +358,21 @@ export interface DischargeDetailResponse {
   status: EncounterStatus;
   assignee?: string;
   model_version: string;
+  scoring_status?: string;
+  capacity_triage?: {
+    priority_rank: number;
+    priority_score: number;
+    is_in_capacity: boolean;
+    capacity_limit: number;
+    active_backlog_total: number;
+    tie_breaker_rule: string;
+    clinical_disclaimer: string;
+  };
+  tasks: TaskItem[];
+  timeline: TimelineEvent[];
   outcome_readmitted_30d?: number | null;
   outcome_at?: string | null;
+  outcome_status?: string;
   features: PatientFormInput;
   shap_explanation: {
     top_risk_increasing: FactorExplanation[];
@@ -281,6 +382,9 @@ export interface DischargeDetailResponse {
   similar_patients_summary?: {
     k_neighbors: number;
     neighbor_readmission_rate: number;
+    readmitted_count?: number;
+    uncertainty_ci_95?: [number, number];
+    rag_status?: string;
     top_neighbors: SimilarEncounter[];
   };
   suggested_interventions?: SuggestedInterventionsSummary;
@@ -335,6 +439,56 @@ export interface MonitoringResponse {
     conformity_rate: number;
     missing_rate: number;
     status: string;
+    total_events_logged?: number;
+    recent_failures?: {
+      id: number;
+      ts: string;
+      source: string;
+      event_type: string;
+      error_message: string;
+    }[];
+    metric_definition?: string;
+  };
+  rag_health?: {
+    status: string;
+    index_size: number;
+    embedding_dimension: number;
+    similarity_metric: string;
+    k_neighbors: number;
+    reference_partition: string;
+    retrieval_errors_logged: number;
+    definition: string;
+  };
+  feature_drift?: {
+    source: string;
+    metric_definition: string;
+    sample_size: number;
+    features: Record<string, { psi: number; status: string }>;
+  };
+  subgroup_fairness?: {
+    source: string;
+    sample_size: number;
+    capacity_threshold_evaluated: number;
+    metric_definition: string;
+    audits: Record<
+      string,
+      {
+        reference_group: string;
+        subgroups: Record<
+          string,
+          {
+            sample_size: number;
+            reliable: boolean;
+            prevalence: number;
+            auc_roc: number;
+            auc_ci_95: [number, number];
+            selection_rate: number;
+            tpr: number;
+            fpr: number;
+          }
+        >;
+      }
+    >;
   };
   outcomes_evaluation: {
     insufficient_outcomes: boolean;
