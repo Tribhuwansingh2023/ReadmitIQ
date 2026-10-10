@@ -294,21 +294,28 @@ export interface WhatIfResponse {
     raw_score: number;
     calibrated_prob: number;
     tier: RiskTier;
+    risk_tier?: RiskTier;
     top_drivers: FactorExplanation[];
+    inputs?: Record<string, any>;
   };
   modified: {
     raw_score: number;
     calibrated_prob: number;
     tier: RiskTier;
+    risk_tier?: RiskTier;
     top_drivers: FactorExplanation[];
+    inputs?: Record<string, any>;
   };
   delta: {
     raw_score: number;
     calibrated_prob: number;
+    probability_change?: number;
+    relative_risk_change_pct?: number;
     tier_changed: boolean;
+    tier_transition?: string;
     increased_risk: boolean;
   };
-  changed_features: Record<string, { from: any; to: any }>;
+  changed_features?: Record<string, { from: any; to: any }>;
 }
 
 export interface WorklistItem {
@@ -359,6 +366,11 @@ export interface DischargeDetailResponse {
   assignee?: string;
   model_version: string;
   scoring_status?: string;
+  capacity_status?: {
+    priority_rank: number;
+    is_in_capacity: boolean;
+    active_open_count: number;
+  };
   capacity_triage?: {
     priority_rank: number;
     priority_score: number;
@@ -370,6 +382,7 @@ export interface DischargeDetailResponse {
   };
   tasks: TaskItem[];
   timeline: TimelineEvent[];
+  chronological_timeline?: TimelineEvent[];
   outcome_readmitted_30d?: number | null;
   outcome_at?: string | null;
   outcome_status?: string;
