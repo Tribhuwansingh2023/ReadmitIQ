@@ -470,13 +470,27 @@ export const DeskPage: React.FC<DeskPageProps> = ({
                       {/* Rank & ID */}
                       <td className="py-3 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] text-muted w-6 text-center">
+                          <span
+                            className={`font-mono text-[11px] w-6 text-center font-bold rounded px-0.5 ${
+                              isCapacityPrioritized
+                                ? "bg-accent/15 text-accent"
+                                : "text-muted"
+                            }`}
+                            title={`Queue Rank #${idx + 1} (Deterministic: Raw Score DESC -> Arrival Time DESC)`}
+                          >
                             #{idx + 1}
                           </span>
                           <div>
-                            <span className="font-mono font-semibold text-primary block">
-                              {item.external_ref || `ENC-${item.id}`}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-semibold text-primary block">
+                                {item.external_ref || `ENC-${item.id}`}
+                              </span>
+                              {isCapacityPrioritized && (
+                                <span className="text-[9px] font-mono px-1 py-0.2 bg-accent text-white rounded font-bold uppercase">
+                                  In Capacity
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-muted font-mono block">
                               ID: {item.id}
                             </span>
@@ -609,11 +623,17 @@ export const DeskPage: React.FC<DeskPageProps> = ({
             </table>
           </div>
 
-          {/* Table Footer with Keyboard Hint */}
-          <div className="bg-subtle/40 px-4 py-2 border-t border-hairline flex items-center justify-between text-[11px] text-muted">
-            <span>
-              Showing {items.length} of {totalCount} total discharges
-            </span>
+          {/* Table Footer with Operational Disclosure & Keyboard Hint */}
+          <div className="bg-subtle/40 px-4 py-2.5 border-t border-hairline flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-muted">
+            <div className="flex items-center gap-2">
+              <span>
+                Showing {items.length} of {totalCount} active encounters
+              </span>
+              <span className="text-muted/60">•</span>
+              <span className="font-mono text-[10px]">
+                Deterministic Priority: Raw Score DESC → Arrival DESC
+              </span>
+            </div>
             <div className="hidden sm:flex items-center gap-3">
               <span>
                 Use <kbd className="px-1 py-0.5 bg-surface rounded hairline-border font-mono text-[10px]">j</kbd> /{" "}
