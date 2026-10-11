@@ -7853,7 +7853,9 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -8017,26 +8019,8 @@ Global Random Seed: 42
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator StandardScaler from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
-C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator Pipeline from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
-C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator OneHotEncoder from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
-C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator ColumnTransformer from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Loaded and transformed full cohorts in 2.49s:
+<pre>Loaded and transformed full cohorts in 1.79s:
   Train: 69,535 rows | Positives: 7,919 (11.39%)
   Val:   14,902 rows | Positives: 1,697 (11.39%)
   Base Matrix: 141 one-hot features | RAG Matrix: 142 features (+rag_struct_rate_k20)
@@ -8185,35 +8169,35 @@ TRAINING AND EVALUATING THE CLASSICAL MODEL COMPARISON MATRIX
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[Logistic Regression (RAG)] Fit: 4.5s | Val AUC: 0.6633 (95% CI: [0.6503, 0.6763]) | Opt Thresh: 0.5030 | Prec@10%: 0.2409
+<pre>[Logistic Regression (RAG)] Fit: 3.7s | Val AUC: 0.6633 (95% CI: [0.6503, 0.6763]) | Opt Thresh: 0.5030 | Prec@10%: 0.2409
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[Random Forest (Base)] Fit: 4.9s | Val AUC: 0.6671 (95% CI: [0.6547, 0.6797]) | Opt Thresh: 0.5020 | Prec@10%: 0.2403
+<pre>[Random Forest (Base)] Fit: 6.8s | Val AUC: 0.6671 (95% CI: [0.6547, 0.6797]) | Opt Thresh: 0.5020 | Prec@10%: 0.2403
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[Random Forest (RAG)] Fit: 4.9s | Val AUC: 0.6674 (95% CI: [0.655, 0.6796]) | Opt Thresh: 0.4948 | Prec@10%: 0.2510
+<pre>[Random Forest (RAG)] Fit: 6.7s | Val AUC: 0.6674 (95% CI: [0.655, 0.6796]) | Opt Thresh: 0.4948 | Prec@10%: 0.2510
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[LightGBM (Base) [Extra]] Fit: 0.4s | Val AUC: 0.6722 (95% CI: [0.6587, 0.6849]) | Opt Thresh: 0.5379 | Prec@10%: 0.2557
+<pre>[LightGBM (Base) [Extra]] Fit: 0.8s | Val AUC: 0.6722 (95% CI: [0.6587, 0.6849]) | Opt Thresh: 0.5379 | Prec@10%: 0.2557
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[LightGBM (RAG) [Extra]] Fit: 0.5s | Val AUC: 0.6731 (95% CI: [0.6601, 0.6858]) | Opt Thresh: 0.5097 | Prec@10%: 0.2530
+<pre>[LightGBM (RAG) [Extra]] Fit: 0.4s | Val AUC: 0.6731 (95% CI: [0.6601, 0.6858]) | Opt Thresh: 0.5097 | Prec@10%: 0.2530
 </pre>
 </div>
 </div>
