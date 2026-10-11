@@ -99,16 +99,33 @@ FEATURE_HUMAN_NAMES = {
 
 
 def compute_roc_auc_pure(y_true: np.ndarray, y_score: np.ndarray) -> float:
-    """Mann-Whitney U AUC in pure NumPy."""
+    """Exact AUC-ROC via sklearn.metrics.roc_auc_score with tie-aware mid-rank fallback."""
     y_true = np.asarray(y_true)
     y_score = np.asarray(y_score)
     pos = y_score[y_true == 1]
     neg = y_score[y_true == 0]
     if len(pos) == 0 or len(neg) == 0:
         return 0.5
-    order = np.argsort(y_score)
-    ranks = np.empty_like(order, dtype=float)
-    ranks[order] = np.arange(len(y_score)) + 1
+    try:
+        from sklearn.metrics import roc_auc_score
+        return float(roc_auc_score(y_true, y_score))
+    except Exception:
+        pass
+
+    try:
+        from scipy.stats import rankdata
+        ranks = rankdata(y_score, method="average")
+    except Exception:
+        order = np.argsort(y_score)
+        sorted_s = y_score[order]
+        unique_s, inv, counts = np.unique(sorted_s, return_inverse=True, return_counts=True)
+        cum = np.cumsum(counts)
+        starts = np.roll(cum, 1)
+        starts[0] = 0
+        mid_ranks = starts + (counts + 1.0) / 2.0
+        ranks = np.empty_like(y_score, dtype=float)
+        ranks[order] = mid_ranks[inv]
+
     sum_ranks_pos = np.sum(ranks[y_true == 1])
     n_pos = len(pos)
     n_neg = len(neg)

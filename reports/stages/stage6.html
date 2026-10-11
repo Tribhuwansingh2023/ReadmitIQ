@@ -8072,7 +8072,8 @@ Loaded DistilBERT + Note-RAG Validation Predictions: 14,902 rows
 <span class="c1"># 5: Transformer (Without RAG)</span>
 <span class="n">p_db</span> <span class="o">=</span> <span class="n">distilbert_val_df</span><span class="p">[</span><span class="s2">"prob"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 <span class="n">y_db</span> <span class="o">=</span> <span class="n">distilbert_val_df</span><span class="p">[</span><span class="s2">"readmitted_30d"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-<span class="n">db_auc</span> <span class="o">=</span> <span class="n">compute_roc_auc</span><span class="p">(</span><span class="n">y_db</span><span class="p">,</span> <span class="n">p_db</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.evaluate</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_predictions</span>
+<span class="n">db_m</span> <span class="o">=</span> <span class="n">evaluate_predictions</span><span class="p">(</span><span class="n">y_db</span><span class="p">,</span> <span class="n">p_db</span><span class="p">,</span> <span class="n">n_bootstraps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="n">top10_k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p_db</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.10</span><span class="p">)</span>
 <span class="n">top10_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">p_db</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">top10_k</span><span class="p">]</span>
@@ -8086,20 +8087,20 @@ Loaded DistilBERT + Note-RAG Validation Predictions: 14,902 rows
     <span class="s2">"Configuration"</span><span class="p">:</span> <span class="s2">"Without RAG"</span><span class="p">,</span>
     <span class="s2">"Role"</span><span class="p">:</span> <span class="s2">"Deep Language Model"</span><span class="p">,</span>
     <span class="s2">"Status"</span><span class="p">:</span> <span class="s2">"Evaluated"</span><span class="p">,</span>
-    <span class="s2">"AUC-ROC"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_auc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-    <span class="s2">"95% CI"</span><span class="p">:</span> <span class="s2">"[0.6358, 0.6636]"</span><span class="p">,</span>
-    <span class="s2">"F1-Score"</span><span class="p">:</span> <span class="s2">"0.2710"</span><span class="p">,</span>
+    <span class="s2">"AUC-ROC"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_m</span><span class="p">[</span><span class="s1">'auc_roc'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="s2">"95% CI"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">db_m</span><span class="p">[</span><span class="s1">'auc_ci_95'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">db_m</span><span class="p">[</span><span class="s1">'auc_ci_95'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]"</span><span class="p">,</span>
+    <span class="s2">"F1-Score"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_m</span><span class="p">[</span><span class="s1">'f1'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
     <span class="s2">"Prec@10%"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prec_top10_db</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span>
     <span class="s2">"Lift@10%"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lift_top10_db</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x"</span><span class="p">,</span>
     <span class="s2">"Brier Score"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">brier_db</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-    <span class="s2">"ECE"</span><span class="p">:</span> <span class="s2">"0.0185"</span><span class="p">,</span>
+    <span class="s2">"ECE"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_m</span><span class="p">[</span><span class="s1">'ece'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
 <span class="p">})</span>
 
 <span class="c1"># 6: Transformer (With Note-RAG)</span>
 <span class="k">if</span> <span class="n">distilbert_noterag_val_df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">p_rag</span> <span class="o">=</span> <span class="n">distilbert_noterag_val_df</span><span class="p">[</span><span class="s2">"prob"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
     <span class="n">y_rag</span> <span class="o">=</span> <span class="n">distilbert_noterag_val_df</span><span class="p">[</span><span class="s2">"readmitted_30d"</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
-    <span class="n">db_rag_auc</span> <span class="o">=</span> <span class="n">compute_roc_auc</span><span class="p">(</span><span class="n">y_rag</span><span class="p">,</span> <span class="n">p_rag</span><span class="p">)</span>
+    <span class="n">db_rag_m</span> <span class="o">=</span> <span class="n">evaluate_predictions</span><span class="p">(</span><span class="n">y_rag</span><span class="p">,</span> <span class="n">p_rag</span><span class="p">,</span> <span class="n">n_bootstraps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
     
     <span class="n">top10_k_rag</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p_rag</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.10</span><span class="p">)</span>
     <span class="n">top10_idx_rag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">p_rag</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">top10_k_rag</span><span class="p">]</span>
@@ -8112,13 +8113,13 @@ Loaded DistilBERT + Note-RAG Validation Predictions: 14,902 rows
         <span class="s2">"Configuration"</span><span class="p">:</span> <span class="s2">"With Note-RAG"</span><span class="p">,</span>
         <span class="s2">"Role"</span><span class="p">:</span> <span class="s2">"Deep Language Model"</span><span class="p">,</span>
         <span class="s2">"Status"</span><span class="p">:</span> <span class="s2">"Evaluated"</span><span class="p">,</span>
-        <span class="s2">"AUC-ROC"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_rag_auc</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-        <span class="s2">"95% CI"</span><span class="p">:</span> <span class="s2">"[0.6352, 0.6630]"</span><span class="p">,</span>
-        <span class="s2">"F1-Score"</span><span class="p">:</span> <span class="s2">"0.2705"</span><span class="p">,</span>
+        <span class="s2">"AUC-ROC"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_rag_m</span><span class="p">[</span><span class="s1">'auc_roc'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s2">"95% CI"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">db_rag_m</span><span class="p">[</span><span class="s1">'auc_ci_95'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">db_rag_m</span><span class="p">[</span><span class="s1">'auc_ci_95'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">]"</span><span class="p">,</span>
+        <span class="s2">"F1-Score"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_rag_m</span><span class="p">[</span><span class="s1">'f1'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"Prec@10%"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prec_top10_rag</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">,</span>
         <span class="s2">"Lift@10%"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lift_top10_rag</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x"</span><span class="p">,</span>
         <span class="s2">"Brier Score"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">brier_rag</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-        <span class="s2">"ECE"</span><span class="p">:</span> <span class="s2">"0.0192"</span><span class="p">,</span>
+        <span class="s2">"ECE"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">db_rag_m</span><span class="p">[</span><span class="s1">'ece'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
     <span class="p">})</span>
 
 <span class="c1"># 7 &amp; 8: LightGBM (Extra / Primary Candidate)</span>
@@ -8249,12 +8250,12 @@ Loaded DistilBERT + Note-RAG Validation Predictions: 14,902 rows
 <td>Deep Language Model</td>
 <td>Evaluated</td>
 <td>0.6497</td>
-<td>[0.6358, 0.6636]</td>
-<td>0.2710</td>
+<td>[0.6369, 0.6623]</td>
+<td>0.2708</td>
 <td>23.69%</td>
 <td>2.08x</td>
 <td>0.2058</td>
-<td>0.0185</td>
+<td>0.3145</td>
 </tr>
 <tr>
 <th>5</th>
@@ -8263,12 +8264,12 @@ Loaded DistilBERT + Note-RAG Validation Predictions: 14,902 rows
 <td>Deep Language Model</td>
 <td>Evaluated</td>
 <td>0.6491</td>
-<td>[0.6352, 0.6630]</td>
-<td>0.2705</td>
+<td>[0.6357, 0.6634]</td>
+<td>0.2662</td>
 <td>23.89%</td>
 <td>2.10x</td>
 <td>0.2106</td>
-<td>0.0192</td>
+<td>0.3206</td>
 </tr>
 <tr>
 <th>6</th>
