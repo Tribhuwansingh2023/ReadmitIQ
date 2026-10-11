@@ -6,7 +6,7 @@
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
 [![LightGBM](https://img.shields.io/badge/LightGBM-4.6-brightgreen.svg)](https://lightgbm.readthedocs.io)
 [![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-orange.svg)](https://github.com/facebookresearch/faiss)
-[![Test Suite](https://img.shields.io/badge/Tests-80_Passed-success.svg)](tests/)
+[![Test Suite](https://img.shields.io/badge/Tests-145_Passed-success.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **ReadmitIQ** is a clinical decision support system for 30-day all-cause hospital readmission risk prediction among diabetic inpatients. Rather than functioning as a passive predictive dashboard, ReadmitIQ operationalizes risk intelligence into a capacity-aware, evidence-supported discharge coordination workflow: the **ReadmitIQ ActionLoop**.
