@@ -92,12 +92,12 @@ print('Artifacts successfully unpacked.')
    PORT=8000
    WORKERS=1
    READMITIQ_SERVE_MODE=lite
-   CORS_ORIGINS=https://readmitiq.vercel.app,http://localhost:5173
+   CORS_ORIGINS=https://readmit-iq.vercel.app,http://localhost:5173
    ```
    *(Note: Set `WORKERS=1` on Free Tier to avoid RAM exhaustion; 1 worker handles ~80 req/sec).*
 6. Click **Create Web Service**.
 7. Wait 3–4 minutes for the Docker image to build. Once deployed, note your service URL:
-   `https://readmitiq-api.onrender.com`
+   `https://readmitiq-wlw1.onrender.com` (or your assigned Render URL)
 
 ---
 
@@ -142,9 +142,9 @@ print('Artifacts successfully unpacked.')
    - **Install Command:** `npm ci`
 5. Expand **Environment Variables** and add:
    - **Key:** `VITE_API_BASE_URL`
-   - **Value:** Your live backend URL from Step 3 without trailing slash (e.g., `https://readmitiq-api.onrender.com`).
+   - **Value:** Your live backend URL from Step 3 without trailing slash (e.g., `https://readmitiq-wlw1.onrender.com`).
 6. Click **Deploy**.
-7. In ~60 seconds, your site will be live at `https://readmitiq.vercel.app`.
+7. In ~60 seconds, your site will be live at `https://readmit-iq.vercel.app`.
 8. Copy the live Vercel domain and add it to `CORS_ORIGINS` in your Render / HF dashboard if not already added.
 
 ---

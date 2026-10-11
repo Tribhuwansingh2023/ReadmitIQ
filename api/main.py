@@ -31,31 +31,36 @@ app = FastAPI(
     version="1.0.0",
 )
 
-
-# Startup event to initialize SQLite database in WAL mode and seed if empty
+# Startup event to initialize SQLite database in WAL mode and seed if empty in background
 @app.on_event("startup")
 def on_startup():
     init_db()
     if os.getenv("READMITIQ_AUTO_SEED", "true").lower() in ("true", "1", "yes"):
-        try:
-            from scripts.seed_demo import seed_if_empty
+        import threading
 
-            seed_if_empty()
-        except Exception as e:
-            logger.warning("Database auto-seed deferred or skipped: %s", e)
+        def _seed_background():
+            try:
+                from scripts.seed_demo import seed_if_empty
+
+                seed_if_empty()
+            except Exception as e:
+                logger.warning("Database auto-seed deferred or skipped: %s", e)
+
+        # Run seeding in a background thread so the server binds the port immediately
+        threading.Thread(target=_seed_background, daemon=True, name="demo_seeder").start()
 
 
 # CORS configuration
 origins_env = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000",
+    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000,https://readmit-iq.vercel.app,https://readmitiq.vercel.app",
 )
 allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if allowed_origins else ["*"],
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"^https://.*\.vercel\.app$|^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -73,6 +78,25 @@ async def add_model_version_header(request, call_next):
 # Include v1 clinical workflow router (both /v1 and /api/v1)
 app.include_router(v1_router)
 app.include_router(v1_router, prefix="/api")
+
+
+@app.get("/", status_code=status.HTTP_200_OK)
+def root():
+    """Root landing endpoint providing service metadata, docs, and health check links."""
+    return {
+        "name": "ReadmitIQ Decision Support API",
+        "status": "online",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "predict": "/predict",
+            "explain": "/explain",
+            "similar": "/similar",
+            "cohort": "/cohort",
+        },
+        "frontend": "https://readmit-iq.vercel.app",
+    }
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
