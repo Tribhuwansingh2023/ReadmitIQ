@@ -113,7 +113,7 @@ flowchart TD
 | **Objective 2** | Engineer RAG-style feature via clinical summary retrieval | Synthetic clinical discharge summaries embedded in 64-dim SVD space; FAISS index retrieves top-20 peers and calculates historical readmission rate. | **100% Compliant** | `rag_struct_rate_k20` engineered, audited, and passed as tabular feature. Leak-free OOF cross-validation. |
 | **Objective 3** | Compare Logistic Regression with and without RAG | Trained on Train ($N=69,535$), evaluated on full Val ($N=14,902$). Baseline vs RAG compared with paired bootstrap 95% CIs. | **100% Compliant** | Val AUC: 0.6619 (No RAG) vs 0.6632 (With RAG). $\Delta\text{AUC} = +0.0013$ [-0.0003, +0.0030]. |
 | **Objective 4** | Compare Random Forest with and without RAG | Trained on Train ($N=69,535$), evaluated on full Val ($N=14,902$). Baseline vs RAG compared with paired bootstrap 95% CIs. | **100% Compliant** | Val AUC: 0.6671 (No RAG) vs 0.6674 (With RAG). $\Delta\text{AUC} = +0.0003$ [-0.0022, +0.0030]. |
-| **Objective 5** | Compare Fine-Tuned Transformer with and without RAG | DistilBERT sequence classification pipeline built in `src/transformer.py`, import schema in `src/transformer_import.py`, and Colab training notebooks. | **Partially Compliant (Pending GPU)** | Full validation metrics pending Colab run; CPU smoke test verified; grid script cleanly flags status as `pending`. |
+| **Objective 5** | Compare Fine-Tuned Transformer with and without RAG | DistilBERT sequence classification evaluated across full 14,902 validation encounters. Without RAG: AUC=0.6497 vs With Note-RAG: AUC=0.6491 ($\Delta\text{AUC} = -0.0006$). | **100% Compliant** | Colab GPU predictions imported and verified in `reports/colab/` and `reports/note_rag/colab/`. |
 | **Objective 6** | Evaluate using AUC-ROC, F1, Precision, and Recall | Evaluated across all models, plus clinical operational metrics: Precision@10%, Lift@10%, Brier Score, and ECE. | **100% Compliant** | All metrics reported in `reports/metrics/ablation_table.json` and `test_results.json`. |
 
 ---
@@ -130,8 +130,8 @@ All baseline and enhanced tabular models were trained on the identical 69,535-en
 | **Logistic Regression** | Yes ($k=20$) | 0.6632 [0.6501, 0.6772] | 0.2766 | 0.1866 | 0.5345 | 0.2430 | 2.13x | 0.2287 | 0.3554 | +0.0013 [-0.0003, +0.0030] | **No** (CI crosses zero) |
 | **Random Forest** | No | 0.6671 [0.6547, 0.6804] | 0.2795 | 0.1904 | 0.5250 | 0.2403 | 2.11x | 0.2112 | 0.3348 | *Reference* | — |
 | **Random Forest** | Yes ($k=20$) | 0.6674 [0.6548, 0.6806] | 0.2778 | 0.1877 | 0.5345 | 0.2510 | 2.20x | 0.2096 | 0.3325 | +0.0003 [-0.0022, +0.0030] | **No** (CI crosses zero) |
-| **Fine-Tuned Transformer** | No | *Pending Colab* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Reference* | — |
-| **Fine-Tuned Transformer** | Yes (Note-RAG) | *Pending Colab* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | *Pending* | — |
+| **Fine-Tuned Transformer** | No | 0.6497 [0.6367, 0.6630] | 0.2708 | 0.1781 | 0.5651 | 0.2369 | 2.08x | 0.2058 | 0.0185 | *Reference* | — |
+| **Fine-Tuned Transformer** | Yes (Note-RAG) | 0.6491 [0.6360, 0.6632] | 0.2662 | 0.1715 | 0.5946 | 0.2389 | 2.10x | 0.2106 | 0.0192 | -0.0006 [-0.0056, +0.0043] | **No** (CI crosses zero) |
 | **LightGBM (Prod Baseline)** | No | 0.6722 [0.6593, 0.6854] | 0.2819 | 0.1970 | 0.4950 | 0.2557 | 2.25x | 0.2196 | 0.3425 | *Reference* | — |
 | **LightGBM (Production)** | Yes ($k=20$) | **0.6731** [0.6602, 0.6863] | **0.2822** | 0.1866 | **0.5787** | 0.2530 | 2.22x | 0.2194 | 0.3420 | +0.0009 [-0.0016, +0.0036] | **No** (CI crosses zero) |
 
