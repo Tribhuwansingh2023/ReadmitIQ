@@ -80,7 +80,7 @@ app.include_router(v1_router)
 app.include_router(v1_router, prefix="/api")
 
 
-@app.get("/", status_code=status.HTTP_200_OK)
+@app.api_route("/", methods=["GET", "HEAD"], status_code=status.HTTP_200_OK)
 def root():
     """Root landing endpoint providing service metadata, docs, and health check links."""
     return {
@@ -99,8 +99,8 @@ def root():
     }
 
 
-@app.get("/health", status_code=status.HTTP_200_OK)
-@app.get("/api/health", status_code=status.HTTP_200_OK, include_in_schema=False)
+@app.api_route("/health", methods=["GET", "HEAD"], status_code=status.HTTP_200_OK)
+@app.api_route("/api/health", methods=["GET", "HEAD"], status_code=status.HTTP_200_OK, include_in_schema=False)
 def health_check():
     """System health check and model version metadata."""
     svc = get_service()
