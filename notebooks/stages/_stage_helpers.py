@@ -4,8 +4,10 @@ Provides standardized, slide-ready visualization styles, artifact path resolutio
 pending artifact callout boxes, and computed checklist evaluation.
 """
 
+import logging
 import os
 import sys
+import warnings
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,6 +16,18 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from IPython.display import HTML, display
+from sklearn.exceptions import InconsistentVersionWarning
+
+# Suppress benign logging, font warnings, unpickling warnings, and user warnings across stages
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+try:
+    from tqdm import TqdmWarning
+    warnings.filterwarnings("ignore", category=TqdmWarning)
+except ImportError:
+    pass
 
 # Centralized repository root resolution
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -37,6 +51,7 @@ STAGE_COLORS = list(STAGE_PALETTE.values())
 
 def set_stage_style():
     """Apply consistent slide-ready seaborn whitegrid styling across all figures."""
+    logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
     sns.set_theme(style="whitegrid", font="sans-serif")
     plt.rcParams.update({
         "figure.figsize": (10, 5),
@@ -45,7 +60,7 @@ def set_stage_style():
         "axes.titlesize": 13,
         "axes.titleweight": "bold",
         "axes.labelsize": 11,
-        "axes.labelweight": "semibold",
+        "axes.labelweight": "bold",
         "xtick.labelsize": 10,
         "ytick.labelsize": 10,
         "legend.fontsize": 10,

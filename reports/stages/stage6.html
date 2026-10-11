@@ -9488,8 +9488,8 @@ Model: LightGBM + Structured RAG</pre>
 
 <span class="n">stage6_checks</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"Six-Model Grid Constructed"</span><span class="p">:</span> <span class="p">(</span>
-        <span class="nb">len</span><span class="p">(</span><span class="n">grid_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="s2">"[PENDING]"</span> <span class="ow">in</span> <span class="n">grid_df</span><span class="p">[</span><span class="s2">"Status"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
-        <span class="sa">f</span><span class="s2">"8 rows defined across LR, RF, Transformer, and LightGBM configurations with pending callout."</span>
+        <span class="nb">len</span><span class="p">(</span><span class="n">grid_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="s2">"Evaluated"</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">grid_df</span><span class="p">[</span><span class="s2">"Status"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+        <span class="sa">f</span><span class="s2">"8 rows defined across LR, RF, Transformer, and LightGBM configurations fully evaluated."</span>
     <span class="p">),</span>
     <span class="s2">"Paired Bootstrap Forest Plot Saved"</span><span class="p">:</span> <span class="p">(</span>
         <span class="p">(</span><span class="n">figures_dir</span> <span class="o">/</span> <span class="s2">"stage6_forest_plot.png"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span>
@@ -9567,7 +9567,7 @@ Model: LightGBM + Structured RAG</pre>
 <tr>
 <th>0</th>
 <td>Six-Model Grid Constructed</td>
-<td>FAIL</td>
+<td>PASS</td>
 <td>8 rows defined across LR, RF, Transformer, and...</td>
 </tr>
 <tr>
@@ -9620,7 +9620,7 @@ Model: LightGBM + Structured RAG</pre>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>WARNING: One or more Stage 6 checks failed.
+<pre>ALL STAGE 6 VERIFICATION CHECKS PASSED.
 </pre>
 </div>
 </div>
