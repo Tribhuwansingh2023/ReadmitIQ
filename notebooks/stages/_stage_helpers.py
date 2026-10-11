@@ -15,7 +15,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from IPython.display import HTML, display
+try:
+    from IPython.display import HTML, display
+except ImportError:
+    HTML = None
+    display = print
 from sklearn.exceptions import InconsistentVersionWarning
 
 # Suppress benign logging, font warnings, unpickling warnings, and user warnings across stages
