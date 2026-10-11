@@ -6,24 +6,34 @@ from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import numpy as np
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = REPO_ROOT / "configs" / "xai.yaml"
 
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    XAI_CONFIG = yaml.safe_load(f)
+DEFAULT_PATHS = {
+    "model": "models/final/model.joblib",
+    "calibrator": "models/final/calibrator.joblib",
+    "feature_list": "models/final/feature_list.json",
+    "serving_thresholds": "models/final/serving_thresholds.json",
+    "train_data": "data/processed/train_rag.parquet",
+    "val_data": "data/processed/val_rag.parquet",
+    "output_dir": "reports/xai",
+    "figures_dir": "reports/xai/figures",
+}
 
-# Resolve paths
+XAI_CONFIG: Dict[str, Any] = {}
+try:
+    import yaml
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            XAI_CONFIG = yaml.safe_load(f) or {}
+except Exception:
+    XAI_CONFIG = {}
+
+paths_dict = XAI_CONFIG.get("paths", DEFAULT_PATHS)
 PATHS = {
-    "model": REPO_ROOT / XAI_CONFIG["paths"]["model"],
-    "calibrator": REPO_ROOT / XAI_CONFIG["paths"]["calibrator"],
-    "feature_list": REPO_ROOT / XAI_CONFIG["paths"]["feature_list"],
-    "serving_thresholds": REPO_ROOT / XAI_CONFIG["paths"]["serving_thresholds"],
-    "train_data": REPO_ROOT / XAI_CONFIG["paths"]["train_data"],
-    "val_data": REPO_ROOT / XAI_CONFIG["paths"]["val_data"],
-    "output_dir": REPO_ROOT / XAI_CONFIG["paths"]["output_dir"],
-    "figures_dir": REPO_ROOT / XAI_CONFIG["paths"]["figures_dir"],
+    k: REPO_ROOT / paths_dict.get(k, DEFAULT_PATHS[k])
+    for k in DEFAULT_PATHS
 }
 PATHS["output_dir"].mkdir(parents=True, exist_ok=True)
 PATHS["figures_dir"].mkdir(parents=True, exist_ok=True)

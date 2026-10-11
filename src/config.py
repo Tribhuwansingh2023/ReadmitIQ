@@ -1,9 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict
-
-import yaml
+from typing import Any, Dict, Optional
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,10 +12,43 @@ CONFIG_YAML_PATH = BASE_DIR / "configs" / "config.yaml"
 
 
 def load_yaml_config(config_path: Path = CONFIG_YAML_PATH) -> Dict[str, Any]:
-    """Load configuration dictionary from YAML file."""
+    """Load configuration dictionary from YAML file with fallback if pyyaml is missing."""
     if config_path.exists():
-        with open(config_path, "r") as f:
-            return yaml.safe_load(f)
+        try:
+            import yaml
+
+            with open(config_path, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f) or {}
+        except ImportError:
+            # Safe pure-Python fallback parser when pyyaml is not installed in the active kernel
+            cfg: Dict[str, Any] = {}
+            curr_section: Optional[str] = None
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line_str = line.rstrip()
+                        if not line_str or line_str.strip().startswith("#"):
+                            continue
+                        if not line_str.startswith(" ") and line_str.endswith(":"):
+                            curr_section = line_str[:-1].strip()
+                            cfg[curr_section] = {}
+                        elif line_str.startswith("  ") and ":" in line_str and curr_section:
+                            parts = line_str.strip().split(":", 1)
+                            k = parts[0].strip()
+                            v = parts[1].strip().strip("\"'")
+                            if v.isdigit():
+                                v_val: Any = int(v)
+                            else:
+                                try:
+                                    v_val = float(v)
+                                except ValueError:
+                                    v_val = v
+                            cfg[curr_section][k] = v_val
+                return cfg
+            except Exception:
+                pass
+        except Exception:
+            pass
     return {}
 
 
