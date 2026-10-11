@@ -133,6 +133,14 @@ def check_consistency():
             "reports/metrics/serving_footprint.json",
         ),
         ("Disk Reduction in Lite Mode (90.9%)", "90.9", "reports/metrics/serving_footprint.json"),
+        ("Faithfulness Deletion Ratio (3.16x)", r"3\.16x|3\.16", "reports/xai/explanation_quality.json"),
+        ("Explanation Stability Jaccard (0.992)", "0.992", "reports/xai/explanation_quality.json"),
+        ("Adebayo Sanity Check Correlation (-0.0587)", r"\-0\.0587", "reports/xai/explanation_quality.json"),
+        ("TreeSHAP Additivity Violation (3.60e-07)", r"3\.60e\-07|3\.6e\-7", "reports/xai/explanation_quality.json"),
+        ("RAG Attribution Share (5.18% / 5.2%)", r"5\.18%|5\.2%", "reports/xai/global_importance.json"),
+        ("Method Agreement TreeSHAP vs Gain (0.953)", "0.953", "reports/xai/method_agreement.json"),
+        ("Method Agreement TreeSHAP vs Permutation (0.885)", "0.885", "reports/xai/method_agreement.json"),
+        ("CPU Explanation Latency (10.85ms)", "10.85", "reports/xai/latency.json"),
     ]
 
     # Verify transformer rows dynamically against ablation_table.json

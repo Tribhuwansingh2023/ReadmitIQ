@@ -78,10 +78,18 @@ Fairness audits were conducted across protected demographic attributes on the he
 
 ---
 
-## 6. Interpretability & Explainability
-- **Feature Attribution:** Global and local feature attributions are computed via TreeExplainer SHAP.
-- **Plain-Language Translations:** Attributions are mapped to clinical sentences (e.g., *"3 prior inpatient admissions in the past year raises risk"*).
-- **Precedent Transparency:** FAISS retrieval surfaces the top-5 historical encounters, their length of stay, diagnoses, and observed 30-day readmission status.
+## 6. Interpretability & Explainability (XAI v2 Layer)
+- **Local TreeSHAP Engine:** Path-dependent TreeSHAP decomposition on the frozen LightGBM model operating in raw log-odds score margin, with maximum validation additivity violation of $3.60 \times 10^{-7}$ (tolerance $< 1.0 \times 10^{-6}$).
+- **Calibrated Probability Waterfall:** Exact telescoping decomposition in post-hoc isotonic probability points, explicitly designated as order-dependent. Base margin reference probability is 10.75%, validation mean is 11.50%.
+- **Data Completeness Segregation:** Missing and unrecorded attributes (`payer_code: Missing`, `A1Cresult: None`, etc.) are partitioned into an *"Information Not Recorded"* section with neutral language and excluded from clinical risk drivers.
+- **Global Feature Importance:** Prior inpatient admissions ranks #1 (mean |SHAP| 0.2168 [0.2124, 0.2212], 18.2% share). Structured RAG rate ranks #7 (mean |SHAP| 0.0616 [0.0598, 0.0634], 5.18% share).
+- **Multi-Method Agreement:** High rank correlation between TreeSHAP and LightGBM Gain ($\rho = 0.953$) and Permutation Importance ($\rho = 0.885$).
+- **Explanation Faithfulness:** Removing top-5 SHAP features degrades model accuracy 3.16x faster than random deletion.
+- **Explanation Stability:** Top-5 feature attribution Jaccard similarity is 0.992 under valid 5% continuous input perturbation (median rank correlation 1.000).
+- **Adebayo Sanity Check:** Explanations on a model trained with permuted labels show rank correlation near zero ($\rho = -0.0587$), confirming attributions reflect learned patterns rather than architectural noise.
+- **Local Reliability Bins:** Empirical validation readmission rate lookups partitioned into 10 equal-count bins with Wilson 95% confidence intervals.
+- **Serving Performance:** CPU inference and local explanation computed in 10.85 ms (well below 300 ms SLA).
+- **Full Documentation & Artifacts:** Documented in [docs/explainable_ai.md](file:///c:/Users/ravik/ReadmitIQ/docs/explainable_ai.md) and backed by [reports/xai/](file:///c:/Users/ravik/ReadmitIQ/reports/xai/).
 
 ---
 

@@ -528,7 +528,26 @@ class ModelExplainer:
         self, val_df: pd.DataFrame, output_path: Path, max_display: int = 15
     ):
         """Generate and save global SHAP summary plot."""
-        X_val = self.prepare_row(val_df.head(1000))
+        n_sample = min(1000, len(val_df))
+        if "readmitted_30d" in val_df.columns and len(val_df["readmitted_30d"].unique()) > 1:
+            # Seeded stratified random sample preserving class prevalence
+            sample_df = val_df.groupby("readmitted_30d", group_keys=False).apply(
+                lambda x: x.sample(
+                    max(1, int(np.rint(n_sample * len(x) / len(val_df)))),
+                    random_state=42,
+                )
+            )
+            if len(sample_df) < n_sample:
+                remaining = n_sample - len(sample_df)
+                extra = val_df.loc[~val_df.index.isin(sample_df.index)].sample(
+                    remaining, random_state=42
+                )
+                sample_df = pd.concat([sample_df, extra])
+            elif len(sample_df) > n_sample:
+                sample_df = sample_df.sample(n_sample, random_state=42)
+        else:
+            sample_df = val_df.sample(n_sample, random_state=42)
+        X_val = self.prepare_row(sample_df)
         if self.backend == "shap" and self.explainer is not None and SHAP_AVAILABLE:
             shap_vals = self.explainer.shap_values(X_val)
             if isinstance(shap_vals, list):

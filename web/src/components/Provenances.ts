@@ -75,4 +75,49 @@ export const PROVENANCES: Record<string, StatProvenance> = {
     howComputed: "Population Stability Index computed across 10 training decile reference bins (PSI < 0.10 stable)",
     verifiedArtifactPath: "models/final/serving_thresholds.json",
   },
+
+  // --- Explainable AI (XAI v2) Benchmarks ---
+  xaiTopFeatureShap: {
+    source: "reports/xai/global_importance.json",
+    howComputed: "Mean absolute TreeSHAP margin attribution on 5,000 stratified validation encounters with 1,000 bootstrap resamples",
+    ci: "95% CI: [0.2119, 0.2214]",
+    verifiedArtifactPath: "reports/xai/global_importance.json",
+  },
+  xaiRetrievalShare: {
+    source: "reports/xai/global_importance.json",
+    howComputed: "Share of total model absolute attribution allocated to rag_struct_rate_k20 (Rank #7)",
+    ci: "Share: 5.18% (Mean |SHAP|: 0.0616)",
+    verifiedArtifactPath: "reports/xai/global_importance.json",
+  },
+  xaiMethodAgreementSpearman: {
+    source: "reports/xai/method_agreement.json",
+    howComputed: "Spearman rank correlation between TreeSHAP and LightGBM split gain importances across all 42 features",
+    ci: "Spearman rho = 0.953 (Kendall tau = 0.817)",
+    verifiedArtifactPath: "reports/xai/method_agreement.json",
+  },
+  xaiFaithfulnessRatio: {
+    source: "reports/xai/explanation_quality.json",
+    howComputed: "Ratio of top-5 SHAP feature deletion accuracy degradation velocity vs uniform random deletion",
+    ci: "3.16x faster accuracy degradation",
+    verifiedArtifactPath: "reports/xai/explanation_quality.json",
+  },
+  xaiStabilityJaccard: {
+    source: "reports/xai/explanation_quality.json",
+    howComputed: "Mean Jaccard overlap of top-5 explanatory features under valid 5% numeric perturbation",
+    ci: "Mean top-5 Jaccard: 0.992",
+    verifiedArtifactPath: "reports/xai/explanation_quality.json",
+  },
+  xaiSanityCheckCorr: {
+    source: "reports/xai/explanation_quality.json",
+    howComputed: "Adebayo et al. model-randomization test: instance-level rank correlation between true model SHAP and randomized model SHAP",
+    ci: "Rank rho = -0.0587 (Threshold: near 0, Passed)",
+    verifiedArtifactPath: "reports/xai/explanation_quality.json",
+  },
+  xaiLatencyMs: {
+    source: "reports/xai/latency.json",
+    howComputed: "Single-patient TreeSHAP + waterfall + contrastive + counterfactual inference latency on standard CPU",
+    ci: "Measured: 10.85 ms (Budget < 300 ms)",
+    verifiedArtifactPath: "reports/xai/latency.json",
+  },
 };
+

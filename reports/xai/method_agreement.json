@@ -1,0 +1,102 @@
+{
+  "methods_evaluated": [
+    "TreeSHAP",
+    "LightGBM Gain",
+    "Permutation",
+    "Standardized LR"
+  ],
+  "spearman_rank_correlation_matrix": {
+    "TreeSHAP": {
+      "TreeSHAP": 1.0,
+      "LightGBM Gain": 0.953,
+      "Permutation": 0.885,
+      "Standardized LR": 0.121
+    },
+    "LightGBM Gain": {
+      "TreeSHAP": 0.953,
+      "LightGBM Gain": 1.0,
+      "Permutation": 0.865,
+      "Standardized LR": 0.091
+    },
+    "Permutation": {
+      "TreeSHAP": 0.885,
+      "LightGBM Gain": 0.865,
+      "Permutation": 1.0,
+      "Standardized LR": 0.231
+    },
+    "Standardized LR": {
+      "TreeSHAP": 0.121,
+      "LightGBM Gain": 0.091,
+      "Permutation": 0.231,
+      "Standardized LR": 1.0
+    }
+  },
+  "kendall_tau_correlation_matrix": {
+    "TreeSHAP": {
+      "TreeSHAP": 1.0,
+      "LightGBM Gain": 0.825,
+      "Permutation": 0.721,
+      "Standardized LR": 0.084
+    },
+    "LightGBM Gain": {
+      "TreeSHAP": 0.825,
+      "LightGBM Gain": 1.0,
+      "Permutation": 0.693,
+      "Standardized LR": 0.081
+    },
+    "Permutation": {
+      "TreeSHAP": 0.721,
+      "LightGBM Gain": 0.693,
+      "Permutation": 1.0,
+      "Standardized LR": 0.162
+    },
+    "Standardized LR": {
+      "TreeSHAP": 0.084,
+      "LightGBM Gain": 0.081,
+      "Permutation": 0.162,
+      "Standardized LR": 1.0
+    }
+  },
+  "top_disagreements": [
+    {
+      "feature": "admission_type_group",
+      "feature_name": "Admission Urgency Type",
+      "shap_rank": 29,
+      "gain_rank": 19,
+      "rank_delta": 10,
+      "clinical_explanation": "Admission Urgency Type is ranked #29 by SHAP vs #19 by split gain. Tree split gain rewards high-cardinality split frequency throughout the ensemble, while SHAP measures game-theoretic marginal attribution on final patient predictions."
+    },
+    {
+      "feature": "insulin",
+      "feature_name": "Insulin Regimen",
+      "shap_rank": 9,
+      "gain_rank": 18,
+      "rank_delta": 9,
+      "clinical_explanation": "Insulin Regimen is ranked #9 by SHAP vs #18 by split gain. Tree split gain rewards high-cardinality split frequency throughout the ensemble, while SHAP measures game-theoretic marginal attribution on final patient predictions."
+    },
+    {
+      "feature": "n_dose_changes",
+      "feature_name": "Medication Dose Adjustments",
+      "shap_rank": 23,
+      "gain_rank": 31,
+      "rank_delta": 8,
+      "clinical_explanation": "Medication Dose Adjustments is ranked #23 by SHAP vs #31 by split gain. Tree split gain rewards high-cardinality split frequency throughout the ensemble, while SHAP measures game-theoretic marginal attribution on final patient predictions."
+    },
+    {
+      "feature": "meds_per_day",
+      "feature_name": "Daily Medication Prescribing Velocity",
+      "shap_rank": 18,
+      "gain_rank": 11,
+      "rank_delta": 7,
+      "clinical_explanation": "Daily Medication Prescribing Velocity is ranked #18 by SHAP vs #11 by split gain. Tree split gain rewards high-cardinality split frequency throughout the ensemble, while SHAP measures game-theoretic marginal attribution on final patient predictions."
+    },
+    {
+      "feature": "admission_source_group",
+      "feature_name": "Admission Source",
+      "shap_rank": 19,
+      "gain_rank": 26,
+      "rank_delta": 7,
+      "clinical_explanation": "Admission Source is ranked #19 by SHAP vs #26 by split gain. Tree split gain rewards high-cardinality split frequency throughout the ensemble, while SHAP measures game-theoretic marginal attribution on final patient predictions."
+    }
+  ]
+}

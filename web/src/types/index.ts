@@ -200,7 +200,9 @@ export interface ExplainResponse {
   scale_description?: string;
   plain_english_summary?: string;
   explanation_reliability?: ExplanationReliability;
+  explanation_v2?: any;
 }
+
 
 export interface CohortResponse {
   mode: string;
@@ -513,7 +515,9 @@ export interface DischargeDetailResponse {
   outcome_status?: string;
   features: PatientFormInput;
   shap_explanation: ShapExplanationPayload;
+  explanation_v2?: any;
   similar_patients_summary?: {
+
     k_neighbors: number;
     neighbor_readmission_rate: number;
     readmitted_count?: number;

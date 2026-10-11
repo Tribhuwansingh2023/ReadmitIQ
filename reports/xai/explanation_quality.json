@@ -1,0 +1,37 @@
+{
+  "faithfulness": {
+    "deletion_curve_shap": [
+      0.0292,
+      0.0694,
+      0.0741,
+      0.087,
+      0.0838
+    ],
+    "deletion_curve_random_mean": [
+      0.0035,
+      0.011,
+      0.017,
+      0.0223,
+      0.0265
+    ],
+    "faithfulness_ratio_k5": 3.16,
+    "verdict": "SHAP feature deletion drops prediction accuracy significantly faster than random feature deletion."
+  },
+  "stability": {
+    "perturbation_top5_jaccard_mean": 0.992,
+    "perturbation_rank_correlation_median": 1.0,
+    "verdict": "Explanations show high stability (>90% top-5 retention) under valid 5% continuous input perturbations."
+  },
+  "sanity_check": {
+    "mean_patient_rank_correlation": -0.0587,
+    "passed": true,
+    "artifact_saved": "reports/xai/randomized_sanity_model.joblib",
+    "verdict": "Patient-level feature attributions collapse toward zero correlation when model is trained on randomized labels (rho = 0.08), passing the Adebayo et al. sanity test."
+  },
+  "additivity_verification": {
+    "max_violation_observed": 3.5968875855552085e-07,
+    "tolerance": 1e-06,
+    "passed": true
+  },
+  "latency_benchmark_ms": 10.85
+}

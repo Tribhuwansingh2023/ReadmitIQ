@@ -87,6 +87,14 @@ class ModelService:
             model_path=self.final_dir / "model.joblib",
             feature_list_path=self.final_dir / "feature_list.json",
         )
+        try:
+            from src.xai.local import LocalExplainerV2
+
+            self.local_explainer_v2 = LocalExplainerV2()
+        except Exception as e:
+            logger.warning("LocalExplainerV2 initialization skipped or failed: %s", e)
+            self.local_explainer_v2 = None
+
         self._shap_cache: Dict[Any, Dict[str, Any]] = {}
 
         # Preloaded cohort scored parquet for fast /cohort replay (adaptive)
@@ -145,13 +153,17 @@ class ModelService:
         df[self.base_num_cols] = df[self.base_num_cols].fillna(0.0).astype(float)
 
         # 1. Vectorized FAISS retrieval
-        missing_rag = "rag_struct_rate_k20" not in df.columns or df["rag_struct_rate_k20"].isna().any()
+        missing_rag = (
+            "rag_struct_rate_k20" not in df.columns or df["rag_struct_rate_k20"].isna().any()
+        )
         neighbor_indices = None
         neighbor_sims = None
 
         if missing_rag:
             try:
-                dense_feats = self.base_preprocessor.transform(df[self.base_num_cols + self.cat_cols])
+                dense_feats = self.base_preprocessor.transform(
+                    df[self.base_num_cols + self.cat_cols]
+                )
                 if hasattr(dense_feats, "toarray"):
                     dense_feats = dense_feats.toarray()
                 query_vecs = self.svd.transform(dense_feats).astype(np.float32)
@@ -169,8 +181,12 @@ class ModelService:
                 ) from e
         else:
             if df["rag_struct_rate_k20"].isna().any():
-                raise ValueError("Batch scoring contains invalid or missing rag_struct_rate_k20 values.")
-            df["rag_struct_rate_k20"] = pd.to_numeric(df["rag_struct_rate_k20"], errors="raise").astype(float)
+                raise ValueError(
+                    "Batch scoring contains invalid or missing rag_struct_rate_k20 values."
+                )
+            df["rag_struct_rate_k20"] = pd.to_numeric(
+                df["rag_struct_rate_k20"], errors="raise"
+            ).astype(float)
 
         # 2. Vectorized LightGBM feature prep & inference
         X_lgbm = prepare_lgbm_data(df, self.num_cols, self.cat_cols)
@@ -252,10 +268,12 @@ class ModelService:
         allow_degraded: bool = False,
         force_degraded: bool = False,
         calibrated_prob: Optional[float] = None,
+        detail: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compute TreeSHAP explanations on demand and cache them."""
-        if cache_key in self._shap_cache:
-            return self._shap_cache[cache_key]
+        full_key = f"{cache_key}_{detail}" if detail else cache_key
+        if full_key in self._shap_cache:
+            return self._shap_cache[full_key]
 
         explanation = self.explain(
             patient_dict,
@@ -263,8 +281,9 @@ class ModelService:
             allow_degraded=allow_degraded,
             force_degraded=force_degraded,
             calibrated_prob=calibrated_prob,
+            detail=detail,
         )
-        self._shap_cache[cache_key] = explanation
+        self._shap_cache[full_key] = explanation
         return explanation
 
     def retrieve_similar(
@@ -324,6 +343,7 @@ class ModelService:
         allow_degraded: bool = False,
         force_degraded: bool = False,
         calibrated_prob: Optional[float] = None,
+        detail: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Explain patient risk attributions, retrieving RAG neighborhood if needed.
 
@@ -361,15 +381,127 @@ class ModelService:
             calibrated_prob=calibrated_prob,
             degraded_mode=False,
         )
+
+        if detail == "full":
+            try:
+                explanation["explanation_v2"] = self.explain_v2(
+                    patient_copy,
+                    top_k=top_k,
+                    calibrated_prob=calibrated_prob,
+                )
+            except Exception as e:
+                logger.warning("Failed to compute explanation_v2: %s", e)
+                explanation["explanation_v2"] = None
+
         return explanation
+
+    def explain_v2(
+        self,
+        patient_dict: Dict[str, Any],
+        top_k: int = 5,
+        calibrated_prob: Optional[float] = None,
+        neighbor_summary: Optional[Dict[str, Any]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Compute full local explanation v2 (TreeSHAP additivity, waterfall, groups, contrastive, counterfactual, reliability)."""
+        if self.local_explainer_v2 is None:
+            try:
+                from src.xai.local import LocalExplainerV2
+
+                self.local_explainer_v2 = LocalExplainerV2()
+            except Exception as e:
+                logger.error("Failed to load LocalExplainerV2: %s", e)
+                return None
+        return self.local_explainer_v2.explain_patient(
+            patient_dict,
+            top_k=top_k,
+            calibrated_prob=calibrated_prob,
+            neighbor_summary=neighbor_summary,
+        )
+
+    def get_counterfactual_for_discharge(
+        self,
+        discharge_id: int,
+        timeout_sec: float = 5.0,
+    ) -> Dict[str, Any]:
+        """Search for feasible 1- or 2-feature care plan adjustments that lower risk tier."""
+        import time
+
+        from api.database import get_db
+
+        start_t = time.monotonic()
+        with get_db() as conn:
+            row = conn.execute("SELECT * FROM discharges WHERE id = ?", (discharge_id,)).fetchone()
+            if not row:
+                raise ValueError(f"Discharge ID {discharge_id} not found.")
+            feats = json.loads(row["features_json"])
+            tier = row["tier"]
+            cal_prob = row["calibrated_prob"]
+
+        if self.local_explainer_v2 is None:
+            from src.xai.local import LocalExplainerV2
+
+            self.local_explainer_v2 = LocalExplainerV2()
+
+        res = self.local_explainer_v2._search_counterfactual(feats, tier, cal_prob)
+        elapsed = time.monotonic() - start_t
+        if elapsed > timeout_sec:
+            logger.warning(
+                "Counterfactual search took %.2fs for discharge %s", elapsed, discharge_id
+            )
+
+        res["discharge_id"] = discharge_id
+        return res
+
+    def get_xai_global_summary(self) -> Dict[str, Any]:
+        """Aggregate computed XAI global analysis summaries from reports/xai/*.json."""
+        xai_dir = REPORTS_DIR / "xai"
+        required_files = [
+            "global_importance.json",
+            "method_agreement.json",
+            "explanation_quality.json",
+            "subgroup_xai.json",
+            "thresholds.json",
+            "local_reliability.json",
+        ]
+        if not xai_dir.exists():
+            return {
+                "status": "pending",
+                "message": "XAI artifacts directory not found; run scripts/run_xai_analysis.py",
+            }
+
+        missing = [f for f in required_files if not (xai_dir / f).exists()]
+        if missing:
+            return {
+                "status": "pending",
+                "message": f"Pending XAI artifacts: {', '.join(missing)}",
+                "missing_files": missing,
+            }
+
+        def _read_json(fname: str) -> Any:
+            fpath = xai_dir / fname
+            if fpath.exists():
+                with open(fpath, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            return None
+
+        return {
+            "status": "complete",
+            "global_importance": _read_json("global_importance.json"),
+            "method_agreement": _read_json("method_agreement.json"),
+            "explanation_quality": _read_json("explanation_quality.json"),
+            "subgroup_xai": _read_json("subgroup_xai.json"),
+            "thresholds": _read_json("thresholds.json"),
+            "local_reliability": _read_json("local_reliability.json"),
+            "dependence_summary": _read_json("dependence_summary.json"),
+            "latency": _read_json("latency.json"),
+            "tier_references": _read_json("tier_references.json"),
+        }
 
     def get_global_explanation(self) -> Dict[str, Any]:
         """Return reference cohort global feature importances, distributions, and model metadata."""
         return self.explainer.get_global_explanation()
 
-    def predict(
-        self, patient_dict: Dict[str, Any], allow_degraded: bool = False
-    ) -> Dict[str, Any]:
+    def predict(self, patient_dict: Dict[str, Any], allow_degraded: bool = False) -> Dict[str, Any]:
         """Perform end-to-end calibrated prediction, RAG retrieval, and SHAP explanation.
 
         The frozen serving model requires valid peer context (rag_struct_rate_k20).

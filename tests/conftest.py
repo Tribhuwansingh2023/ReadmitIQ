@@ -10,6 +10,37 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+try:
+    import faiss
+except (ImportError, Exception):
+    import numpy as np
+
+    class _FallbackIndex:
+        def search(self, query_vecs, k):
+            n = len(query_vecs)
+            scores = np.ones((n, k), dtype=np.float32) * 0.85
+            indices = np.zeros((n, k), dtype=np.int64)
+            for i in range(n):
+                indices[i] = np.arange(k)
+            return scores, indices
+
+    class _MockFaiss:
+        @staticmethod
+        def omp_set_num_threads(n):
+            pass
+
+        @staticmethod
+        def normalize_L2(vecs):
+            norms = np.linalg.norm(vecs, axis=-1, keepdims=True)
+            norms = np.where(norms == 0, 1.0, norms)
+            vecs /= norms
+
+        @staticmethod
+        def read_index(path):
+            return _FallbackIndex()
+
+    sys.modules["faiss"] = _MockFaiss()
+
 
 def has_processed_data() -> bool:
     """Return True if processed dataset parquets are present locally."""

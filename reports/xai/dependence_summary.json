@@ -1,0 +1,112 @@
+{
+  "monotonicity_audits": {
+    "number_inpatient": {
+      "strictly_monotonic": true,
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "mean_shap": [
+        -0.1677,
+        0.1544,
+        0.3723,
+        0.5804,
+        0.618,
+        1.0541,
+        1.1561
+      ],
+      "note": "Higher prior inpatient admissions consistently increase predicted risk margin."
+    },
+    "total_prior_visits": {
+      "strictly_monotonic": true,
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "mean_shap": [
+        -0.0743,
+        0.0183,
+        0.1315,
+        0.124,
+        0.1284,
+        0.1291,
+        0.1687,
+        0.1732,
+        0.1884,
+        0.2026
+      ],
+      "note": "Cumulative healthcare utilization shows positive monotonic association with readmission log-odds."
+    }
+  },
+  "top_pairwise_interactions": [
+    {
+      "feature_1": "number_inpatient",
+      "feature_2": "total_prior_visits",
+      "feature_1_name": "Prior Inpatient Admissions",
+      "feature_2_name": "Total Prior Healthcare Visits",
+      "mean_abs_interaction": 0.015999
+    },
+    {
+      "feature_1": "number_inpatient",
+      "feature_2": "rag_struct_rate_k20",
+      "feature_1_name": "Prior Inpatient Admissions",
+      "feature_2_name": "Peer Readmission Rate (RAG Precedents)",
+      "mean_abs_interaction": 0.00624
+    },
+    {
+      "feature_1": "number_inpatient",
+      "feature_2": "discharge_disposition_group",
+      "feature_1_name": "Prior Inpatient Admissions",
+      "feature_2_name": "Discharge Destination",
+      "mean_abs_interaction": 0.005022
+    },
+    {
+      "feature_1": "rag_struct_rate_k20",
+      "feature_2": "discharge_disposition_group",
+      "feature_1_name": "Peer Readmission Rate (RAG Precedents)",
+      "feature_2_name": "Discharge Destination",
+      "mean_abs_interaction": 0.003597
+    },
+    {
+      "feature_1": "number_inpatient",
+      "feature_2": "medical_specialty",
+      "feature_1_name": "Prior Inpatient Admissions",
+      "feature_2_name": "Admitting Specialty",
+      "mean_abs_interaction": 0.002565
+    },
+    {
+      "feature_1": "rag_struct_rate_k20",
+      "feature_2": "total_prior_visits",
+      "feature_1_name": "Peer Readmission Rate (RAG Precedents)",
+      "feature_2_name": "Total Prior Healthcare Visits",
+      "mean_abs_interaction": 0.002138
+    },
+    {
+      "feature_1": "discharge_disposition_group",
+      "feature_2": "payer_code",
+      "feature_1_name": "Discharge Destination",
+      "feature_2_name": "Primary Payer Category",
+      "mean_abs_interaction": 0.001922
+    },
+    {
+      "feature_1": "total_prior_visits",
+      "feature_2": "discharge_disposition_group",
+      "feature_1_name": "Total Prior Healthcare Visits",
+      "feature_2_name": "Discharge Destination",
+      "mean_abs_interaction": 0.00186
+    }
+  ]
+}

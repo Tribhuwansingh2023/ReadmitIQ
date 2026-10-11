@@ -1,0 +1,617 @@
+{
+  "metadata": {
+    "sample_size": 5000,
+    "total_features": 42
+  },
+  "retrieval_feature": {
+    "feature": "rag_struct_rate_k20",
+    "rank": 7,
+    "share_of_attribution_pct": 5.18,
+    "mean_abs_shap": 0.0616,
+    "clinical_finding": "The structured retrieval feature ranks #7 with 5.2% share of total model attribution. This connects directly to the ablation findings: while RAG provides rich qualitative precedent evidence, it does not provide a statistically significant AUC boost over standard tabular features."
+  },
+  "group_rankings": [
+    {
+      "group_id": "prior_utilization",
+      "group_name": "Prior Healthcare Utilization",
+      "total_mean_abs_shap": 0.3154,
+      "share_pct": 26.51
+    },
+    {
+      "group_id": "discharge_and_admission",
+      "group_name": "Discharge Destination & Admission Context",
+      "total_mean_abs_shap": 0.2049,
+      "share_pct": 17.22
+    },
+    {
+      "group_id": "diagnoses",
+      "group_name": "Clinical Diagnoses & Comorbidity Burden",
+      "total_mean_abs_shap": 0.1694,
+      "share_pct": 14.23
+    },
+    {
+      "group_id": "administrative",
+      "group_name": "Administrative & Attending Specialty Context",
+      "total_mean_abs_shap": 0.1557,
+      "share_pct": 13.09
+    },
+    {
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "total_mean_abs_shap": 0.1124,
+      "share_pct": 9.45
+    },
+    {
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "total_mean_abs_shap": 0.1032,
+      "share_pct": 8.67
+    },
+    {
+      "group_id": "retrieval",
+      "group_name": "Historical Patient Precedent Retrieval",
+      "total_mean_abs_shap": 0.0616,
+      "share_pct": 5.18
+    },
+    {
+      "group_id": "demographics",
+      "group_name": "Demographic Characteristics",
+      "total_mean_abs_shap": 0.0531,
+      "share_pct": 4.46
+    },
+    {
+      "group_id": "glycemic_testing",
+      "group_name": "Glycemic Lab Testing & Surveillance",
+      "total_mean_abs_shap": 0.0142,
+      "share_pct": 1.19
+    }
+  ],
+  "feature_rankings": [
+    {
+      "rank": 1,
+      "feature": "number_inpatient",
+      "feature_name": "Prior Inpatient Admissions",
+      "group_id": "prior_utilization",
+      "group_name": "Prior Healthcare Utilization",
+      "mean_abs_shap": 0.21679,
+      "ci_95": [
+        0.211942,
+        0.221357
+      ],
+      "share_of_attribution_pct": 18.22
+    },
+    {
+      "rank": 2,
+      "feature": "discharge_disposition_group",
+      "feature_name": "Discharge Destination",
+      "group_id": "discharge_and_admission",
+      "group_name": "Discharge Destination & Admission Context",
+      "mean_abs_shap": 0.183221,
+      "ci_95": [
+        0.179245,
+        0.186969
+      ],
+      "share_of_attribution_pct": 15.4
+    },
+    {
+      "rank": 3,
+      "feature": "medical_specialty",
+      "feature_name": "Admitting Specialty",
+      "group_id": "administrative",
+      "group_name": "Administrative & Attending Specialty Context",
+      "mean_abs_shap": 0.08822,
+      "ci_95": [
+        0.08514,
+        0.091993
+      ],
+      "share_of_attribution_pct": 7.41
+    },
+    {
+      "rank": 4,
+      "feature": "total_prior_visits",
+      "feature_name": "Total Prior Healthcare Visits",
+      "group_id": "prior_utilization",
+      "group_name": "Prior Healthcare Utilization",
+      "mean_abs_shap": 0.081123,
+      "ci_95": [
+        0.079839,
+        0.082536
+      ],
+      "share_of_attribution_pct": 6.82
+    },
+    {
+      "rank": 5,
+      "feature": "diag_1_group",
+      "feature_name": "Primary Diagnosis Category",
+      "group_id": "diagnoses",
+      "group_name": "Clinical Diagnoses & Comorbidity Burden",
+      "mean_abs_shap": 0.069731,
+      "ci_95": [
+        0.068457,
+        0.0709
+      ],
+      "share_of_attribution_pct": 5.86
+    },
+    {
+      "rank": 6,
+      "feature": "payer_code",
+      "feature_name": "Primary Payer Category",
+      "group_id": "administrative",
+      "group_name": "Administrative & Attending Specialty Context",
+      "mean_abs_shap": 0.067509,
+      "ci_95": [
+        0.066145,
+        0.068732
+      ],
+      "share_of_attribution_pct": 5.67
+    },
+    {
+      "rank": 7,
+      "feature": "rag_struct_rate_k20",
+      "feature_name": "Peer Readmission Rate (RAG Precedents)",
+      "group_id": "retrieval",
+      "group_name": "Historical Patient Precedent Retrieval",
+      "mean_abs_shap": 0.06164,
+      "ci_95": [
+        0.060464,
+        0.062839
+      ],
+      "share_of_attribution_pct": 5.18
+    },
+    {
+      "rank": 8,
+      "feature": "number_diagnoses",
+      "feature_name": "Coded Diagnoses Count",
+      "group_id": "diagnoses",
+      "group_name": "Clinical Diagnoses & Comorbidity Burden",
+      "mean_abs_shap": 0.037957,
+      "ci_95": [
+        0.036984,
+        0.038825
+      ],
+      "share_of_attribution_pct": 3.19
+    },
+    {
+      "rank": 9,
+      "feature": "insulin",
+      "feature_name": "Insulin Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.037817,
+      "ci_95": [
+        0.037102,
+        0.038586
+      ],
+      "share_of_attribution_pct": 3.18
+    },
+    {
+      "rank": 10,
+      "feature": "diag_2_group",
+      "feature_name": "Secondary Diagnosis Category",
+      "group_id": "diagnoses",
+      "group_name": "Clinical Diagnoses & Comorbidity Burden",
+      "mean_abs_shap": 0.037777,
+      "ci_95": [
+        0.036626,
+        0.038999
+      ],
+      "share_of_attribution_pct": 3.17
+    },
+    {
+      "rank": 11,
+      "feature": "age_num",
+      "feature_name": "Patient Age Midpoint",
+      "group_id": "demographics",
+      "group_name": "Demographic Characteristics",
+      "mean_abs_shap": 0.035954,
+      "ci_95": [
+        0.035365,
+        0.036537
+      ],
+      "share_of_attribution_pct": 3.02
+    },
+    {
+      "rank": 12,
+      "feature": "n_active_drugs",
+      "feature_name": "Active Diabetes Medications",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.030142,
+      "ci_95": [
+        0.0294,
+        0.030818
+      ],
+      "share_of_attribution_pct": 2.53
+    },
+    {
+      "rank": 13,
+      "feature": "time_in_hospital",
+      "feature_name": "Length of Stay (Days)",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.0283,
+      "ci_95": [
+        0.027399,
+        0.029094
+      ],
+      "share_of_attribution_pct": 2.38
+    },
+    {
+      "rank": 14,
+      "feature": "num_lab_procedures",
+      "feature_name": "Diagnostic Lab Procedures",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.024558,
+      "ci_95": [
+        0.024029,
+        0.025178
+      ],
+      "share_of_attribution_pct": 2.06
+    },
+    {
+      "rank": 15,
+      "feature": "diag_3_group",
+      "feature_name": "Tertiary Diagnosis Category",
+      "group_id": "diagnoses",
+      "group_name": "Clinical Diagnoses & Comorbidity Burden",
+      "mean_abs_shap": 0.023912,
+      "ci_95": [
+        0.02337,
+        0.02453
+      ],
+      "share_of_attribution_pct": 2.01
+    },
+    {
+      "rank": 16,
+      "feature": "num_medications",
+      "feature_name": "Prescribed Medications Count",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.023183,
+      "ci_95": [
+        0.022625,
+        0.023706
+      ],
+      "share_of_attribution_pct": 1.95
+    },
+    {
+      "rank": 17,
+      "feature": "metformin",
+      "feature_name": "Metformin Therapy",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.019114,
+      "ci_95": [
+        0.018569,
+        0.019644
+      ],
+      "share_of_attribution_pct": 1.61
+    },
+    {
+      "rank": 18,
+      "feature": "meds_per_day",
+      "feature_name": "Daily Medication Prescribing Velocity",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.018608,
+      "ci_95": [
+        0.017497,
+        0.019907
+      ],
+      "share_of_attribution_pct": 1.56
+    },
+    {
+      "rank": 19,
+      "feature": "admission_source_group",
+      "feature_name": "Admission Source",
+      "group_id": "discharge_and_admission",
+      "group_name": "Discharge Destination & Admission Context",
+      "mean_abs_shap": 0.016902,
+      "ci_95": [
+        0.016258,
+        0.017626
+      ],
+      "share_of_attribution_pct": 1.42
+    },
+    {
+      "rank": 20,
+      "feature": "labs_per_day",
+      "feature_name": "Daily Lab Procedure Velocity",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.012041,
+      "ci_95": [
+        0.011553,
+        0.012475
+      ],
+      "share_of_attribution_pct": 1.01
+    },
+    {
+      "rank": 21,
+      "feature": "race",
+      "feature_name": "Patient Race / Ethnicity",
+      "group_id": "demographics",
+      "group_name": "Demographic Characteristics",
+      "mean_abs_shap": 0.011774,
+      "ci_95": [
+        0.011149,
+        0.012416
+      ],
+      "share_of_attribution_pct": 0.99
+    },
+    {
+      "rank": 22,
+      "feature": "number_emergency",
+      "feature_name": "Prior Emergency Room Visits",
+      "group_id": "prior_utilization",
+      "group_name": "Prior Healthcare Utilization",
+      "mean_abs_shap": 0.01076,
+      "ci_95": [
+        0.010253,
+        0.011244
+      ],
+      "share_of_attribution_pct": 0.9
+    },
+    {
+      "rank": 23,
+      "feature": "n_dose_changes",
+      "feature_name": "Medication Dose Adjustments",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.007688,
+      "ci_95": [
+        0.007508,
+        0.00785
+      ],
+      "share_of_attribution_pct": 0.65
+    },
+    {
+      "rank": 24,
+      "feature": "number_outpatient",
+      "feature_name": "Prior Outpatient Clinic Visits",
+      "group_id": "prior_utilization",
+      "group_name": "Prior Healthcare Utilization",
+      "mean_abs_shap": 0.00676,
+      "ci_95": [
+        0.006376,
+        0.007215
+      ],
+      "share_of_attribution_pct": 0.57
+    },
+    {
+      "rank": 25,
+      "feature": "a1c_tested",
+      "feature_name": "HbA1c Lab Drawn During Stay",
+      "group_id": "glycemic_testing",
+      "group_name": "Glycemic Lab Testing & Surveillance",
+      "mean_abs_shap": 0.006688,
+      "ci_95": [
+        0.006481,
+        0.006884
+      ],
+      "share_of_attribution_pct": 0.56
+    },
+    {
+      "rank": 26,
+      "feature": "num_procedures",
+      "feature_name": "Non-Lab Clinical Procedures",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.005755,
+      "ci_95": [
+        0.005471,
+        0.006027
+      ],
+      "share_of_attribution_pct": 0.48
+    },
+    {
+      "rank": 27,
+      "feature": "gender",
+      "feature_name": "Patient Biological Sex",
+      "group_id": "demographics",
+      "group_name": "Demographic Characteristics",
+      "mean_abs_shap": 0.005368,
+      "ci_95": [
+        0.005251,
+        0.005486
+      ],
+      "share_of_attribution_pct": 0.45
+    },
+    {
+      "rank": 28,
+      "feature": "A1Cresult",
+      "feature_name": "HbA1c Lab Test Result",
+      "group_id": "glycemic_testing",
+      "group_name": "Glycemic Lab Testing & Surveillance",
+      "mean_abs_shap": 0.005137,
+      "ci_95": [
+        0.004839,
+        0.00549
+      ],
+      "share_of_attribution_pct": 0.43
+    },
+    {
+      "rank": 29,
+      "feature": "admission_type_group",
+      "feature_name": "Admission Urgency Type",
+      "group_id": "discharge_and_admission",
+      "group_name": "Discharge Destination & Admission Context",
+      "mean_abs_shap": 0.004799,
+      "ci_95": [
+        0.004591,
+        0.005026
+      ],
+      "share_of_attribution_pct": 0.4
+    },
+    {
+      "rank": 30,
+      "feature": "glipizide",
+      "feature_name": "Glipizide Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.003251,
+      "ci_95": [
+        0.003075,
+        0.003424
+      ],
+      "share_of_attribution_pct": 0.27
+    },
+    {
+      "rank": 31,
+      "feature": "glyburide",
+      "feature_name": "Glyburide Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.002552,
+      "ci_95": [
+        0.002417,
+        0.002685
+      ],
+      "share_of_attribution_pct": 0.21
+    },
+    {
+      "rank": 32,
+      "feature": "max_glu_serum",
+      "feature_name": "Serum Glucose Lab Result",
+      "group_id": "glycemic_testing",
+      "group_name": "Glycemic Lab Testing & Surveillance",
+      "mean_abs_shap": 0.002394,
+      "ci_95": [
+        0.002219,
+        0.002578
+      ],
+      "share_of_attribution_pct": 0.2
+    },
+    {
+      "rank": 33,
+      "feature": "change",
+      "feature_name": "Diabetes Medication Modified",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.001223,
+      "ci_95": [
+        0.001162,
+        0.001292
+      ],
+      "share_of_attribution_pct": 0.1
+    },
+    {
+      "rank": 34,
+      "feature": "glimepiride",
+      "feature_name": "Glimepiride Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.000748,
+      "ci_95": [
+        0.000697,
+        0.000801
+      ],
+      "share_of_attribution_pct": 0.06
+    },
+    {
+      "rank": 35,
+      "feature": "repaglinide",
+      "feature_name": "Repaglinide Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.000203,
+      "ci_95": [
+        0.000183,
+        0.000228
+      ],
+      "share_of_attribution_pct": 0.02
+    },
+    {
+      "rank": 36,
+      "feature": "acarbose",
+      "feature_name": "Acarbose Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.000185,
+      "ci_95": [
+        0.000132,
+        0.000247
+      ],
+      "share_of_attribution_pct": 0.02
+    },
+    {
+      "rank": 37,
+      "feature": "pioglitazone",
+      "feature_name": "Pioglitazone Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.00015,
+      "ci_95": [
+        0.000116,
+        0.000193
+      ],
+      "share_of_attribution_pct": 0.01
+    },
+    {
+      "rank": 38,
+      "feature": "rosiglitazone",
+      "feature_name": "Rosiglitazone Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.000105,
+      "ci_95": [
+        8.9e-05,
+        0.000125
+      ],
+      "share_of_attribution_pct": 0.01
+    },
+    {
+      "rank": 39,
+      "feature": "glyburide-metformin",
+      "feature_name": "Glyburide-Metformin Combination",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 4.1e-05,
+      "ci_95": [
+        3.3e-05,
+        4.9e-05
+      ],
+      "share_of_attribution_pct": 0.0
+    },
+    {
+      "rank": 40,
+      "feature": "nateglinide",
+      "feature_name": "Nateglinide Regimen",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.0,
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "share_of_attribution_pct": 0.0
+    },
+    {
+      "rank": 41,
+      "feature": "diabetesMed",
+      "feature_name": "Prescribed Diabetes Medication",
+      "group_id": "diabetes_medications",
+      "group_name": "Diabetes Pharmacotherapy Regimen",
+      "mean_abs_shap": 0.0,
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "share_of_attribution_pct": 0.0
+    },
+    {
+      "rank": 42,
+      "feature": "polypharmacy",
+      "feature_name": "Polypharmacy Flag (>16 Meds)",
+      "group_id": "stay_and_intensity",
+      "group_name": "Inpatient Stay Duration & Care Intensity",
+      "mean_abs_shap": 0.0,
+      "ci_95": [
+        0.0,
+        0.0
+      ],
+      "share_of_attribution_pct": 0.0
+    }
+  ]
+}

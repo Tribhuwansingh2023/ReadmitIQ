@@ -1,0 +1,146 @@
+{
+  "race": {
+    "Caucasian": {
+      "sample_size": 3768,
+      "reliable": true,
+      "group_attributions": {
+        "prior_utilization": 0.3079,
+        "diabetes_medications": 0.105,
+        "diagnoses": 0.1698,
+        "discharge_and_admission": 0.2076,
+        "stay_and_intensity": 0.1126,
+        "glycemic_testing": 0.0139,
+        "demographics": 0.0478,
+        "administrative": 0.1542,
+        "retrieval": 0.0608
+      },
+      "proxy_attributions": {
+        "payer_code": 0.067,
+        "medical_specialty": 0.0873,
+        "race": 0.0077
+      }
+    },
+    "AfricanAmerican": {
+      "sample_size": 915,
+      "reliable": true,
+      "group_attributions": {
+        "prior_utilization": 0.3502,
+        "diabetes_medications": 0.0969,
+        "diagnoses": 0.1659,
+        "discharge_and_admission": 0.1874,
+        "stay_and_intensity": 0.1098,
+        "glycemic_testing": 0.0154,
+        "demographics": 0.0477,
+        "administrative": 0.1584,
+        "retrieval": 0.0627
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0692,
+        "medical_specialty": 0.0892,
+        "race": 0.0033
+      }
+    },
+    "Hispanic": {
+      "sample_size": 101,
+      "reliable": true,
+      "group_attributions": {
+        "prior_utilization": 0.3169,
+        "diabetes_medications": 0.1035,
+        "diagnoses": 0.1778,
+        "discharge_and_admission": 0.1933,
+        "stay_and_intensity": 0.1127,
+        "glycemic_testing": 0.0173,
+        "demographics": 0.1019,
+        "administrative": 0.1596,
+        "retrieval": 0.0702
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0601,
+        "medical_specialty": 0.0995,
+        "race": 0.0558
+      }
+    },
+    "Other": {
+      "sample_size": 77,
+      "reliable": false,
+      "group_attributions": {
+        "prior_utilization": 0.3394,
+        "diabetes_medications": 0.1042,
+        "diagnoses": 0.1848,
+        "discharge_and_admission": 0.2295,
+        "stay_and_intensity": 0.1207,
+        "glycemic_testing": 0.0171,
+        "demographics": 0.1555,
+        "administrative": 0.1769,
+        "retrieval": 0.0755
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0802,
+        "medical_specialty": 0.0967,
+        "race": 0.1065
+      }
+    },
+    "Asian": {
+      "sample_size": 32,
+      "reliable": false,
+      "group_attributions": {
+        "prior_utilization": 0.323,
+        "diabetes_medications": 0.1118,
+        "diagnoses": 0.1519,
+        "discharge_and_admission": 0.2454,
+        "stay_and_intensity": 0.1394,
+        "glycemic_testing": 0.014,
+        "demographics": 0.0921,
+        "administrative": 0.2037,
+        "retrieval": 0.0734
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0721,
+        "medical_specialty": 0.1316,
+        "race": 0.038
+      }
+    }
+  },
+  "gender": {
+    "Female": {
+      "sample_size": 2642,
+      "reliable": true,
+      "group_attributions": {
+        "prior_utilization": 0.3114,
+        "diabetes_medications": 0.1038,
+        "diagnoses": 0.1687,
+        "discharge_and_admission": 0.2097,
+        "stay_and_intensity": 0.113,
+        "glycemic_testing": 0.0142,
+        "demographics": 0.0528,
+        "administrative": 0.1594,
+        "retrieval": 0.0614
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0661,
+        "medical_specialty": 0.0933,
+        "race": 0.0117
+      }
+    },
+    "Male": {
+      "sample_size": 2358,
+      "reliable": true,
+      "group_attributions": {
+        "prior_utilization": 0.3199,
+        "diabetes_medications": 0.1025,
+        "diagnoses": 0.1701,
+        "discharge_and_admission": 0.1995,
+        "stay_and_intensity": 0.1119,
+        "glycemic_testing": 0.0142,
+        "demographics": 0.0534,
+        "administrative": 0.1516,
+        "retrieval": 0.0619
+      },
+      "proxy_attributions": {
+        "payer_code": 0.0691,
+        "medical_specialty": 0.0825,
+        "race": 0.0118
+      }
+    }
+  }
+}

@@ -535,9 +535,11 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
                 riskTier={detail.tier}
                 modelVersion={detail.model_version}
                 shapExplanation={detail.shap_explanation}
+                explanationV2={detail.explanation_v2}
                 similarEncounters={detail.similar_patients_summary?.top_neighbors || []}
                 patientFeatures={detail.features as any}
               />
+
 
               {/* Section 3: Precedent Orbit (Radial Visualization) */}
               <div className="bg-surface p-6 rounded-sm hairline-border space-y-4">

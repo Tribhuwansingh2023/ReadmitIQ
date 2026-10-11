@@ -1,0 +1,260 @@
+version: "1.0.0"
+seed: 42
+
+paths:
+  model: "models/final/model.joblib"
+  calibrator: "models/final/calibrator.joblib"
+  feature_list: "models/final/feature_list.json"
+  serving_thresholds: "models/final/serving_thresholds.json"
+  train_data: "data/processed/train_rag.parquet"
+  val_data: "data/processed/val_rag.parquet"
+  output_dir: "reports/xai"
+  figures_dir: "reports/xai/figures"
+
+# Cutoffs for risk tiers from serving thresholds
+risk_tiers:
+  Critical:
+    raw_score_min: 0.683933
+    capacity_percentile: "Top 5%"
+  High:
+    raw_score_min: 0.640775
+    capacity_percentile: "Top 10%"
+  Medium:
+    raw_score_min: 0.579340
+    capacity_percentile: "Top 20%"
+  Low:
+    raw_score_min: 0.0
+    capacity_percentile: "Bottom 80%"
+
+# Feature groups with clinical rationale
+feature_groups:
+  prior_utilization:
+    name: "Prior Healthcare Utilization"
+    rationale: "Historical acute care frequency indicates underlying chronic disease instability and high healthcare utilization patterns."
+    features:
+      - "number_inpatient"
+      - "number_emergency"
+      - "number_outpatient"
+      - "total_prior_visits"
+  diabetes_medications:
+    name: "Diabetes Pharmacotherapy Regimen"
+    rationale: "Active medication complexity, polypharmacy, and titration events reflect glycemic volatility and therapeutic adherence requirements."
+    features:
+      - "insulin"
+      - "metformin"
+      - "glipizide"
+      - "glyburide"
+      - "pioglitazone"
+      - "glimepiride"
+      - "rosiglitazone"
+      - "repaglinide"
+      - "nateglinide"
+      - "acarbose"
+      - "glyburide-metformin"
+      - "n_active_drugs"
+      - "n_dose_changes"
+      - "change"
+      - "diabetesMed"
+  diagnoses:
+    name: "Clinical Diagnoses & Comorbidity Burden"
+    rationale: "Primary ICD-9 diagnosis and secondary comorbidity load dictate multi-organ clinical acuity and post-discharge vulnerability."
+    features:
+      - "diag_1_group"
+      - "diag_2_group"
+      - "diag_3_group"
+      - "number_diagnoses"
+  discharge_and_admission:
+    name: "Discharge Destination & Admission Context"
+    rationale: "Inpatient admission urgency and post-discharge care transition destinations govern immediate continuity of outpatient care."
+    features:
+      - "discharge_disposition_group"
+      - "admission_type_group"
+      - "admission_source_group"
+  stay_and_intensity:
+    name: "Inpatient Stay Duration & Care Intensity"
+    rationale: "Hospital length of stay, procedure counts, and diagnostic lab velocities reflect acute inpatient episode complexity."
+    features:
+      - "time_in_hospital"
+      - "labs_per_day"
+      - "meds_per_day"
+      - "num_medications"
+      - "num_lab_procedures"
+      - "num_procedures"
+      - "polypharmacy"
+  glycemic_testing:
+    name: "Glycemic Lab Testing & Surveillance"
+    rationale: "Inpatient HbA1c surveillance and peak serum glucose testing reveal diabetes monitoring quality and metabolic control."
+    features:
+      - "A1Cresult"
+      - "max_glu_serum"
+      - "a1c_tested"
+  demographics:
+    name: "Demographic Characteristics"
+    rationale: "Baseline age bracket, biological sex, and recorded demographic identity provide baseline population epidemiology."
+    features:
+      - "age_num"
+      - "race"
+      - "gender"
+  administrative:
+    name: "Administrative & Attending Specialty Context"
+    rationale: "Health insurance payer classification and admitting clinical specialty describe administrative care delivery pathways."
+    features:
+      - "payer_code"
+      - "medical_specialty"
+  retrieval:
+    name: "Historical Patient Precedent Retrieval"
+    rationale: "Empirical readmission rate observed among the top 20 structurally similar historical diabetic patient encounters."
+    features:
+      - "rag_struct_rate_k20"
+
+# Clinical modifiability classification
+# modifiable: can be directly influenced by post-discharge care transition plan
+# partly_modifiable: clinical state influenced over multi-day inpatient stay
+# fixed: immutable past medical history or demographic attributes
+feature_modifiability:
+  discharge_disposition_group:
+    status: "modifiable"
+    rationale: "Post-discharge destination plan (e.g., home health care referral vs. unassisted discharge) is directly decided prior to discharge."
+    allowed_values: ["Home", "Home Health", "SNF", "Other"]
+  change:
+    status: "modifiable"
+    rationale: "Decision to modify or maintain diabetic medication regimen during discharge reconciliation."
+    allowed_values: ["No", "Ch"]
+  diabetesMed:
+    status: "modifiable"
+    rationale: "Prescribing anti-diabetic medications upon inpatient discharge."
+    allowed_values: ["Yes", "No"]
+  insulin:
+    status: "modifiable"
+    rationale: "Titrating or stabilizing inpatient insulin management before discharge."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  metformin:
+    status: "modifiable"
+    rationale: "Adjusting biguanide oral therapy regimen based on renal function."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  glipizide:
+    status: "modifiable"
+    rationale: "Adjusting sulfonylurea medication regimen."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  glyburide:
+    status: "modifiable"
+    rationale: "Adjusting sulfonylurea medication regimen."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  pioglitazone:
+    status: "modifiable"
+    rationale: "Adjusting thiazolidinedione therapy regimen."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  glimepiride:
+    status: "modifiable"
+    rationale: "Adjusting sulfonylurea medication regimen."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  rosiglitazone:
+    status: "modifiable"
+    rationale: "Adjusting thiazolidinedione therapy regimen."
+    allowed_values: ["No", "Steady", "Up", "Down"]
+  a1c_tested:
+    status: "modifiable"
+    rationale: "Ordering an inpatient glycated hemoglobin (HbA1c) lab test prior to discharge."
+    allowed_values: [0, 1]
+  A1Cresult:
+    status: "partly_modifiable"
+    rationale: "Ordering HbA1c test produces recorded lab result category; cannot manipulate value itself."
+    allowed_values: ["None", "Norm", ">7", ">8"]
+  time_in_hospital:
+    status: "partly_modifiable"
+    rationale: "Length of stay reflects clinical recovery velocity and medical necessity."
+  num_medications:
+    status: "partly_modifiable"
+    rationale: "Medication deprescribing and reconciliation can reduce polypharmacy load."
+  n_active_drugs:
+    status: "partly_modifiable"
+    rationale: "Number of active agents can be rationalized during care transition review."
+  n_dose_changes:
+    status: "partly_modifiable"
+    rationale: "Dose titration events indicate regimen adjustment stability."
+  labs_per_day:
+    status: "partly_modifiable"
+    rationale: "Diagnostic testing velocity during stay."
+  meds_per_day:
+    status: "partly_modifiable"
+    rationale: "Daily medication prescribing intensity."
+  polypharmacy:
+    status: "partly_modifiable"
+    rationale: "Indicator whether total medication count exceeds 16 distinct drugs."
+  number_inpatient:
+    status: "fixed"
+    rationale: "Historical inpatient admissions in past 12 months cannot be altered."
+  number_emergency:
+    status: "fixed"
+    rationale: "Historical emergency room visits in past 12 months cannot be altered."
+  number_outpatient:
+    status: "fixed"
+    rationale: "Historical outpatient clinic visits in past 12 months cannot be altered."
+  total_prior_visits:
+    status: "fixed"
+    rationale: "Total past healthcare utilization is immutable history."
+  admission_type_group:
+    status: "fixed"
+    rationale: "Urgency of original hospital admission is an immutable historical fact."
+  admission_source_group:
+    status: "fixed"
+    rationale: "Origin point prior to hospital admission is immutable."
+  diag_1_group:
+    status: "fixed"
+    rationale: "Primary admitting ICD diagnosis category is fixed for this encounter."
+  diag_2_group:
+    status: "fixed"
+    rationale: "Secondary comorbidity ICD diagnosis category is fixed."
+  diag_3_group:
+    status: "fixed"
+    rationale: "Tertiary comorbidity ICD diagnosis category is fixed."
+  number_diagnoses:
+    status: "fixed"
+    rationale: "Total distinct documented ICD diagnoses for encounter."
+  age_num:
+    status: "fixed"
+    rationale: "Patient chronological age is immutable."
+  race:
+    status: "fixed"
+    rationale: "Patient demographic racial or ethnic identity is immutable."
+  gender:
+    status: "fixed"
+    rationale: "Patient biological sex is immutable."
+  payer_code:
+    status: "fixed"
+    rationale: "Primary health insurance coverage program."
+  medical_specialty:
+    status: "fixed"
+    rationale: "Admitting physician specialty for this hospitalization."
+  num_lab_procedures:
+    status: "fixed"
+    rationale: "Total diagnostic lab tests performed during index stay."
+  num_procedures:
+    status: "fixed"
+    rationale: "Total non-lab surgical or diagnostic procedures performed."
+  max_glu_serum:
+    status: "fixed"
+    rationale: "Peak serum glucose lab result documented during stay."
+  repaglinide:
+    status: "fixed"
+    rationale: "Meglitinide therapy regimen status."
+  nateglinide:
+    status: "fixed"
+    rationale: "Meglitinide therapy regimen status."
+  acarbose:
+    status: "fixed"
+    rationale: "Alpha-glucosidase inhibitor regimen status."
+  glyburide-metformin:
+    status: "fixed"
+    rationale: "Combination oral agent therapy regimen status."
+  rag_struct_rate_k20:
+    status: "fixed"
+    rationale: "Empirical readmission rate of 20 historical peer encounters from training registry."
+
+# Data completeness indicators: values that represent 'not recorded'
+not_recorded_patterns:
+  payer_code: ["Missing", "?", "Unknown"]
+  medical_specialty: ["Missing", "?", "Unknown"]
+  A1Cresult: ["None"]
+  max_glu_serum: ["None"]
+  race: ["?", "Unknown", "Other"]

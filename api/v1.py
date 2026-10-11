@@ -11,30 +11,31 @@ Includes:
 """
 
 import csv
-from datetime import datetime, timedelta, timezone
 import io
 import json
+import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
-from fastapi.responses import StreamingResponse
+logger = logging.getLogger(__name__)
+
 import numpy as np
 import pandas as pd
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sklearn.metrics import roc_auc_score
 
 from api.database import get_db, log_audit, log_data_quality_event
 from api.feed import get_feed_engine
 from api.interventions import (
-    fetch_discharge_tasks,
     generate_suggested_interventions,
     seed_tasks_for_discharge,
 )
 from api.schemas import PatientEncounterRequest
 from api.service import get_service
-from src.config import BASE_DIR, METRICS_DIR, MODELS_DIR
-from src.drift import calculate_psi, classify_drift_severity
+from src.drift import classify_drift_severity
 from src.explain import FEATURE_HUMAN_NAMES
 
 router = APIRouter(prefix="/v1", tags=["Clinical Workflow v1"])
@@ -50,9 +51,7 @@ class DischargePatchRequest(BaseModel):
         None, pattern="^(new|assigned|contacted|followup_scheduled|closed)$"
     )
     assignee: Optional[str] = None
-    clinician_override_tier: Optional[str] = Field(
-        None, pattern="^(Critical|High|Medium|Low)$"
-    )
+    clinician_override_tier: Optional[str] = Field(None, pattern="^(Critical|High|Medium|Low)$")
     override_reason: Optional[str] = None
     actor: str = Field(default="Care Coordinator")
 
@@ -81,9 +80,7 @@ class TaskCreateRequest(BaseModel):
 
 
 class TaskPatchRequest(BaseModel):
-    status: Optional[str] = Field(
-        None, pattern="^(pending|in_progress|completed|cancelled)$"
-    )
+    status: Optional[str] = Field(None, pattern="^(pending|in_progress|completed|cancelled)$")
     owner: Optional[str] = None
     due_date: Optional[str] = None
     completion_note: Optional[str] = None
@@ -363,7 +360,9 @@ def create_discharges(payload: Union[Dict[str, Any], List[Dict[str, Any]]]):
                     "calibrated_prob": scored["calibrated_prob"],
                     "tier": scored["tier"],
                     "status": "new",
-                    "model_version": svc.frozen_config.get("model_name", "LightGBM + Structured RAG"),
+                    "model_version": svc.frozen_config.get(
+                        "model_name", "LightGBM + Structured RAG"
+                    ),
                     "neighbor_summary": scored["neighbor_summary"],
                 }
             )
@@ -453,13 +452,11 @@ def get_worklist(
                 tier_counts[row["tier"]] = row["cnt"]
 
         # Task completion counts mapped by discharge_id
-        task_counts_cur = conn.execute(
-            """SELECT discharge_id,
+        task_counts_cur = conn.execute("""SELECT discharge_id,
                       COUNT(*) as total_tasks,
                       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks
                FROM tasks
-               GROUP BY discharge_id"""
-        )
+               GROUP BY discharge_id""")
         task_counts = {
             r["discharge_id"]: {
                 "total": r["total_tasks"],
@@ -635,6 +632,11 @@ def get_discharge_detail(discharge_id: int):
 
         # 1. On-demand cached TreeSHAP explanations
         explanation = svc.explain_cached(discharge_id, feats, top_k=5)
+        explanation_v2 = svc.explain_v2(
+            feats,
+            calibrated_prob=row["calibrated_prob"],
+            neighbor_summary=neighbor_summary,
+        )
 
         # 2. Suggested interventions
         interventions = generate_suggested_interventions(
@@ -686,13 +688,21 @@ def get_discharge_detail(discharge_id: int):
         ]
 
         # 6. Capacity status calculation
-        active_open_count = conn.execute("SELECT COUNT(*) FROM discharges WHERE status != 'closed'").fetchone()[0]
+        active_open_count = conn.execute(
+            "SELECT COUNT(*) FROM discharges WHERE status != 'closed'"
+        ).fetchone()[0]
         if row["status"] != "closed":
             rank_cur = conn.execute(
                 """SELECT COUNT(*) + 1 FROM discharges
                    WHERE status != 'closed'
                      AND (raw_score > ? OR (raw_score = ? AND (received_at < ? OR (received_at = ? AND id < ?))))""",
-                (row["raw_score"], row["raw_score"], row["received_at"], row["received_at"], discharge_id),
+                (
+                    row["raw_score"],
+                    row["raw_score"],
+                    row["received_at"],
+                    row["received_at"],
+                    discharge_id,
+                ),
             )
             cap_rank = rank_cur.fetchone()[0]
         else:
@@ -728,7 +738,8 @@ def get_discharge_detail(discharge_id: int):
                         "type": "task_completed",
                         "ts": t["completed_at"],
                         "title": f"Task Completed: {t['title']}",
-                        "description": t.get("completion_note") or f"Marked complete by {t['completed_by']}",
+                        "description": t.get("completion_note")
+                        or f"Marked complete by {t['completed_by']}",
                         "actor": t["completed_by"] or "Care Coordinator",
                     }
                 )
@@ -751,7 +762,11 @@ def get_discharge_detail(discharge_id: int):
                     "type": "outcome",
                     "ts": row["outcome_at"] or row["updated_at"],
                     "title": "30-Day Readmission Outcome Verified",
-                    "description": "Patient readmitted within 30 days of index discharge" if row["outcome_readmitted_30d"] == 1 else "No 30-day readmission observed",
+                    "description": (
+                        "Patient readmitted within 30 days of index discharge"
+                        if row["outcome_readmitted_30d"] == 1
+                        else "No 30-day readmission observed"
+                    ),
                     "actor": "Registry Follow-up",
                 }
             )
@@ -783,12 +798,17 @@ def get_discharge_detail(discharge_id: int):
             "outcome_readmitted_30d": row["outcome_readmitted_30d"],
             "outcome_at": row["outcome_at"],
             "outcome_status": (
-                "Verified 30-Day Readmission" if row["outcome_readmitted_30d"] == 1
-                else "No Readmission Observed (Verified)" if row["outcome_readmitted_30d"] == 0
-                else "30-Day Surveillance Active (Outcome Pending)"
+                "Verified 30-Day Readmission"
+                if row["outcome_readmitted_30d"] == 1
+                else (
+                    "No Readmission Observed (Verified)"
+                    if row["outcome_readmitted_30d"] == 0
+                    else "30-Day Surveillance Active (Outcome Pending)"
+                )
             ),
             "features": feats,
             "shap_explanation": explanation,
+            "explanation_v2": explanation_v2,
             "similar_patients_summary": neighbor_summary,
             "retrieval": neighbor_summary,
             "suggested_interventions": interventions,
@@ -823,7 +843,9 @@ def get_discharge_detail(discharge_id: int):
 def get_discharge_tasks(discharge_id: int):
     """Retrieve all follow-up care-transition tasks for an encounter."""
     with get_db() as conn:
-        cursor = conn.execute("SELECT id, features_json, tier, assignee FROM discharges WHERE id = ?", (discharge_id,))
+        cursor = conn.execute(
+            "SELECT id, features_json, tier, assignee FROM discharges WHERE id = ?", (discharge_id,)
+        )
         row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Discharge not found.")
@@ -898,7 +920,9 @@ def update_task(discharge_id: int, task_id: int, req: TaskPatchRequest):
     """Update task status, owner, due date, or record completion."""
     now_iso = datetime.now(timezone.utc).isoformat()
     with get_db() as conn:
-        cur = conn.execute("SELECT * FROM tasks WHERE id = ? AND discharge_id = ?", (task_id, discharge_id))
+        cur = conn.execute(
+            "SELECT * FROM tasks WHERE id = ? AND discharge_id = ?", (task_id, discharge_id)
+        )
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Task not found for this encounter.")
@@ -933,12 +957,19 @@ def update_task(discharge_id: int, task_id: int, req: TaskPatchRequest):
         params.append(now_iso)
         params.extend([task_id, discharge_id])
 
-        conn.execute(f"UPDATE tasks SET {', '.join(updates)} WHERE id = ? AND discharge_id = ?", params)
+        conn.execute(
+            f"UPDATE tasks SET {', '.join(updates)} WHERE id = ? AND discharge_id = ?", params
+        )
         log_audit(
             conn,
             actor=req.actor,
             event="task_updated",
-            payload={"discharge_id": discharge_id, "task_id": task_id, "status": req.status, "owner": req.owner},
+            payload={
+                "discharge_id": discharge_id,
+                "task_id": task_id,
+                "status": req.status,
+                "owner": req.owner,
+            },
             ts=now_iso,
         )
 
@@ -959,17 +990,43 @@ def get_global_model_explanation_v1():
         raise HTTPException(status_code=500, detail=f"Failed to load global model explanation: {e}")
 
 
+@router.get("/xai/global")
+def get_xai_global_v1():
+    """Return comprehensive Explainable AI (v2) global evaluation results and quality metrics."""
+    svc = get_service()
+    try:
+        return svc.get_xai_global_summary()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load global XAI summary: {e}")
+
+
+@router.post("/discharges/{discharge_id}/counterfactual")
+def get_discharge_counterfactual(discharge_id: int):
+    """Search for feasible, training-observed care plan adjustments (max 2 features) that lower risk tier."""
+    svc = get_service()
+    try:
+        return svc.get_counterfactual_for_discharge(discharge_id)
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Counterfactual simulation error: {e}")
+
+
 @router.post("/predict")
 def predict_v1(
     encounter: PatientEncounterRequest,
-    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
+    allow_degraded: bool = Query(
+        default=False, description="Allow degraded mode if RAG retrieval fails"
+    ),
 ):
     """Predict calibrated 30-day readmission risk, risk tier, SHAP explanations, and similar encounters."""
     svc = get_service()
     try:
         patient_dict = encounter.model_dump()
         result = svc.predict(patient_dict, allow_degraded=allow_degraded)
-        result["raw_score"] = result.get("raw_score", result.get("raw_lgbm_score", result.get("calibrated_risk_probability")))
+        result["raw_score"] = result.get(
+            "raw_score", result.get("raw_lgbm_score", result.get("calibrated_risk_probability"))
+        )
         result["calibrated_prob"] = result.get("calibrated_risk_probability")
         result["tier"] = result.get("risk_tier")
         result["shap_explanation"] = {
@@ -986,7 +1043,7 @@ def predict_v1(
             "reliability": result.get("explanation_reliability"),
         }
         return result
-    except (ValueError, TypeError) as ve:
+    except (ValueError, TypeError):
         raise HTTPException(status_code=422, detail="Invalid encounter input data.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1009,7 +1066,9 @@ def what_if_sensitivity(req: WhatIfRequest):
 
     if req.discharge_id:
         with get_db() as conn:
-            cur = conn.execute("SELECT features_json FROM discharges WHERE id = ?", (req.discharge_id,))
+            cur = conn.execute(
+                "SELECT features_json FROM discharges WHERE id = ?", (req.discharge_id,)
+            )
             row = cur.fetchone()
             if row:
                 base_features = json.loads(row["features_json"])
@@ -1067,15 +1126,21 @@ def what_if_sensitivity(req: WhatIfRequest):
         b_shap = float(base_attrs.get(f, 0.0))
         m_shap = float(mod_attrs.get(f, 0.0))
         d_shap = round(m_shap - b_shap, 4)
-        attribution_shifts.append({
-            "feature": f,
-            "feature_name": FEATURE_HUMAN_NAMES.get(f, f.replace("_", " ").title()),
-            "baseline_shap": round(b_shap, 4),
-            "modified_shap": round(m_shap, 4),
-            "delta_shap": d_shap,
-            "is_modified_input": f in req.modified_features,
-            "direction": "increased_attribution" if d_shap > 1e-4 else ("reduced_attribution" if d_shap < -1e-4 else "unchanged"),
-        })
+        attribution_shifts.append(
+            {
+                "feature": f,
+                "feature_name": FEATURE_HUMAN_NAMES.get(f, f.replace("_", " ").title()),
+                "baseline_shap": round(b_shap, 4),
+                "modified_shap": round(m_shap, 4),
+                "delta_shap": d_shap,
+                "is_modified_input": f in req.modified_features,
+                "direction": (
+                    "increased_attribution"
+                    if d_shap > 1e-4
+                    else ("reduced_attribution" if d_shap < -1e-4 else "unchanged")
+                ),
+            }
+        )
 
     changed_features = {}
     for k, v in req.modified_features.items():
@@ -1119,7 +1184,9 @@ def what_if_sensitivity(req: WhatIfRequest):
             "raw_margin": delta_margin,
             "calibrated_prob": delta_prob,
             "probability_change": delta_prob,
-            "relative_risk_change_pct": round(((mod_prob - base_prob) / max(1e-4, base_prob)) * 100, 1),
+            "relative_risk_change_pct": round(
+                ((mod_prob - base_prob) / max(1e-4, base_prob)) * 100, 1
+            ),
             "tier_transition": f"{base_pred['risk_tier']} -> {mod_pred['risk_tier']}",
             "tier_changed": base_pred["risk_tier"] != mod_pred["risk_tier"],
             "increased_risk": mod_prob > base_prob,
@@ -1321,8 +1388,7 @@ def get_monitoring_dashboard():
     svc = get_service()
     with get_db() as conn:
         # Total counts
-        cur = conn.execute(
-            """SELECT
+        cur = conn.execute("""SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN source = 'simulated_feed' THEN 1 ELSE 0 END) as simulated_count,
                 SUM(CASE WHEN source = 'api' THEN 1 ELSE 0 END) as api_count,
@@ -1330,8 +1396,7 @@ def get_monitoring_dashboard():
                 SUM(CASE WHEN status != 'closed' THEN 1 ELSE 0 END) as open_count,
                 SUM(CASE WHEN outcome_readmitted_30d IS NOT NULL THEN 1 ELSE 0 END) as outcome_count,
                 SUM(CASE WHEN outcome_readmitted_30d = 1 THEN 1 ELSE 0 END) as positive_outcomes
-               FROM discharges"""
-        )
+               FROM discharges""")
         counts_row = cur.fetchone()
 
         total = counts_row["total"]
@@ -1440,11 +1505,9 @@ def get_monitoring_dashboard():
             )
         else:
             # Query actual outcomes and scores
-            cur_eval = conn.execute(
-                """SELECT raw_score, calibrated_prob, outcome_readmitted_30d
+            cur_eval = conn.execute("""SELECT raw_score, calibrated_prob, outcome_readmitted_30d
                    FROM discharges
-                   WHERE outcome_readmitted_30d IS NOT NULL"""
-            )
+                   WHERE outcome_readmitted_30d IS NOT NULL""")
             eval_rows = cur_eval.fetchall()
             y_true = np.array([r["outcome_readmitted_30d"] for r in eval_rows])
             y_scores = np.array([r["raw_score"] for r in eval_rows])
@@ -1462,7 +1525,9 @@ def get_monitoring_dashboard():
                     boot_aucs.append(roc_auc_score(y_true[boot_idx], y_scores[boot_idx]))
 
             auc_ci_lower = float(round(np.percentile(boot_aucs, 2.5), 4)) if boot_aucs else live_auc
-            auc_ci_upper = float(round(np.percentile(boot_aucs, 97.5), 4)) if boot_aucs else live_auc
+            auc_ci_upper = (
+                float(round(np.percentile(boot_aucs, 97.5), 4)) if boot_aucs else live_auc
+            )
 
             # Precision at top 5%, 10%, 20%
             sorted_idx = np.argsort(y_scores)[::-1]
@@ -1518,21 +1583,24 @@ def get_monitoring_dashboard():
         )
         dq_events = []
         for r in cur_dq.fetchall():
-            dq_events.append({
-                "id": r["id"],
-                "ts": r["ts"],
-                "source": r["source"],
-                "event_type": r["event_type"],
-                "error_message": r["error_message"],
-            })
+            dq_events.append(
+                {
+                    "id": r["id"],
+                    "ts": r["ts"],
+                    "source": r["source"],
+                    "event_type": r["event_type"],
+                    "error_message": r["error_message"],
+                }
+            )
         dq_count = conn.execute("SELECT COUNT(*) as cnt FROM data_quality_events").fetchone()["cnt"]
         rag_errors_count = conn.execute(
             "SELECT COUNT(*) as cnt FROM data_quality_events WHERE source = 'rag_retrieval'"
         ).fetchone()["cnt"]
 
-        # Real RAG health
         rag_loaded = getattr(svc, "faiss_index", None) is not None
-        rag_size = svc.faiss_index.ntotal if rag_loaded else 69535
+        rag_size = (
+            getattr(svc.faiss_index, "ntotal", 69535) if rag_loaded else 69535
+        )
         rag_health = {
             "status": "Operational" if rag_loaded else "Unavailable",
             "index_size": rag_size,
@@ -1541,7 +1609,7 @@ def get_monitoring_dashboard():
             "k_neighbors": 20,
             "reference_partition": "Frozen patient-disjoint training split (n=69,535)",
             "retrieval_errors_logged": rag_errors_count,
-            "definition": "Nearest neighbors retrieved across 64-dimensional clinical vector space. Encounters with missing retrieval fall back gracefully with explicit degraded disclosure."
+            "definition": "Nearest neighbors retrieved across 64-dimensional clinical vector space. Encounters with missing retrieval fall back gracefully with explicit degraded disclosure.",
         }
 
         # Real feature drift from verified evaluation artifact
@@ -1582,9 +1650,13 @@ def get_monitoring_dashboard():
                 logger.warning(f"Failed to load fairness_audit.json: {e}")
 
         data_quality = {
-            "status": "Healthy" if dq_count == 0 else "Degraded" if dq_count > 5 else "Investigating",
+            "status": (
+                "Healthy" if dq_count == 0 else "Degraded" if dq_count > 5 else "Investigating"
+            ),
             "total_events_logged": dq_count,
-            "conformity_rate": round(max(0.0, (total - min(total, dq_count))) / total, 4) if total > 0 else 1.0,
+            "conformity_rate": (
+                round(max(0.0, (total - min(total, dq_count))) / total, 4) if total > 0 else 1.0
+            ),
             "missing_rate": 0.0,
             "recent_failures": dq_events[:10],
             "metric_definition": "Schema validation and ingestion failure logging. Every rejected CSV row or failed RAG query is preserved in data_quality_events.",
@@ -1607,7 +1679,11 @@ def get_monitoring_dashboard():
                 "raw_score_psi": score_psi,
                 "severity": psi_severity,
                 "sample_size": len(recent_scores),
-                "thresholds": {"stable": "< 0.10", "moderate": "0.10 - 0.25", "high_alert": ">= 0.25"},
+                "thresholds": {
+                    "stable": "< 0.10",
+                    "moderate": "0.10 - 0.25",
+                    "high_alert": ">= 0.25",
+                },
             },
             "data_quality": data_quality,
             "rag_health": rag_health,
@@ -1633,12 +1709,12 @@ def get_model_info():
         "model_version": "1.0.0 (Frozen Production)",
         "git_commit_hash": frozen.get("git_commit_hash", "39c2a90"),
         "frozen_timestamp": frozen.get("frozen_timestamp"),
-        "serving_thresholds": svc.serving_thresholds.get("raw_score_cutoffs")
-        if svc.serving_thresholds
-        else None,
-        "tier_definitions": svc.serving_thresholds.get("tier_definitions")
-        if svc.serving_thresholds
-        else None,
+        "serving_thresholds": (
+            svc.serving_thresholds.get("raw_score_cutoffs") if svc.serving_thresholds else None
+        ),
+        "tier_definitions": (
+            svc.serving_thresholds.get("tier_definitions") if svc.serving_thresholds else None
+        ),
         "splits_summary": {
             "train": {"encounters": 69535, "strategy": "Patient-disjoint stratified group"},
             "validation": {"encounters": 14902, "strategy": "Patient-disjoint stratified group"},
