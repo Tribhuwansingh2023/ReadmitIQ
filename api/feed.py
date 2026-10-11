@@ -38,11 +38,18 @@ class SimulatedFeedEngine:
         test_path = PROCESSED_DATA_DIR / "test_rag.parquet"
         if not test_path.exists():
             test_path = BASE_DIR / "data" / "processed" / "test_rag.parquet"
+        if not test_path.exists():
+            test_path = BASE_DIR / "reports" / "demo" / "cohort_scored.parquet"
+        if not test_path.exists():
+            test_path = BASE_DIR / "reports" / "demo" / "cohort_scored_lite.parquet"
 
-        df = pd.read_parquet(test_path)
-        rng = np.random.RandomState(seed)
-        shuffled_indices = rng.permutation(len(df))
-        self._shuffled_records = df.iloc[shuffled_indices].to_dict(orient="records")
+        if test_path.exists():
+            df = pd.read_parquet(test_path)
+            rng = np.random.RandomState(seed)
+            shuffled_indices = rng.permutation(len(df))
+            self._shuffled_records = df.iloc[shuffled_indices].to_dict(orient="records")
+        else:
+            self._shuffled_records = []
         self.current_index = 0
 
     def start(self, rate_per_minute: float = 60.0, seed: int = 42) -> Dict[str, Any]:

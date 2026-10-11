@@ -4,9 +4,10 @@ FROM python:3.11-slim as backend
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app \
     PORT=8000 \
-    WORKERS=2 \
-    READMITIQ_SERVE_MODE=full \
+    WORKERS=1 \
+    READMITIQ_SERVE_MODE=lite \
     CORS_ORIGINS="*"
 
 WORKDIR /app
@@ -22,14 +23,16 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Copy source code, config, and models
+# Copy source code, config, models, and scripts
 COPY src/ ./src/
 COPY configs/ ./configs/
 COPY api/ ./api/
+COPY scripts/ ./scripts/
 COPY models/final/ ./models/final/
 COPY models/FROZEN_SELECTION.json ./models/
 COPY reports/metrics/ ./reports/metrics/
 COPY reports/demo/ ./reports/demo/
+COPY .env.example ./.env
 
 # Container Healthcheck verifying /health returns HTTP 200
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
