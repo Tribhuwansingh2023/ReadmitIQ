@@ -1,13 +1,16 @@
-# ReadmitIQ: 7-Member Presentation Speaking Plan
+# ReadmitIQ: Presentation Speaking Plan & Roles
 
-*A synchronized 5-minute talk division for 7 members with exact handover lines and ownership boundaries.*
+*Project Lead, Architect & Full-Stack Developer: **Tribhuwan Singh** ([@Tribhuwansingh2023](https://github.com/Tribhuwansingh2023))*
+
+*A synchronized 5-minute presentation plan covering the end-to-end ReadmitIQ platform architecture, clinical validation, and live demo.*
 
 ---
 
 ## Overview
+- **Project Lead & Developer:** Tribhuwan Singh (Full-Stack ML Engineering, Modeling, Clinical UX & DevOps)
 - **Total Presentation Time:** 5 Minutes (300 Seconds) + Q&A
-- **Structure:** 7 Handover Segments (~40–45 seconds each)
-- **Visual Presence:** Seamless speaker transitions to showcase collaborative excellence to the Cognizant judging panel.
+- **Structure:** 7 Logical Segments (~40–45 seconds each)
+- **Format:** Adaptable for solo delivery by Tribhuwan Singh or distributed panel presentation.
 
 ---
 

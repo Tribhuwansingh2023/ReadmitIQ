@@ -3,6 +3,7 @@
 ## 1. Model Details
 - **Model Name:** ReadmitIQ Frozen Production Classifier (`LightGBM + Structured RAG`)
 - **Version:** 1.0.0 (Frozen Selection: `models/FROZEN_SELECTION.json`)
+- **Author & Maintainer:** Tribhuwan Singh ([@Tribhuwansingh2023](https://github.com/Tribhuwansingh2023), `webosingh93@gmail.com`)
 - **Model Architecture:** Gradient Boosted Decision Tree (LightGBM) with native categorical handling, augmented with a 64-dimensional Structured FAISS Inner Product retriever ($k=20$).
 - **Calibration Method:** Isotonic Regression fitted strictly on 5-fold Out-Of-Fold (OOF) Train probability predictions.
 - **License:** MIT License (Research & Clinical Decision Support Prototype).

@@ -69,6 +69,13 @@ Continuously surveils production pipeline health to protect patient safety:
 - **Data Quality & Rejection Audit:** Logs all rejected CSV rows, formatting errors, and schema conformity rates in SQLite.
 - **Small-n Statistical Power Guardrails:** Withholds live empirical discrimination claims until sample sizes reach $n \ge 200$ resolved outcomes with $\ge 20$ positives. Flags demographic subgroups with $n < 100$ encounters with an **Unpowered Small-n Guard** to prevent premature compliance assertions.
 
+### 3. Enterprise Clinical Explainability & Trust Engine (XAI)
+Provides transparent, auditable, and clinically grounded explanations for every individual encounter and the model as a whole:
+- **Local TreeSHAP Attribution:** Exact mathematical log-odds decomposition ($m = \phi_0 + \sum \phi_i$) separating risk-increasing vs protective factors with non-causal clinical wording.
+- **Global Model Explanation:** Precomputed baseline metrics across $N=14,902$ validation encounters, mean absolute SHAP rankings, and directional impact shares.
+- **5-Point Technical Reliability Matrix:** Evaluates prediction availability, TreeSHAP availability, RAG evidence availability, feature completeness, and calibration evidence before display.
+- **Attribution Shift Explorer:** Side-by-side SHAP shift delta ($\Delta \phi_i$) during What-If sensitivity counterfactual simulations.
+
 ---
 
 ## Scientific Evaluation & Benchmark Results
@@ -220,9 +227,10 @@ ReadmitIQ/
 │   ├── run_frontend.bat / .sh  # Cross-platform frontend launchers
 │   ├── check_system_health.py  # Health check utility
 │   └── export_demo_encounters.py # Demo CSV generator
-├── tests/                      # Automated test suite (80 passing tests)
+├── tests/                      # Automated test suite (145 passing tests)
 │   ├── test_actionloop.py      # ActionLoop end-to-end integration tests
 │   ├── test_v1_workflow.py     # Worklist, tasks, and audit trail tests
+│   ├── test_xai_explainability.py # Clinical Explainability & SHAP decomposition tests
 │   ├── test_audit_leakage.py   # Zero patient leakage audit
 │   └── test_rag_leakage.py     # RAG split isolation verification
 ├── Dockerfile.backend          # Production backend containerfile
@@ -235,6 +243,15 @@ ReadmitIQ/
 
 ---
 
+## Author & Project Lead
+
+**Tribhuwan Singh**
+- **GitHub:** [@Tribhuwansingh2023](https://github.com/Tribhuwansingh2023)
+- **Repository:** [Tribhuwansingh2023/ReadmitIQ](https://github.com/Tribhuwansingh2023/ReadmitIQ)
+- **Contact:** [webosingh93@gmail.com](mailto:webosingh93@gmail.com)
+
+---
+
 ## Ethical & Regulatory Disclaimer
 ReadmitIQ is an investigational research prototype designed to demonstrate capacity-aware discharge coordination and transparent model surveillance. It has **not** received FDA 510(k), De Novo clearance, or CE mark approval as a medical device (SaMD). It is **not** intended to replace clinical judgment. All clinical decisions regarding discharge readiness, patient outreach, and treatment interventions must be made by qualified healthcare professionals.
 
@@ -242,3 +259,4 @@ ReadmitIQ is an investigational research prototype designed to demonstrate capac
 
 ## License
 Distributed under the [MIT License](LICENSE).
+

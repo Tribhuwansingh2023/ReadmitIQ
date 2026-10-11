@@ -1,5 +1,7 @@
 # ReadmitIQ Contribution & Code Standards
 
+*Repository Owner & Lead: **Tribhuwan Singh** ([@Tribhuwansingh2023](https://github.com/Tribhuwansingh2023), `webosingh93@gmail.com`)*
+
 Guidelines for maintaining code hygiene, documentation integrity, and scientific rigor across the ReadmitIQ repository.
 
 ---

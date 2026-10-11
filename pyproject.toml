@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "readmit-iq"
 version = "1.0.0"
 description = "ReadmitIQ: Capacity-Aware Hospital Readmission Decision Support Platform"
-authors = [{ name = "Tribhuwan Singh", email = "tribhuwan@example.com" }]
+authors = [{ name = "Tribhuwan Singh", email = "webosingh93@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

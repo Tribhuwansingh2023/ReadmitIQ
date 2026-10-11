@@ -2,6 +2,7 @@
 
 ## 1. Dataset Overview & Provenance
 - **Dataset Name**: Diabetes 130-US Hospitals (1999–2008)
+- **Curator & Lead Investigator**: Tribhuwan Singh ([@Tribhuwansingh2023](https://github.com/Tribhuwansingh2023), `webosingh93@gmail.com`)
 - **Source**: UCI Machine Learning Repository / Center for Clinical and Translational Research, Virginia Commonwealth University
 - **Citation**: Strack, B., DeShazo, J. P., Gennings, C., Olmo, J. L., Ventura, S., Cios, K. J., & Clore, J. N. (2014). *Impact of HbA1c Measurement on Hospital Readmission Rates: Analysis of 70,000 Clinical Database Patient Records*. BioMed Research International.
 - **Task**: Binary classification predicting 30-day all-cause hospital readmission at the time of discharge for diabetic inpatients.
