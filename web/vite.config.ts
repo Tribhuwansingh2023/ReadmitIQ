@@ -2,6 +2,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
+const backendTarget = process.env.BACKEND_URL || 'http://127.0.0.1:8000'
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -9,27 +11,35 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/v1': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/predict': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/explain': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/similar': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
         changeOrigin: true,
       },
       '/cohort': {
-        target: 'http://127.0.0.1:8000',
+        target: backendTarget,
+        changeOrigin: true,
+      },
+      '/model-info': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
+      '/api': {
+        target: backendTarget,
         changeOrigin: true,
       },
     },

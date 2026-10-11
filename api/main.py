@@ -63,11 +63,13 @@ async def add_model_version_header(request, call_next):
     return response
 
 
-# Include v1 clinical workflow router
+# Include v1 clinical workflow router (both /v1 and /api/v1)
 app.include_router(v1_router)
+app.include_router(v1_router, prefix="/api")
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
+@app.get("/api/health", status_code=status.HTTP_200_OK, include_in_schema=False)
 def health_check():
     """System health check and model version metadata."""
     svc = get_service()

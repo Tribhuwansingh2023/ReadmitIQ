@@ -1,10 +1,95 @@
 {
-  "buildCommand": "cd web && npm run build",
-  "outputDirectory": "web/dist",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "fastapi"
+    },
+    "web": {
+      "root": "web",
+      "framework": "vite",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "app",
+          "format": "url",
+          "env": "BACKEND_URL"
+        }
+      ]
+    }
+  },
   "rewrites": [
     {
+      "source": "/health",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/model-info",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/predict",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/similar",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/explain/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/cohort/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/v1/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/docs",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/openapi.json",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/redoc",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": {
+        "service": "web"
+      }
     }
   ]
 }

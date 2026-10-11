@@ -24,7 +24,12 @@ const getApiBaseUrl = () => {
   }
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname || "127.0.0.1";
-    return `http://${hostname}:8000`;
+    // In local standalone dev on port 5173, point directly to FastAPI on port 8000
+    if ((hostname === "localhost" || hostname === "127.0.0.1") && window.location.port === "5173") {
+      return `http://${hostname}:8000`;
+    }
+    // In multi-service deployments (e.g. Vercel, Docker Nginx proxy), use same-origin relative URLs
+    return "";
   }
   return "http://127.0.0.1:8000";
 };
