@@ -3,10 +3,10 @@
 Saves output to models/final/serving_thresholds.json.
 """
 
-from datetime import datetime, timezone
 import json
-from pathlib import Path
 import sys
+from datetime import datetime, timezone
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -15,7 +15,7 @@ import pandas as pd
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from src.config import MODELS_DIR, PROCESSED_DATA_DIR, TRAIN_RAG_PARQUET, VAL_RAG_PARQUET
+from src.config import MODELS_DIR, TRAIN_RAG_PARQUET, VAL_RAG_PARQUET
 from src.train import prepare_lgbm_data
 
 

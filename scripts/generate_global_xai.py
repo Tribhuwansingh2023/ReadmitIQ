@@ -1,16 +1,18 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import json
+
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 
 from src.config import (
     METRICS_DIR,
-    VAL_RAG_PARQUET,
     MODELS_DIR,
+    VAL_RAG_PARQUET,
 )
 from src.train import prepare_lgbm_data
 

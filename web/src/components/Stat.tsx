@@ -13,6 +13,7 @@ interface StatProps {
   label: string;
   value: React.ReactNode;
   unit?: string;
+  secondary?: React.ReactNode;
   provenance: StatProvenance;
   trend?: {
     direction: "up" | "down" | "neutral";
@@ -27,6 +28,7 @@ export const Stat: React.FC<StatProps> = ({
   label,
   value,
   unit,
+  secondary,
   provenance,
   trend,
   highlight = "none",
@@ -92,6 +94,12 @@ export const Stat: React.FC<StatProps> = ({
         </span>
         {unit && <span className="text-sm font-sans text-muted">{unit}</span>}
       </div>
+
+      {secondary && (
+        <div className="text-xs font-sans text-muted mt-0.5 leading-snug">
+          {secondary}
+        </div>
+      )}
 
       {trend && (
         <div className="mt-2 text-xs font-sans text-muted flex items-center gap-1">

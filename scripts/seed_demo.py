@@ -8,16 +8,15 @@ Populates an empty database through the exact same live scoring code paths:
 - All seeded records are labeled 'simulated_feed'.
 """
 
-import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Ensure project root is on sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from api.database import get_db, init_db, log_audit
+from api.database import get_db, init_db
 from api.feed import get_feed_engine
 from api.service import get_service
 

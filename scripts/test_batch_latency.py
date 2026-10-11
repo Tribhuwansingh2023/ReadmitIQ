@@ -1,7 +1,9 @@
 import json
-from pathlib import Path
 import time
+from pathlib import Path
+
 import pandas as pd
+
 from api.service import get_service
 
 svc = get_service()

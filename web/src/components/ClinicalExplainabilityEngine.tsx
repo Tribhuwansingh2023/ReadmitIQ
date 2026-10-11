@@ -5,30 +5,18 @@ import {
   Info,
   ShieldAlert,
   CheckCircle2,
-  AlertTriangle,
   Activity,
   Layers,
-  Search,
-  Database,
-  BarChart3,
   Scale,
   Users,
-  FileText,
   Sliders,
-  Sparkles,
   HelpCircle,
-  ExternalLink,
-  ChevronRight,
-  Clock,
 } from "lucide-react";
 import { apiClient } from "../api/client";
-import { RiskGlyph } from "./RiskGlyph";
 import { Stat } from "./Stat";
 import { PROVENANCES } from "./Provenances";
 import type {
   FactorExplanation,
-  ExplanationReliability,
-  GlobalExplanationResponse,
   ShapExplanationPayload,
   SimilarEncounter,
 } from "../types";
@@ -51,26 +39,17 @@ interface ClinicalExplainabilityEngineProps {
 export const ClinicalExplainabilityEngine: React.FC<
   ClinicalExplainabilityEngineProps
 > = ({
-  encounterId,
   calibratedProb,
-  rawScore,
-  rawMargin,
-  baseValue = -0.196,
   riskTier,
   modelVersion = "LightGBM v1.0.0 (Frozen)",
   shapExplanation,
   explanationV2,
-  similarEncounters = [],
-  patientFeatures = {},
 }) => {
   // Navigation tabs matching clinical decision workflow
   const [activeTab, setActiveTab] = useState<
     "score" | "tier" | "change" | "evidence" | "global"
   >("score");
   const [showHowToRead, setShowHowToRead] = useState<boolean>(false);
-  const [showFullTable, setShowFullTable] = useState<boolean>(false);
-  const [tableSearch, setTableSearch] = useState<string>("");
-  const [tableFilter, setTableFilter] = useState<"all" | "increasing" | "reducing">("all");
 
   // Global model explanation state
   const [globalData, setGlobalData] = useState<any | null>(null);
@@ -109,34 +88,6 @@ export const ClinicalExplainabilityEngine: React.FC<
     v2?.top_risk_increasing || shapExplanation?.top_risk_increasing || [];
   const reducingFactors: FactorExplanation[] =
     v2?.top_risk_reducing || shapExplanation?.top_risk_reducing || [];
-  const fullTable: FactorExplanation[] =
-    shapExplanation?.full_attribution_table || [
-      ...increasingFactors,
-      ...reducingFactors,
-    ];
-
-  const effectiveRawMargin =
-    v2?.raw_margin ??
-    rawMargin ??
-    (shapExplanation?.raw_margin !== undefined
-      ? shapExplanation.raw_margin
-      : rawScore ?? 0);
-
-  const effectiveBaseValue =
-    v2?.base_value ??
-    (shapExplanation?.base_value !== undefined
-      ? shapExplanation.base_value
-      : baseValue);
-
-  const filteredTable = fullTable.filter((item) => {
-    const nameMatch = (item.feature_name || item.feature)
-      .toLowerCase()
-      .includes(tableSearch.toLowerCase());
-    const attr = item.attribution ?? item.shap_value ?? 0;
-    if (tableFilter === "increasing") return nameMatch && attr > 0.0001;
-    if (tableFilter === "reducing") return nameMatch && attr < -0.0001;
-    return nameMatch;
-  });
 
   return (
     <div className="bg-surface rounded-sm hairline-border space-y-4 font-sans text-primary">

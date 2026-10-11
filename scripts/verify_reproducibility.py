@@ -12,7 +12,6 @@ Verifies:
 """
 
 import sys
-import os
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -60,8 +59,11 @@ def check_dependencies() -> bool:
 
     # Check FAISS
     try:
-        import faiss
-        print(f"  {GREEN}[PASS]{RESET} FAISS (Vector retrieval engine)")
+        import importlib.util
+        if importlib.util.find_spec("faiss") is not None:
+            print(f"  {GREEN}[PASS]{RESET} FAISS (Vector retrieval engine)")
+        else:
+            raise ImportError
     except ImportError:
         print(f"  {YELLOW}[WARN]{RESET} faiss / faiss-cpu missing. RAG retrieval requires faiss-cpu.")
         all_ok = False
@@ -155,7 +157,7 @@ def main():
     print(f"{BOLD}====================================================================")
     print(" ReadmitIQ System Reproducibility & Portability Audit")
     print(f"===================================================================={RESET}")
-    
+
     r1 = check_python_version()
     r2 = check_dependencies()
     r3 = check_runtime_artifacts()
@@ -163,7 +165,7 @@ def main():
     r5 = run_pipeline_smoke_test()
 
     print(f"\n{BOLD}====================================================================")
-    if r1 and r2 and r3 and r5:
+    if r1 and r2 and r3 and r4 and r5:
         print(f" {GREEN}[SUCCESS] ReadmitIQ is fully verified and reproducible on this machine!{RESET}")
         print(f"{BOLD}===================================================================={RESET}")
         sys.exit(0)

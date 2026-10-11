@@ -86,8 +86,9 @@ class LocalExplainerV2:
     def __init__(self):
         import json
         import warnings
-        from sklearn.exceptions import InconsistentVersionWarning
+
         import joblib
+        from sklearn.exceptions import InconsistentVersionWarning
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=InconsistentVersionWarning)

@@ -87,7 +87,7 @@ def main():
     print(f"  Peer Cohort Size: {len(neighbors)} historical matches")
     print(f"  Top Match Similarity: {neighbors[0]['similarity_score']:.3f}")
     print(f"  Neighborhood 30d Readmission Rate: {rate*100:.1f}%")
-    print(f"  Scientific Guardrail: Peer precedents provide clinical context; Delta AUC = 0.0000.")
+    print("  Scientific Guardrail: Peer precedents provide clinical context; Delta AUC = 0.0000.")
     print(f"  {GREEN}[PASS] Stage 2 Precedent Evidence operational.{RESET}\n")
 
     # -------------------------------------------------------------
@@ -99,25 +99,25 @@ def main():
     for idx, item in enumerate(interventions[:2], 1):
         action_name = item.get("action") or item.get("title") or "Intervention"
         print(f"    {idx}. [{item.get('priority', 'High')}] {action_name}")
-    print(f"  Status Transitions: pending -> in_progress -> completed verified.")
+    print("  Status Transitions: pending -> in_progress -> completed verified.")
     print(f"  {GREEN}[PASS] Stage 3 Action Plan operational.{RESET}\n")
 
     # -------------------------------------------------------------
     # Stage 4: Capacity-Aware Priority Triage
     # -------------------------------------------------------------
     print(f"{BOLD}[Stage 4: Capacity-Aware Priority Triage]{RESET}")
-    print(f"  Deterministic Ordering: Raw Score DESC -> Arrival DESC -> ID ASC")
-    print(f"  Isotonic Plateau Resolution: Strict raw model ordering avoids ties")
-    print(f"  Capacity Thresholding: Nurse outreach bounded to top N encounters (e.g. 15)")
+    print("  Deterministic Ordering: Raw Score DESC -> Arrival DESC -> ID ASC")
+    print("  Isotonic Plateau Resolution: Strict raw model ordering avoids ties")
+    print("  Capacity Thresholding: Nurse outreach bounded to top N encounters (e.g. 15)")
     print(f"  {GREEN}[PASS] Stage 4 Capacity Triage operational.{RESET}\n")
 
     # -------------------------------------------------------------
     # Stage 5: Closed-Loop Follow-up & Chronological Timeline
     # -------------------------------------------------------------
     print(f"{BOLD}[Stage 5: Closed-Loop Follow-up & Timeline]{RESET}")
-    print(f"  Touchpoint Logging: Phone calls, home visits, and med reconciliation")
-    print(f"  30-Day Registry Outcome: Ground-truth unsealed post-discharge")
-    print(f"  Reverse Chronological Audit: Intake -> Touchpoints -> Tasks -> Outcomes")
+    print("  Touchpoint Logging: Phone calls, home visits, and med reconciliation")
+    print("  30-Day Registry Outcome: Ground-truth unsealed post-discharge")
+    print("  Reverse Chronological Audit: Intake -> Touchpoints -> Tasks -> Outcomes")
     print(f"  {GREEN}[PASS] Stage 5 Closed-Loop Follow-up operational.{RESET}\n")
 
     # -------------------------------------------------------------
@@ -132,17 +132,17 @@ def main():
     print(f"  Baseline Calibrated Probability: {cal*100:.1f}%")
     print(f"  Simulated Modified Probability:  {mod_res['calibrated_risk_probability']*100:.1f}%")
     print(f"  Absolute Delta: {delta_prob*100:+.1f}%")
-    print(f"  Causal Guardrail: Associative model sensitivity; not a clinical guarantee.")
+    print("  Causal Guardrail: Associative model sensitivity; not a clinical guarantee.")
     print(f"  {GREEN}[PASS] Differentiator 1 What-If Explorer operational.{RESET}\n")
 
     # -------------------------------------------------------------
     # Differentiator 2: Trust & Safety Surveillance Monitor
     # -------------------------------------------------------------
     print(f"{BOLD}[Differentiator 2: Trust & Safety Surveillance Monitor]{RESET}")
-    print(f"  Population Stability Index (PSI): Training deciles monitored continuously")
-    print(f"  RAG Vector Health: 69,535 vectors, 64 dimensions, 0 query errors")
-    print(f"  Data Quality Surveillance: Schema validation & rejection events logged")
-    print(f"  Small-n Power Guardrail: Metrics withheld when n < 200 (prevents misleading claims)")
+    print("  Population Stability Index (PSI): Training deciles monitored continuously")
+    print("  RAG Vector Health: 69,535 vectors, 64 dimensions, 0 query errors")
+    print("  Data Quality Surveillance: Schema validation & rejection events logged")
+    print("  Small-n Power Guardrail: Metrics withheld when n < 200 (prevents misleading claims)")
     print(f"  {GREEN}[PASS] Differentiator 2 Trust & Safety Monitor operational.{RESET}\n")
 
     print(f"{BOLD}{GREEN}====================================================================")

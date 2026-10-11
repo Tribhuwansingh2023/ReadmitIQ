@@ -4,10 +4,10 @@ Usage:
     python scripts/check_system_health.py [base_url]
 """
 
+import json
 import sys
 import time
 import urllib.request
-import json
 
 DEFAULT_URL = "http://localhost:8000"
 
@@ -15,7 +15,6 @@ DEFAULT_URL = "http://localhost:8000"
 def main():
     base_url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
     health_url = f"{base_url.rstrip('/')}/health"
-    info_url = f"{base_url.rstrip('/')}/v1/model/info"
 
     print(f"Pinging ReadmitIQ Gateway at: {health_url}")
     t0 = time.perf_counter()
