@@ -108,7 +108,7 @@ def seed_if_empty():
             cnt = conn.execute("SELECT COUNT(*) FROM discharges").fetchone()[0]
             if cnt == 0:
                 print("[OPS] Ephemeral disk detected empty database. Running startup demo seed...")
-                seed_demo_data(target_total=300, release_target=150)
+                seed_demo_data(target_total=100, release_target=50)
     except Exception as e:
         print(f"[OPS WARNING] Auto-seed error: {e}")
 
