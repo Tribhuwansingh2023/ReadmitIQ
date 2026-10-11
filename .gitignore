@@ -41,6 +41,7 @@ web/.tmp/
 *.wav
 screenshots/
 docs/screenshots/
+docs/demo/
 screen-recordings/
 recordings/
 demo-videos/
