@@ -120,9 +120,24 @@ class SimilarRequest(BaseModel):
 
 class FactorExplanation(BaseModel):
     feature: str
+    feature_name: Optional[str] = None
     value: Any
     shap_value: float
+    direction: Optional[str] = None
     explanation: str
+    description: Optional[str] = None
+
+
+class ExplanationReliabilityCheck(BaseModel):
+    status: str
+    label: str
+    detail: str
+
+
+class ExplanationReliability(BaseModel):
+    overall_status: str
+    checks: Dict[str, ExplanationReliabilityCheck]
+    disclaimer: str
 
 
 class SuggestedIntervention(BaseModel):
@@ -152,6 +167,17 @@ class PredictResponse(BaseModel):
     top_risk_reducing_factors: List[FactorExplanation]
     similar_patients_summary: Dict[str, Any]
     suggested_interventions: Optional[SuggestedInterventionsSummary] = None
+    raw_score: Optional[float] = None
+    raw_lgbm_score: Optional[float] = None
+    raw_margin: Optional[float] = None
+    base_value: Optional[float] = None
+    output_scale: Optional[str] = None
+    scale_units: Optional[str] = None
+    scale_description: Optional[str] = None
+    plain_english_summary: Optional[str] = None
+    full_attribution_table: Optional[List[FactorExplanation]] = None
+    explanation_reliability: Optional[ExplanationReliability] = None
+    all_attributions: Optional[Dict[str, float]] = None
     degraded_mode: Optional[bool] = False
     degraded_reason: Optional[str] = None
 
@@ -177,6 +203,14 @@ class ExplainResponse(BaseModel):
     top_risk_increasing: List[FactorExplanation]
     top_risk_reducing: List[FactorExplanation]
     all_attributions: Dict[str, float]
+    full_attribution_table: Optional[List[FactorExplanation]] = None
+    base_value: Optional[float] = None
+    raw_margin: Optional[float] = None
+    output_scale: Optional[str] = None
+    scale_units: Optional[str] = None
+    scale_description: Optional[str] = None
+    plain_english_summary: Optional[str] = None
+    reliability: Optional[ExplanationReliability] = None
     degraded_mode: Optional[bool] = False
     degraded_reason: Optional[str] = None
 

@@ -449,6 +449,131 @@ export const WhatIfExplorer: React.FC<WhatIfExplorerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Section: SHAP Attribution Shifts & Driver Dynamics */}
+      {simulation && (
+        <div className="p-4 bg-surface hairline-border rounded-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-hairline pb-2">
+            <div>
+              <h4 className="text-xs font-semibold text-primary uppercase font-mono tracking-wider flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-accent" />
+                <span>Feature Attribution Shifts (Δ TreeSHAP Log-Odds)</span>
+              </h4>
+              <p className="text-[11px] text-muted font-mono">
+                Evaluates how input modifications alter feature contributions in frozen tree paths
+              </p>
+            </div>
+            {simulation.delta?.raw_margin !== undefined && (
+              <span className="text-[10px] font-mono text-muted">
+                Margin Shift: Δm = {simulation.delta.raw_margin >= 0 ? `+${simulation.delta.raw_margin.toFixed(4)}` : simulation.delta.raw_margin.toFixed(4)}
+              </span>
+            )}
+          </div>
+
+          {/* Newly Appearing or Disappearing Driver Badges */}
+          {((simulation.newly_appearing_drivers && simulation.newly_appearing_drivers.length > 0) ||
+            (simulation.disappearing_drivers && simulation.disappearing_drivers.length > 0)) && (
+            <div className="p-3 bg-canvas hairline-border rounded-sm space-y-2 text-xs font-mono">
+              <div className="text-[10px] uppercase font-bold text-muted">
+                Top Risk Driver Transitions
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {simulation.newly_appearing_drivers?.map((feat, idx) => (
+                  <span
+                    key={`new-${idx}`}
+                    className="px-2 py-0.5 rounded bg-critical/15 text-critical text-[11px] font-medium flex items-center gap-1"
+                  >
+                    <span>+ New Top Driver:</span>
+                    <strong>{feat}</strong>
+                  </span>
+                ))}
+                {simulation.disappearing_drivers?.map((feat, idx) => (
+                  <span
+                    key={`drop-${idx}`}
+                    className="px-2 py-0.5 rounded bg-protective/15 text-protective text-[11px] font-medium flex items-center gap-1"
+                  >
+                    <span>- Displaced Driver:</span>
+                    <strong>{feat}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Attribution Shifts Table */}
+          {simulation.attribution_shifts && simulation.attribution_shifts.length > 0 ? (
+            <div className="border border-hairline rounded overflow-hidden">
+              <table className="w-full text-left text-xs font-sans border-collapse">
+                <thead className="bg-subtle text-[10px] font-mono text-muted uppercase border-b border-hairline">
+                  <tr>
+                    <th className="p-2.5">Feature</th>
+                    <th className="p-2.5 text-right">Baseline SHAP</th>
+                    <th className="p-2.5 text-right">Simulated SHAP</th>
+                    <th className="p-2.5 text-right">Shift (Δ φᵢ)</th>
+                    <th className="p-2.5">Sensitivity Effect</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-hairline font-mono text-[11px]">
+                  {simulation.attribution_shifts.map((shift, idx) => {
+                    const isIncreased = shift.delta_shap > 0.0001;
+                    const isReduced = shift.delta_shap < -0.0001;
+
+                    return (
+                      <tr key={idx} className="hover:bg-subtle/40">
+                        <td className="p-2.5 text-primary">
+                          <div className="font-semibold">{shift.feature_name}</div>
+                          <div className="text-[10px] text-muted flex items-center gap-1">
+                            <span>{shift.feature}</span>
+                            {shift.is_modified_input && (
+                              <span className="px-1 py-0.2 rounded bg-accent/15 text-accent text-[9px] font-bold">
+                                Modified Input
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-2.5 text-right text-muted">
+                          {shift.baseline_shap >= 0 ? `+${shift.baseline_shap.toFixed(4)}` : shift.baseline_shap.toFixed(4)}
+                        </td>
+                        <td className="p-2.5 text-right text-primary font-medium">
+                          {shift.modified_shap >= 0 ? `+${shift.modified_shap.toFixed(4)}` : shift.modified_shap.toFixed(4)}
+                        </td>
+                        <td
+                          className={`p-2.5 text-right font-bold ${
+                            isIncreased
+                              ? "text-critical"
+                              : isReduced
+                              ? "text-protective"
+                              : "text-muted"
+                          }`}
+                        >
+                          {shift.delta_shap > 0 ? `+${shift.delta_shap.toFixed(4)}` : shift.delta_shap.toFixed(4)}
+                        </td>
+                        <td className="p-2.5">
+                          {isIncreased ? (
+                            <span className="text-critical text-[10px] font-semibold">
+                              Increased Risk Push
+                            </span>
+                          ) : isReduced ? (
+                            <span className="text-protective text-[10px] font-semibold">
+                              Reduced Risk Push
+                            </span>
+                          ) : (
+                            <span className="text-muted text-[10px]">Unchanged</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-4 text-center text-xs text-muted font-mono">
+              Adjust sliders above to observe feature attribution shifts.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

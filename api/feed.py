@@ -53,7 +53,12 @@ class SimulatedFeedEngine:
         self.rate_per_minute = max(1.0, min(rate_per_minute, 600.0))
         self._load_and_shuffle(seed)
         self.is_running = True
-        self._task = asyncio.create_task(self._feed_loop())
+        try:
+            loop = asyncio.get_running_loop()
+            self._task = loop.create_task(self._feed_loop())
+        except RuntimeError:
+            loop = asyncio.get_event_loop()
+            self._task = loop.create_task(self._feed_loop())
         return self.get_status()
 
     def stop(self) -> Dict[str, Any]:

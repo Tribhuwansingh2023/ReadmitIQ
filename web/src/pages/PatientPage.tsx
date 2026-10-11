@@ -2,19 +2,17 @@ import React, { useEffect, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  ArrowDownRight,
-  ArrowUpRight,
   CheckCircle2,
   ClipboardCheck,
   Clock,
   FileText,
   History,
   Loader2,
-  ShieldAlert,
   Zap,
 } from "lucide-react";
 import { apiClient } from "../api/client";
 import type { PatientFormInput, PredictResponse } from "../types";
+import { ClinicalExplainabilityEngine } from "../components/ClinicalExplainabilityEngine";
 
 interface PatientPageProps {
   initialPatient?: Partial<PatientFormInput> | null;
@@ -605,72 +603,23 @@ export const PatientPage: React.FC<PatientPageProps> = ({ initialPatient }) => {
                 </div>
               </div>
 
-              {/* Explainability: SHAP Clinical Factors */}
-              <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    Plain-Language Contributing Factors (SHAP)
-                  </h3>
-                  <span className="text-xs text-slate-500 font-mono">
-                    TreeExplainer
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Risk Increasing */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold text-rose-400 flex items-center gap-1">
-                      <ArrowUpRight className="w-3.5 h-3.5" /> Risk Increasing
-                      Drivers
-                    </span>
-                    {predictResult.top_risk_increasing_factors.map(
-                      (item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 text-xs text-slate-200"
-                        >
-                          <div className="font-medium text-rose-300">
-                            {item.explanation}
-                          </div>
-                          <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-                            <span>SHAP +{item.shap_value.toFixed(3)}</span>
-                            <span className="font-mono text-slate-500">
-                              {item.feature}
-                            </span>
-                          </div>
-                        </div>
-                      ),
-                    )}
-                  </div>
-
-                  {/* Risk Reducing */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-                      <ArrowDownRight className="w-3.5 h-3.5" /> Risk Reducing
-                      Drivers
-                    </span>
-                    {predictResult.top_risk_reducing_factors.map(
-                      (item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-xs text-slate-200"
-                        >
-                          <div className="font-medium text-emerald-300">
-                            {item.explanation}
-                          </div>
-                          <div className="text-[11px] text-slate-400 mt-1 flex justify-between">
-                            <span>SHAP {item.shap_value.toFixed(3)}</span>
-                            <span className="font-mono text-slate-500">
-                              {item.feature}
-                            </span>
-                          </div>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Explainability: Clinical Explainability & Trust Engine */}
+              <ClinicalExplainabilityEngine
+                calibratedProb={predictResult.calibrated_risk_probability}
+                rawScore={predictResult.raw_score}
+                rawMargin={predictResult.raw_margin ?? predictResult.raw_score}
+                baseValue={predictResult.base_value ?? -0.196}
+                riskTier={predictResult.risk_tier}
+                shapExplanation={
+                  predictResult.shap_explanation || {
+                    top_risk_increasing: predictResult.top_risk_increasing_factors,
+                    top_risk_reducing: predictResult.top_risk_reducing_factors,
+                    all_attributions: {},
+                  }
+                }
+                similarEncounters={predictResult.similar_patients_summary?.top_neighbors || []}
+                patientFeatures={formData}
+              />
 
               {/* Suggested Follow-Up Actions Panel (Deterministic Decision Support) */}
               {predictResult.suggested_interventions && (

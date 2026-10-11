@@ -3,6 +3,7 @@ import type {
   DischargeDetailResponse,
   ExplainResponse,
   FeedStatusResponse,
+  GlobalExplanationResponse,
   HealthResponse,
   MetricsResponse,
   ModelInfoResponse,
@@ -17,8 +18,18 @@ import type {
   WorklistResponse,
 } from "../types";
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname || "127.0.0.1";
+    return `http://${hostname}:8000`;
+  }
+  return "http://127.0.0.1:8000";
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -269,6 +280,17 @@ export const apiClient = {
       body: JSON.stringify(patient),
     });
     return handleResponse<ExplainResponse>(res);
+  },
+
+  async getGlobalExplanation(): Promise<GlobalExplanationResponse> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/v1/explain/global`);
+      return await handleResponse<GlobalExplanationResponse>(res);
+    } catch {
+      // Fallback to core explain/global
+      const res = await fetch(`${API_BASE_URL}/explain/global`);
+      return handleResponse<GlobalExplanationResponse>(res);
+    }
   },
 
   async getCohort(capacity: number = 0.1): Promise<CohortResponse> {

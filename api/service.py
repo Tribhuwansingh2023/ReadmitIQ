@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import faiss
@@ -17,7 +17,7 @@ from src.config import (
     MODELS_DIR,
     REPORTS_DIR,
 )
-from src.explain import ExplainerError, ModelExplainer
+from src.explain import ExplainerError, ModelExplainer, check_explanation_reliability
 from src.train import prepare_lgbm_data
 
 logger = logging.getLogger("readmitiq.service")
@@ -251,13 +251,18 @@ class ModelService:
         top_k: int = 3,
         allow_degraded: bool = False,
         force_degraded: bool = False,
+        calibrated_prob: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Compute TreeSHAP explanations on demand and cache them."""
         if cache_key in self._shap_cache:
             return self._shap_cache[cache_key]
 
         explanation = self.explain(
-            patient_dict, top_k=top_k, allow_degraded=allow_degraded, force_degraded=force_degraded
+            patient_dict,
+            top_k=top_k,
+            allow_degraded=allow_degraded,
+            force_degraded=force_degraded,
+            calibrated_prob=calibrated_prob,
         )
         self._shap_cache[cache_key] = explanation
         return explanation
@@ -318,6 +323,7 @@ class ModelService:
         top_k: int = 3,
         allow_degraded: bool = False,
         force_degraded: bool = False,
+        calibrated_prob: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Explain patient risk attributions, retrieving RAG neighborhood if needed.
 
@@ -342,10 +348,24 @@ class ModelService:
                     "and cannot safely generate attributions using fabricated peer evidence."
                 ) from e
 
-        explanation = self.explainer.explain_patient(patient_copy, top_k=top_k)
+        explanation = self.explainer.explain_patient(
+            patient_copy, top_k=top_k, calibrated_prob=calibrated_prob
+        )
         explanation["degraded_mode"] = False
         explanation["degraded_reason"] = None
+        explanation["reliability"] = check_explanation_reliability(
+            patient_copy,
+            has_prediction=True,
+            has_shap=True,
+            has_rag=True,
+            calibrated_prob=calibrated_prob,
+            degraded_mode=False,
+        )
         return explanation
+
+    def get_global_explanation(self) -> Dict[str, Any]:
+        """Return reference cohort global feature importances, distributions, and model metadata."""
+        return self.explainer.get_global_explanation()
 
     def predict(
         self, patient_dict: Dict[str, Any], allow_degraded: bool = False
@@ -410,7 +430,7 @@ class ModelService:
             tier = "Low"
 
         # 4. SHAP Explanation
-        explanation = self.explain(patient_dict, top_k=3)
+        explanation = self.explain(patient_dict, top_k=5, calibrated_prob=cal_prob)
 
         # 5. Deterministic Decision Support Interventions
         interventions = generate_suggested_interventions(
@@ -434,6 +454,14 @@ class ModelService:
         return {
             "raw_score": round(raw_prob, 6),
             "raw_lgbm_score": round(raw_prob, 6),
+            "raw_margin": explanation.get("raw_margin", round(raw_prob, 6)),
+            "base_value": explanation.get("base_value", -0.1960),
+            "output_scale": explanation.get("output_scale", "log_odds_margin"),
+            "scale_units": explanation.get("scale_units", "Log-Odds Margin Space"),
+            "scale_description": explanation.get("scale_description"),
+            "plain_english_summary": explanation.get("plain_english_summary"),
+            "full_attribution_table": explanation.get("full_attribution_table", []),
+            "explanation_reliability": explanation.get("reliability"),
             "calibrated_risk_probability": round(cal_prob, 4),
             "risk_tier": tier,
             "decision_threshold": round(f1_th, 4),
@@ -445,6 +473,7 @@ class ModelService:
             },
             "top_risk_increasing_factors": top_increasing,
             "top_risk_reducing_factors": top_reducing,
+            "all_attributions": explanation.get("all_attributions", {}),
             "similar_patients_summary": similar_summary,
             "suggested_interventions": interventions,
             "degraded_mode": False,

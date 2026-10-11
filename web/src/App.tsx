@@ -190,11 +190,10 @@ export const App: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as ScreenTab)}
-                className={`px-3 py-1.5 rounded-sm transition-all ${
-                  activeTab === tab.id
+                className={`px-3 py-1.5 rounded-sm transition-all ${activeTab === tab.id
                     ? "bg-primary text-canvas font-bold shadow-xs"
                     : "text-muted hover:text-primary hover:bg-subtle"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -219,11 +218,10 @@ export const App: React.FC = () => {
             {/* Presentation Mode Toggle */}
             <button
               onClick={() => setIsPresentationMode(!isPresentationMode)}
-              className={`p-1.5 rounded-sm border text-xs transition-colors hidden sm:flex items-center gap-1 font-mono ${
-                isPresentationMode
+              className={`p-1.5 rounded-sm border text-xs transition-colors hidden sm:flex items-center gap-1 font-mono ${isPresentationMode
                   ? "border-accent bg-accent/15 text-accent font-bold"
                   : "border-hairline hover:bg-subtle text-muted hover:text-primary"
-              }`}
+                }`}
               title="Presentation Mode (P)"
             >
               <Monitor className="w-4 h-4" />
@@ -307,11 +305,10 @@ export const App: React.FC = () => {
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id as ScreenTab)}
-            className={`py-1.5 px-2 rounded-xs flex flex-col items-center ${
-              activeTab === item.id
+            className={`py-1.5 px-2 rounded-xs flex flex-col items-center ${activeTab === item.id
                 ? "text-accent font-bold bg-accent/10"
                 : "text-muted hover:text-primary"
-            }`}
+              }`}
           >
             <span>{item.label}</span>
           </button>

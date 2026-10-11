@@ -15,6 +15,105 @@ export interface FactorExplanation {
   feature_name?: string;
   attribution?: number;
   clinical_meaning?: string;
+  direction?: "increasing" | "reducing" | "neutral";
+  description?: string;
+}
+
+export interface ExplanationReliabilityCheck {
+  status: "Available" | "Degraded" | "Unavailable" | "Insufficient Data";
+  label: string;
+  detail: string;
+}
+
+export interface ExplanationReliability {
+  overall_status: "Available" | "Degraded" | "Unavailable" | "Insufficient Data";
+  checks: {
+    prediction_availability: ExplanationReliabilityCheck;
+    shap_explanation_availability: ExplanationReliabilityCheck;
+    rag_peer_evidence_availability: ExplanationReliabilityCheck;
+    feature_input_completeness: ExplanationReliabilityCheck;
+    calibration_evidence_availability: ExplanationReliabilityCheck;
+  };
+  disclaimer: string;
+}
+
+export interface GlobalFeatureImportance {
+  rank: number;
+  feature: string;
+  feature_name: string;
+  description: string;
+  mean_abs_shap: number;
+  direction_distribution: {
+    positive_risk_pct: number;
+    protective_risk_pct: number;
+  };
+  feature_type: "numeric" | "categorical";
+  summary_stats: {
+    min?: number;
+    p25?: number;
+    median?: number;
+    p75?: number;
+    max?: number;
+    mean?: number;
+    top_categories?: Record<string, number>;
+  };
+}
+
+export interface GlobalExplanationResponse {
+  model_name: string;
+  git_commit_hash: string;
+  explainer_method: string;
+  reference_cohort: {
+    name: string;
+    sample_size: number;
+    positive_prevalence: number;
+    time_split_window: string;
+    leakage_protection: string;
+  };
+  output_scale: {
+    scale_type: string;
+    base_value: number;
+    units: string;
+    mathematical_definition: string;
+    clinical_scale_explanation: string;
+  };
+  feature_importances: GlobalFeatureImportance[];
+  calibration_summary: {
+    method: string;
+    artifact: string;
+    validation_sample_size: number;
+    test_sample_size: number;
+    ece: number;
+    brier_score: number;
+    test_auc_roc: number;
+    test_auc_ci_95: [number, number];
+    optimal_f1_threshold: number;
+  };
+  capacity_thresholds?: Record<string, string>;
+}
+
+export interface AttributionShift {
+  feature: string;
+  feature_name: string;
+  baseline_shap: number;
+  modified_shap: number;
+  delta_shap: number;
+  is_modified_input: boolean;
+  direction: "increased_attribution" | "reduced_attribution" | "unchanged";
+}
+
+export interface ShapExplanationPayload {
+  top_risk_increasing: FactorExplanation[];
+  top_risk_reducing: FactorExplanation[];
+  all_attributions: Record<string, number>;
+  full_attribution_table?: FactorExplanation[];
+  base_value?: number;
+  raw_margin?: number;
+  output_scale?: string;
+  scale_units?: string;
+  scale_description?: string;
+  plain_english_summary?: string;
+  reliability?: ExplanationReliability;
 }
 
 export interface SimilarEncounter {
@@ -52,7 +151,9 @@ export interface PredictResponse {
   predicted_readmission: boolean;
   raw_score?: number;
   calibrated_prob?: number;
-  tier?: "Critical" | "High" | "Medium" | "Low";
+  raw_margin?: number;
+  base_value?: number;
+  shap_explanation?: ShapExplanationPayload;
   capacity_thresholds: {
     top_5pct_critical: number;
     top_10pct_high: number;
@@ -91,6 +192,14 @@ export interface ExplainResponse {
   top_risk_increasing: FactorExplanation[];
   top_risk_reducing: FactorExplanation[];
   all_attributions: Record<string, number>;
+  full_attribution_table?: FactorExplanation[];
+  base_value?: number;
+  raw_margin?: number;
+  output_scale?: string;
+  scale_units?: string;
+  scale_description?: string;
+  plain_english_summary?: string;
+  explanation_reliability?: ExplanationReliability;
 }
 
 export interface CohortResponse {
@@ -292,22 +401,35 @@ export interface WhatIfResponse {
   disclaimer: string;
   baseline: {
     raw_score: number;
+    raw_margin?: number;
+    base_value?: number;
     calibrated_prob: number;
     tier: RiskTier;
     risk_tier?: RiskTier;
+    decision_threshold?: number;
     top_drivers: FactorExplanation[];
+    top_risk_drivers?: FactorExplanation[];
+    top_risk_reducing?: FactorExplanation[];
+    all_attributions?: Record<string, number>;
     inputs?: Record<string, any>;
   };
   modified: {
     raw_score: number;
+    raw_margin?: number;
+    base_value?: number;
     calibrated_prob: number;
     tier: RiskTier;
     risk_tier?: RiskTier;
+    decision_threshold?: number;
     top_drivers: FactorExplanation[];
+    top_risk_drivers?: FactorExplanation[];
+    top_risk_reducing?: FactorExplanation[];
+    all_attributions?: Record<string, number>;
     inputs?: Record<string, any>;
   };
   delta: {
     raw_score: number;
+    raw_margin?: number;
     calibrated_prob: number;
     probability_change?: number;
     relative_risk_change_pct?: number;
@@ -316,6 +438,9 @@ export interface WhatIfResponse {
     increased_risk: boolean;
   };
   changed_features?: Record<string, { from: any; to: any }>;
+  attribution_shifts?: AttributionShift[];
+  newly_appearing_drivers?: string[];
+  disappearing_drivers?: string[];
 }
 
 export interface WorklistItem {
@@ -387,11 +512,7 @@ export interface DischargeDetailResponse {
   outcome_at?: string | null;
   outcome_status?: string;
   features: PatientFormInput;
-  shap_explanation: {
-    top_risk_increasing: FactorExplanation[];
-    top_risk_reducing: FactorExplanation[];
-    all_attributions: Record<string, number>;
-  };
+  shap_explanation: ShapExplanationPayload;
   similar_patients_summary?: {
     k_neighbors: number;
     neighbor_readmission_rate: number;

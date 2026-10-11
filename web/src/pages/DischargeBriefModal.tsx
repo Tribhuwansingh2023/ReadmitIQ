@@ -3,8 +3,6 @@ import {
   X,
   Printer,
   AlertTriangle,
-  TrendingUp,
-  TrendingDown,
   Sliders,
   Info,
   Send,
@@ -19,6 +17,7 @@ import { RiskGlyph } from "../components/RiskGlyph";
 import { ActionPlanBoard } from "../components/ActionPlanBoard";
 import { ChronologicalTimeline } from "../components/ChronologicalTimeline";
 import { WhatIfExplorer } from "../components/WhatIfExplorer";
+import { ClinicalExplainabilityEngine } from "../components/ClinicalExplainabilityEngine";
 
 interface DischargeBriefModalProps {
   dischargeId: number | null;
@@ -526,103 +525,19 @@ export const DischargeBriefModal: React.FC<DischargeBriefModalProps> = ({
                 </div>
               </div>
 
-              {/* Section 2: Diverging SHAP Drivers */}
-              <div className="bg-surface p-6 rounded-sm hairline-border space-y-4">
-                <div className="border-b border-hairline pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <div>
-                    <h2 className="text-sm font-semibold text-primary">
-                      What Pushes This Patient's Risk Up or Down (Model Log-Odds)
-                    </h2>
-                    <p className="text-[11px] text-muted font-mono">
-                      Attributions represent additive shifts in model log-odds space; they do NOT sum directly to the final calibrated probability.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                  {/* Risk Increasing */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-critical text-xs font-semibold uppercase tracking-wider font-mono">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Top Factors Pushing Risk Up (+ Log-Odds)</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {detail.shap_explanation.top_risk_increasing.map((f, i) => {
-                        const featName = f.feature_name || f.feature;
-                        const attr = f.attribution ?? f.shap_value ?? 0;
-                        const meaning = f.clinical_meaning || f.explanation || "Risk contributor";
-                        return (
-                          <div
-                            key={i}
-                            className="p-3 bg-canvas hairline-border rounded-sm text-xs space-y-1"
-                          >
-                            <div className="flex justify-between font-medium">
-                              <span className="text-primary font-mono">{featName}</span>
-                              <span className="text-critical font-mono font-bold">
-                                +{attr.toFixed(3)}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-muted">{meaning}</p>
-                            <div className="w-full bg-subtle h-1.5 rounded-full overflow-hidden mt-1">
-                              <div
-                                className="bg-critical h-full"
-                                style={{
-                                  width: `${Math.min(100, Math.abs(attr) * 80)}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Risk Reducing */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-protective text-xs font-semibold uppercase tracking-wider font-mono">
-                      <TrendingDown className="w-4 h-4" />
-                      <span>Top Factors Pushing Risk Down (- Log-Odds)</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {detail.shap_explanation.top_risk_reducing.length === 0 ? (
-                        <div className="p-4 bg-canvas hairline-border rounded-sm text-xs text-muted text-center font-mono">
-                          No significant protective factors detected for this high-acuity encounter.
-                        </div>
-                      ) : (
-                        detail.shap_explanation.top_risk_reducing.map((f, i) => {
-                          const featName = f.feature_name || f.feature;
-                          const attr = f.attribution ?? f.shap_value ?? 0;
-                          const meaning = f.clinical_meaning || f.explanation || "Protective factor";
-                          return (
-                            <div
-                              key={i}
-                              className="p-3 bg-canvas hairline-border rounded-sm text-xs space-y-1"
-                            >
-                              <div className="flex justify-between font-medium">
-                                <span className="text-primary font-mono">{featName}</span>
-                                <span className="text-protective font-mono font-bold">
-                                  {attr.toFixed(3)}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-muted">{meaning}</p>
-                              <div className="w-full bg-subtle h-1.5 rounded-full overflow-hidden mt-1">
-                                <div
-                                  className="bg-protective h-full"
-                                  style={{
-                                    width: `${Math.min(100, Math.abs(attr) * 80)}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* Section 2: Clinical Explainability & Trust Engine */}
+              <ClinicalExplainabilityEngine
+                encounterId={detail.id}
+                calibratedProb={detail.calibrated_prob}
+                rawScore={detail.raw_score}
+                rawMargin={(detail.shap_explanation as any)?.raw_margin ?? detail.raw_score}
+                baseValue={(detail.shap_explanation as any)?.base_value ?? -0.196}
+                riskTier={detail.tier}
+                modelVersion={detail.model_version}
+                shapExplanation={detail.shap_explanation}
+                similarEncounters={detail.similar_patients_summary?.top_neighbors || []}
+                patientFeatures={detail.features as any}
+              />
 
               {/* Section 3: Precedent Orbit (Radial Visualization) */}
               <div className="bg-surface p-6 rounded-sm hairline-border space-y-4">

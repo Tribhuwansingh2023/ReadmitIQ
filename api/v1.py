@@ -35,6 +35,7 @@ from api.schemas import PatientEncounterRequest
 from api.service import get_service
 from src.config import BASE_DIR, METRICS_DIR, MODELS_DIR
 from src.drift import calculate_psi, classify_drift_severity
+from src.explain import FEATURE_HUMAN_NAMES
 
 router = APIRouter(prefix="/v1", tags=["Clinical Workflow v1"])
 
@@ -948,6 +949,16 @@ def update_task(discharge_id: int, task_id: int, req: TaskPatchRequest):
     return {"status": "success", "task_id": task_id, "updated_at": now_iso, "task": t_updated}
 
 
+@router.get("/explain/global")
+def get_global_model_explanation_v1():
+    """Return global model explainability summary across the validation reference cohort."""
+    svc = get_service()
+    try:
+        return svc.get_global_explanation()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load global model explanation: {e}")
+
+
 @router.post("/predict")
 def predict_v1(
     encounter: PatientEncounterRequest,
@@ -964,6 +975,15 @@ def predict_v1(
         result["shap_explanation"] = {
             "top_risk_increasing": result.get("top_risk_increasing_factors", []),
             "top_risk_reducing": result.get("top_risk_reducing_factors", []),
+            "all_attributions": result.get("all_attributions", {}),
+            "full_attribution_table": result.get("full_attribution_table", []),
+            "base_value": result.get("base_value", -0.1960),
+            "raw_margin": result.get("raw_margin"),
+            "output_scale": result.get("output_scale", "log_odds_margin"),
+            "scale_units": result.get("scale_units", "Log-Odds Margin Space"),
+            "scale_description": result.get("scale_description"),
+            "plain_english_summary": result.get("plain_english_summary"),
+            "reliability": result.get("explanation_reliability"),
         }
         return result
     except (ValueError, TypeError) as ve:
@@ -1024,37 +1044,79 @@ def what_if_sensitivity(req: WhatIfRequest):
     mod_raw = float(mod_pred.get("raw_score", mod_pred.get("raw_lgbm_score", mod_prob)))
     delta_raw = round(mod_raw - base_raw, 4)
 
+    base_margin = float(base_pred.get("raw_margin", base_raw))
+    mod_margin = float(mod_pred.get("raw_margin", mod_raw))
+    delta_margin = round(mod_margin - base_margin, 4)
+
+    # Compare SHAP attributions and top drivers
+    base_top_inc = [f["feature"] for f in base_pred.get("top_risk_increasing_factors", [])]
+    mod_top_inc = [f["feature"] for f in mod_pred.get("top_risk_increasing_factors", [])]
+    newly_appearing = [f for f in mod_top_inc if f not in base_top_inc]
+    disappearing = [f for f in base_top_inc if f not in mod_top_inc]
+
+    base_attrs = base_pred.get("all_attributions", {})
+    mod_attrs = mod_pred.get("all_attributions", {})
+
+    tracked_features = list(req.modified_features.keys())
+    for f in mod_top_inc + base_top_inc:
+        if f not in tracked_features:
+            tracked_features.append(f)
+
+    attribution_shifts = []
+    for f in tracked_features:
+        b_shap = float(base_attrs.get(f, 0.0))
+        m_shap = float(mod_attrs.get(f, 0.0))
+        d_shap = round(m_shap - b_shap, 4)
+        attribution_shifts.append({
+            "feature": f,
+            "feature_name": FEATURE_HUMAN_NAMES.get(f, f.replace("_", " ").title()),
+            "baseline_shap": round(b_shap, 4),
+            "modified_shap": round(m_shap, 4),
+            "delta_shap": d_shap,
+            "is_modified_input": f in req.modified_features,
+            "direction": "increased_attribution" if d_shap > 1e-4 else ("reduced_attribution" if d_shap < -1e-4 else "unchanged"),
+        })
+
     changed_features = {}
     for k, v in req.modified_features.items():
         changed_features[k] = {"from": base_req.get(k), "to": v}
 
     return {
         "disclaimer": (
-            "Model Sensitivity Analysis: Simulates frozen model response to hypothetical input variations. "
+            "Model Sensitivity Analysis: Simulates frozen tabular model response to hypothetical input variations. "
             "This is NOT a causal estimate, clinical treatment effect, or guarantee of reduced readmission risk."
         ),
         "baseline": {
             "tier": base_pred["risk_tier"],
             "risk_tier": base_pred["risk_tier"],
             "raw_score": base_raw,
+            "raw_margin": base_margin,
+            "base_value": base_pred.get("base_value", -0.1960),
             "calibrated_prob": base_prob,
             "decision_threshold": base_pred["decision_threshold"],
             "top_drivers": base_pred["top_risk_increasing_factors"],
             "top_risk_drivers": base_pred["top_risk_increasing_factors"],
+            "top_risk_reducing": base_pred.get("top_risk_reducing_factors", []),
+            "all_attributions": base_attrs,
             "inputs": {k: base_req.get(k) for k in req.modified_features.keys()},
         },
         "modified": {
             "tier": mod_pred["risk_tier"],
             "risk_tier": mod_pred["risk_tier"],
             "raw_score": mod_raw,
+            "raw_margin": mod_margin,
+            "base_value": mod_pred.get("base_value", -0.1960),
             "calibrated_prob": mod_prob,
             "decision_threshold": mod_pred["decision_threshold"],
             "top_drivers": mod_pred["top_risk_increasing_factors"],
             "top_risk_drivers": mod_pred["top_risk_increasing_factors"],
+            "top_risk_reducing": mod_pred.get("top_risk_reducing_factors", []),
+            "all_attributions": mod_attrs,
             "inputs": req.modified_features,
         },
         "delta": {
             "raw_score": delta_raw,
+            "raw_margin": delta_margin,
             "calibrated_prob": delta_prob,
             "probability_change": delta_prob,
             "relative_risk_change_pct": round(((mod_prob - base_prob) / max(1e-4, base_prob)) * 100, 1),
@@ -1063,6 +1125,9 @@ def what_if_sensitivity(req: WhatIfRequest):
             "increased_risk": mod_prob > base_prob,
         },
         "changed_features": changed_features,
+        "attribution_shifts": attribution_shifts,
+        "newly_appearing_drivers": newly_appearing,
+        "disappearing_drivers": disappearing,
     }
 
 
@@ -1215,28 +1280,28 @@ def record_discharge_outcome(discharge_id: int, req: OutcomeCreateRequest):
 
 
 @router.post("/feed/start")
-def start_feed(req: FeedStartRequest):
+async def start_feed(req: FeedStartRequest):
     """Start simulated replay feed using held-out test encounters."""
     engine = get_feed_engine()
     return engine.start(rate_per_minute=req.rate_per_minute, seed=req.seed)
 
 
 @router.post("/feed/stop")
-def stop_feed():
+async def stop_feed():
     """Stop simulated replay feed."""
     engine = get_feed_engine()
     return engine.stop()
 
 
 @router.get("/feed/status")
-def get_feed_status():
+async def get_feed_status():
     """Get status of the simulated encounter feed."""
     engine = get_feed_engine()
     return engine.get_status()
 
 
 @router.post("/feed/time-machine")
-def advance_time_machine(req: TimeMachineRequest):
+async def advance_time_machine(req: TimeMachineRequest):
     """Advance simulated time and release outcomes from sealed feed_truth (>30 days)."""
     engine = get_feed_engine()
     return engine.advance_time_machine(days=req.days)

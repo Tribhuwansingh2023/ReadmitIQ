@@ -1,0 +1,880 @@
+{
+  "model_name": "LightGBM + Structured RAG",
+  "git_commit_hash": "efa44003ae6ea2bc4243532def61ef50cf13630b",
+  "explainer_method": "Native LightGBM TreeSHAP (Additive Decision Tree Path Contribution)",
+  "reference_cohort": {
+    "name": "Validation Cohort (val_rag.parquet)",
+    "sample_size": 14902,
+    "positive_prevalence": 0.1139,
+    "time_split_window": "Temporal held-out partition of diabetic inpatient encounters (discharged 30d follow-up)",
+    "leakage_protection": "Disjoint patient-level splitting; zero future data leakage."
+  },
+  "output_scale": {
+    "scale_type": "log_odds_margin",
+    "base_value": -0.195954,
+    "units": "Log-Odds Margin Space",
+    "mathematical_definition": "phi_0 + sum(phi_i) == raw_margin; sigmoid(raw_margin) == raw_uncalibrated_probability",
+    "clinical_scale_explanation": "TreeSHAP attributions represent additive shifts in model log-odds margin relative to explainer baseline (-0.1960); they do NOT represent percentage-point changes in 30-day readmission risk."
+  },
+  "feature_importances": [
+    {
+      "rank": 1,
+      "feature": "number_inpatient",
+      "feature_name": "Prior Inpatient Admissions",
+      "description": "Number of inpatient hospitalizations in the 12 months preceding the index discharge.",
+      "mean_abs_shap": 0.2176,
+      "direction_distribution": {
+        "positive_risk_pct": 33.1,
+        "protective_risk_pct": 66.9
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 1.0,
+        "max": 6.0,
+        "mean": 0.6
+      }
+    },
+    {
+      "rank": 2,
+      "feature": "discharge_disposition_group",
+      "feature_name": "Discharge Destination",
+      "description": "Destination patient is discharged to (e.g. Home, Skilled Nursing, Home Health, AMA).",
+      "mean_abs_shap": 0.1829,
+      "direction_distribution": {
+        "positive_risk_pct": 34.7,
+        "protective_risk_pct": 65.2
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "home": 0.597,
+          "transferred_facility": 0.216,
+          "home_health": 0.132,
+          "other_unknown": 0.049,
+          "left_ama": 0.007
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "feature": "medical_specialty",
+      "feature_name": "Admitting Specialty",
+      "description": "Primary specialty of admitting or attending physician.",
+      "mean_abs_shap": 0.0899,
+      "direction_distribution": {
+        "positive_risk_pct": 76.7,
+        "protective_risk_pct": 23.2
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "Missing": 0.487,
+          "InternalMedicine": 0.146,
+          "Family/GeneralPractice": 0.076,
+          "Emergency/Trauma": 0.075,
+          "Cardiology": 0.052
+        }
+      }
+    },
+    {
+      "rank": 4,
+      "feature": "total_prior_visits",
+      "feature_name": "Total Prior Healthcare Visits",
+      "description": "Cumulative count of previous emergency, inpatient, and outpatient encounters in past year.",
+      "mean_abs_shap": 0.0809,
+      "direction_distribution": {
+        "positive_risk_pct": 40.7,
+        "protective_risk_pct": 59.2
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 2.0,
+        "max": 11.0,
+        "mean": 1.16
+      }
+    },
+    {
+      "rank": 5,
+      "feature": "diag_1_group",
+      "feature_name": "Primary Diagnosis Category",
+      "description": "Primary ICD diagnosis category documented at admission.",
+      "mean_abs_shap": 0.0696,
+      "direction_distribution": {
+        "positive_risk_pct": 52.2,
+        "protective_risk_pct": 47.7
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "circulatory": 0.303,
+          "other": 0.175,
+          "respiratory": 0.135,
+          "digestive": 0.096,
+          "diabetes": 0.09
+        }
+      }
+    },
+    {
+      "rank": 6,
+      "feature": "payer_code",
+      "feature_name": "Primary Payer Category",
+      "description": "Primary expected healthcare payer or insurance plan (e.g. Medicare, Medicaid, Private).",
+      "mean_abs_shap": 0.0671,
+      "direction_distribution": {
+        "positive_risk_pct": 64.2,
+        "protective_risk_pct": 35.8
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "Missing": 0.399,
+          "MC": 0.312,
+          "HM": 0.061,
+          "SP": 0.05,
+          "BC": 0.047
+        }
+      }
+    },
+    {
+      "rank": 7,
+      "feature": "rag_struct_rate_k20",
+      "feature_name": "Peer Readmission Rate (RAG Precedents)",
+      "description": "Empirical 30-day readmission rate among top-20 structurally similar historical diabetes discharges.",
+      "mean_abs_shap": 0.0622,
+      "direction_distribution": {
+        "positive_risk_pct": 39.4,
+        "protective_risk_pct": 60.5
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.05,
+        "median": 0.10000000149011612,
+        "p75": 0.15,
+        "max": 0.699999988079071,
+        "mean": 0.10999999940395355
+      }
+    },
+    {
+      "rank": 8,
+      "feature": "number_diagnoses",
+      "feature_name": "Coded Diagnoses Count",
+      "description": "Total distinct ICD diagnoses recorded on the encounter claim.",
+      "mean_abs_shap": 0.0377,
+      "direction_distribution": {
+        "positive_risk_pct": 64.5,
+        "protective_risk_pct": 35.3
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 1.0,
+        "p25": 6.0,
+        "median": 8.0,
+        "p75": 9.0,
+        "max": 9.0,
+        "mean": 7.39
+      }
+    },
+    {
+      "rank": 9,
+      "feature": "diag_2_group",
+      "feature_name": "Secondary Diagnosis Category",
+      "description": "Secondary comorbidity ICD diagnosis category.",
+      "mean_abs_shap": 0.0375,
+      "direction_distribution": {
+        "positive_risk_pct": 57.7,
+        "protective_risk_pct": 42.1
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "circulatory": 0.309,
+          "other": 0.265,
+          "diabetes": 0.127,
+          "respiratory": 0.104,
+          "genitourinary": 0.083
+        }
+      }
+    },
+    {
+      "rank": 10,
+      "feature": "insulin",
+      "feature_name": "Insulin Regimen",
+      "description": "Status of insulin management (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0371,
+      "direction_distribution": {
+        "positive_risk_pct": 51.2,
+        "protective_risk_pct": 48.7
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.461,
+          "Steady": 0.308,
+          "Down": 0.12,
+          "Up": 0.111
+        }
+      }
+    },
+    {
+      "rank": 11,
+      "feature": "age_num",
+      "feature_name": "Patient Age Midpoint",
+      "description": "Estimated midpoint age in years for patient demographic cohort.",
+      "mean_abs_shap": 0.0366,
+      "direction_distribution": {
+        "positive_risk_pct": 63.3,
+        "protective_risk_pct": 36.7
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 5.0,
+        "p25": 55.0,
+        "median": 65.0,
+        "p75": 75.0,
+        "max": 95.0,
+        "mean": 65.72
+      }
+    },
+    {
+      "rank": 12,
+      "feature": "n_active_drugs",
+      "feature_name": "Active Diabetes Medications",
+      "description": "Number of active diabetic pharmaceutical agents prescribed.",
+      "mean_abs_shap": 0.0302,
+      "direction_distribution": {
+        "positive_risk_pct": 74.2,
+        "protective_risk_pct": 25.6
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 1.0,
+        "median": 1.0,
+        "p75": 2.0,
+        "max": 6.0,
+        "mean": 1.19
+      }
+    },
+    {
+      "rank": 13,
+      "feature": "time_in_hospital",
+      "feature_name": "Length of Stay (Days)",
+      "description": "Total duration of inpatient stay in days.",
+      "mean_abs_shap": 0.0286,
+      "direction_distribution": {
+        "positive_risk_pct": 33.7,
+        "protective_risk_pct": 66.0
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 1.0,
+        "p25": 2.0,
+        "median": 4.0,
+        "p75": 6.0,
+        "max": 14.0,
+        "mean": 4.37
+      }
+    },
+    {
+      "rank": 14,
+      "feature": "num_lab_procedures",
+      "feature_name": "Diagnostic Lab Procedures",
+      "description": "Total count of diagnostic lab tests performed during hospitalization.",
+      "mean_abs_shap": 0.0245,
+      "direction_distribution": {
+        "positive_risk_pct": 72.3,
+        "protective_risk_pct": 27.6
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 1.0,
+        "p25": 31.0,
+        "median": 44.0,
+        "p75": 57.0,
+        "max": 84.0,
+        "mean": 42.71
+      }
+    },
+    {
+      "rank": 15,
+      "feature": "diag_3_group",
+      "feature_name": "Tertiary Diagnosis Category",
+      "description": "Tertiary comorbidity ICD diagnosis category.",
+      "mean_abs_shap": 0.024,
+      "direction_distribution": {
+        "positive_risk_pct": 39.5,
+        "protective_risk_pct": 60.3
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "other": 0.311,
+          "circulatory": 0.288,
+          "diabetes": 0.175,
+          "respiratory": 0.072,
+          "genitourinary": 0.061
+        }
+      }
+    },
+    {
+      "rank": 16,
+      "feature": "num_medications",
+      "feature_name": "Prescribed Medications Count",
+      "description": "Count of distinct pharmaceutical agents administered during hospitalization.",
+      "mean_abs_shap": 0.0232,
+      "direction_distribution": {
+        "positive_risk_pct": 57.2,
+        "protective_risk_pct": 42.5
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 1.0,
+        "p25": 10.0,
+        "median": 15.0,
+        "p75": 20.0,
+        "max": 43.0,
+        "mean": 15.84
+      }
+    },
+    {
+      "rank": 17,
+      "feature": "metformin",
+      "feature_name": "Metformin Therapy",
+      "description": "Status of metformin therapy (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0193,
+      "direction_distribution": {
+        "positive_risk_pct": 80.4,
+        "protective_risk_pct": 19.6
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.804,
+          "Steady": 0.178,
+          "Up": 0.011,
+          "Down": 0.007
+        }
+      }
+    },
+    {
+      "rank": 18,
+      "feature": "meds_per_day",
+      "feature_name": "Daily Medication Prescribing Velocity",
+      "description": "Ratio of distinct medications prescribed per inpatient hospital day.",
+      "mean_abs_shap": 0.0185,
+      "direction_distribution": {
+        "positive_risk_pct": 84.9,
+        "protective_risk_pct": 15.0
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.12,
+        "p25": 2.6,
+        "median": 4.0,
+        "p75": 6.0,
+        "max": 20.0,
+        "mean": 5.0
+      }
+    },
+    {
+      "rank": 19,
+      "feature": "admission_source_group",
+      "feature_name": "Admission Source",
+      "description": "Point of origin prior to inpatient admission (e.g. Emergency Room, Referral).",
+      "mean_abs_shap": 0.0165,
+      "direction_distribution": {
+        "positive_risk_pct": 82.7,
+        "protective_risk_pct": 17.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "emergency_room": 0.559,
+          "referral": 0.305,
+          "other_unknown": 0.074,
+          "transfer": 0.063
+        }
+      }
+    },
+    {
+      "rank": 20,
+      "feature": "race",
+      "feature_name": "Patient Race / Ethnicity",
+      "description": "Recorded racial or ethnic identity in clinical registry.",
+      "mean_abs_shap": 0.0121,
+      "direction_distribution": {
+        "positive_risk_pct": 83.2,
+        "protective_risk_pct": 16.4
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "Caucasian": 0.748,
+          "AfricanAmerican": 0.185,
+          "Missing": 0.022,
+          "Hispanic": 0.022,
+          "Other": 0.017
+        }
+      }
+    },
+    {
+      "rank": 21,
+      "feature": "labs_per_day",
+      "feature_name": "Daily Lab Procedure Velocity",
+      "description": "Ratio of lab tests performed per inpatient hospital day.",
+      "mean_abs_shap": 0.0117,
+      "direction_distribution": {
+        "positive_risk_pct": 74.1,
+        "protective_risk_pct": 25.5
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.07,
+        "p25": 6.5,
+        "median": 10.83,
+        "p75": 18.25,
+        "max": 58.0,
+        "mean": 14.22
+      }
+    },
+    {
+      "rank": 22,
+      "feature": "number_emergency",
+      "feature_name": "Prior Emergency Room Visits",
+      "description": "Emergency department visits in the 12 months preceding the index discharge.",
+      "mean_abs_shap": 0.0106,
+      "direction_distribution": {
+        "positive_risk_pct": 15.9,
+        "protective_risk_pct": 83.8
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 0.0,
+        "max": 3.0,
+        "mean": 0.17
+      }
+    },
+    {
+      "rank": 23,
+      "feature": "n_dose_changes",
+      "feature_name": "Medication Dose Adjustments",
+      "description": "Total count of diabetes medication titration events (Up or Down).",
+      "mean_abs_shap": 0.0076,
+      "direction_distribution": {
+        "positive_risk_pct": 32.3,
+        "protective_risk_pct": 67.6
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 1.0,
+        "max": 3.0,
+        "mean": 0.29
+      }
+    },
+    {
+      "rank": 24,
+      "feature": "number_outpatient",
+      "feature_name": "Prior Outpatient Clinic Visits",
+      "description": "Outpatient clinic visits in the 12 months preceding the index discharge.",
+      "mean_abs_shap": 0.0067,
+      "direction_distribution": {
+        "positive_risk_pct": 91.5,
+        "protective_risk_pct": 8.5
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 0.0,
+        "max": 5.0,
+        "mean": 0.34
+      }
+    },
+    {
+      "rank": 25,
+      "feature": "a1c_tested",
+      "feature_name": "HbA1c Lab Drawn During Stay",
+      "description": "Binary indicator confirming whether an HbA1c test was performed during the encounter.",
+      "mean_abs_shap": 0.0067,
+      "direction_distribution": {
+        "positive_risk_pct": 83.3,
+        "protective_risk_pct": 16.7
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 0.0,
+        "p75": 0.0,
+        "max": 1.0,
+        "mean": 0.17
+      }
+    },
+    {
+      "rank": 26,
+      "feature": "num_procedures",
+      "feature_name": "Non-Lab Clinical Procedures",
+      "description": "Total non-lab diagnostic or surgical procedures performed during stay.",
+      "mean_abs_shap": 0.0058,
+      "direction_distribution": {
+        "positive_risk_pct": 57.2,
+        "protective_risk_pct": 40.3
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 0.0,
+        "median": 1.0,
+        "p75": 2.0,
+        "max": 6.0,
+        "mean": 1.31
+      }
+    },
+    {
+      "rank": 27,
+      "feature": "gender",
+      "feature_name": "Patient Biological Sex",
+      "description": "Recorded biological sex in patient registration.",
+      "mean_abs_shap": 0.0053,
+      "direction_distribution": {
+        "positive_risk_pct": 48.0,
+        "protective_risk_pct": 51.6
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "Female": 0.529,
+          "Male": 0.471
+        }
+      }
+    },
+    {
+      "rank": 28,
+      "feature": "A1Cresult",
+      "feature_name": "HbA1c Lab Test Result",
+      "description": "Recorded glycated hemoglobin test result range during admission.",
+      "mean_abs_shap": 0.0052,
+      "direction_distribution": {
+        "positive_risk_pct": 84.6,
+        "protective_risk_pct": 15.3
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "None": 0.833,
+          ">8": 0.081,
+          "Norm": 0.048,
+          ">7": 0.038
+        }
+      }
+    },
+    {
+      "rank": 29,
+      "feature": "admission_type_group",
+      "feature_name": "Admission Urgency Type",
+      "description": "Clinical urgency of admission (e.g. Emergency, Urgent, Elective).",
+      "mean_abs_shap": 0.0049,
+      "direction_distribution": {
+        "positive_risk_pct": 68.3,
+        "protective_risk_pct": 30.5
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "emergency_urgent": 0.707,
+          "elective": 0.186,
+          "other_unknown": 0.108,
+          "newborn": 0.0
+        }
+      }
+    },
+    {
+      "rank": 30,
+      "feature": "glipizide",
+      "feature_name": "Glipizide Regimen",
+      "description": "Sulfonylurea medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0032,
+      "direction_distribution": {
+        "positive_risk_pct": 20.7,
+        "protective_risk_pct": 74.9
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.869,
+          "Steady": 0.116,
+          "Up": 0.009,
+          "Down": 0.006
+        }
+      }
+    },
+    {
+      "rank": 31,
+      "feature": "glyburide",
+      "feature_name": "Glyburide Regimen",
+      "description": "Sulfonylurea medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0026,
+      "direction_distribution": {
+        "positive_risk_pct": 88.5,
+        "protective_risk_pct": 11.1
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.894,
+          "Steady": 0.092,
+          "Up": 0.008,
+          "Down": 0.006
+        }
+      }
+    },
+    {
+      "rank": 32,
+      "feature": "max_glu_serum",
+      "feature_name": "Serum Glucose Lab Result",
+      "description": "Peak serum glucose lab result category recorded during stay.",
+      "mean_abs_shap": 0.0023,
+      "direction_distribution": {
+        "positive_risk_pct": 78.5,
+        "protective_risk_pct": 12.8
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "None": 0.942,
+          "Norm": 0.029,
+          ">200": 0.016,
+          ">300": 0.013
+        }
+      }
+    },
+    {
+      "rank": 33,
+      "feature": "change",
+      "feature_name": "Diabetes Medication Modified",
+      "description": "Whether any diabetic medication was altered during the inpatient stay.",
+      "mean_abs_shap": 0.0012,
+      "direction_distribution": {
+        "positive_risk_pct": 54.2,
+        "protective_risk_pct": 40.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.537,
+          "Ch": 0.463
+        }
+      }
+    },
+    {
+      "rank": 34,
+      "feature": "glimepiride",
+      "feature_name": "Glimepiride Regimen",
+      "description": "Sulfonylurea medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0008,
+      "direction_distribution": {
+        "positive_risk_pct": 95.0,
+        "protective_risk_pct": 5.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.95,
+          "Steady": 0.045,
+          "Up": 0.003,
+          "Down": 0.002
+        }
+      }
+    },
+    {
+      "rank": 35,
+      "feature": "repaglinide",
+      "feature_name": "Repaglinide Regimen",
+      "description": "Meglitinide medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0002,
+      "direction_distribution": {
+        "positive_risk_pct": 1.5,
+        "protective_risk_pct": 48.4
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.984,
+          "Steady": 0.015,
+          "Up": 0.001,
+          "Down": 0.0
+        }
+      }
+    },
+    {
+      "rank": 36,
+      "feature": "acarbose",
+      "feature_name": "Acarbose Regimen",
+      "description": "Alpha-glucosidase inhibitor regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0002,
+      "direction_distribution": {
+        "positive_risk_pct": 0.0,
+        "protective_risk_pct": 0.3
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.997,
+          "Steady": 0.003,
+          "Up": 0.0
+        }
+      }
+    },
+    {
+      "rank": 37,
+      "feature": "pioglitazone",
+      "feature_name": "Pioglitazone Regimen",
+      "description": "Thiazolidinedione medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0001,
+      "direction_distribution": {
+        "positive_risk_pct": 16.9,
+        "protective_risk_pct": 5.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.929,
+          "Steady": 0.068,
+          "Up": 0.002,
+          "Down": 0.001
+        }
+      }
+    },
+    {
+      "rank": 38,
+      "feature": "rosiglitazone",
+      "feature_name": "Rosiglitazone Regimen",
+      "description": "Thiazolidinedione medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0001,
+      "direction_distribution": {
+        "positive_risk_pct": 3.5,
+        "protective_risk_pct": 6.3
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.937,
+          "Steady": 0.06,
+          "Up": 0.002,
+          "Down": 0.001
+        }
+      }
+    },
+    {
+      "rank": 39,
+      "feature": "glyburide-metformin",
+      "feature_name": "Glyburide-Metformin Combination",
+      "description": "Combination oral agent therapy regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0,
+      "direction_distribution": {
+        "positive_risk_pct": 0.8,
+        "protective_risk_pct": 0.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.992,
+          "Steady": 0.007,
+          "Up": 0.0
+        }
+      }
+    },
+    {
+      "rank": 40,
+      "feature": "nateglinide",
+      "feature_name": "Nateglinide Regimen",
+      "description": "Meglitinide medication regimen (No, Steady, Up, Down).",
+      "mean_abs_shap": 0.0,
+      "direction_distribution": {
+        "positive_risk_pct": 0.0,
+        "protective_risk_pct": 0.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "No": 0.994,
+          "Steady": 0.005,
+          "Up": 0.0,
+          "Down": 0.0
+        }
+      }
+    },
+    {
+      "rank": 41,
+      "feature": "diabetesMed",
+      "feature_name": "Prescribed Diabetes Medication",
+      "description": "Indicator whether any anti-diabetic medication was prescribed.",
+      "mean_abs_shap": 0.0,
+      "direction_distribution": {
+        "positive_risk_pct": 0.0,
+        "protective_risk_pct": 0.0
+      },
+      "feature_type": "categorical",
+      "summary_stats": {
+        "top_categories": {
+          "Yes": 0.774,
+          "No": 0.226
+        }
+      }
+    },
+    {
+      "rank": 42,
+      "feature": "polypharmacy",
+      "feature_name": "Polypharmacy Flag (>16 Meds)",
+      "description": "Indicator whether patient received more than 16 distinct medications.",
+      "mean_abs_shap": 0.0,
+      "direction_distribution": {
+        "positive_risk_pct": 0.0,
+        "protective_risk_pct": 0.0
+      },
+      "feature_type": "numeric",
+      "summary_stats": {
+        "min": 0.0,
+        "p25": 1.0,
+        "median": 1.0,
+        "p75": 1.0,
+        "max": 1.0,
+        "mean": 0.8
+      }
+    }
+  ],
+  "calibration_summary": {
+    "method": "Isotonic Regression (Non-parametric piecewise monotonic mapping)",
+    "artifact": "models/final/calibrator.joblib",
+    "validation_sample_size": 14902,
+    "test_sample_size": 14903,
+    "ece": 0.0039,
+    "brier_score": 0.0973,
+    "test_auc_roc": 0.659,
+    "test_auc_ci_95": [
+      0.6458,
+      0.6728
+    ],
+    "optimal_f1_threshold": 0.1495
+  },
+  "capacity_thresholds": {
+    "Critical": "raw_score >= 0.683933 (top 5% validation raw score)",
+    "High": "raw_score >= 0.640775 and raw_score < 0.683933 (top 5-10%)",
+    "Medium": "raw_score >= 0.579340 and raw_score < 0.640775 (top 10-20%)",
+    "Low": "raw_score < 0.579340 (bottom 80%)"
+  }
+}

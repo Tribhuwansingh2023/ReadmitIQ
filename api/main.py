@@ -41,13 +41,14 @@ def on_startup():
 # CORS configuration
 origins_env = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000",
+    "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000",
 )
 allowed_origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if allowed_origins else ["*"],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -134,6 +135,17 @@ def find_similar_patients(req: SimilarRequest):
         raise HTTPException(status_code=500, detail="Retrieval processing error. Please verify request inputs.")
 
 
+@app.get("/explain/global", status_code=status.HTTP_200_OK)
+def get_global_model_explanation():
+    """Return global model explainability summary across the validation reference cohort."""
+    svc = get_service()
+    try:
+        return svc.get_global_explanation()
+    except Exception as e:
+        logger.error("Global explainability error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Global explainability processing error: {e}")
+
+
 @app.post("/explain", response_model=ExplainResponse, status_code=status.HTTP_200_OK)
 def explain_patient_risk(
     encounter: PatientEncounterRequest,
@@ -149,6 +161,14 @@ def explain_patient_risk(
             "top_risk_increasing": explanation["top_risk_increasing"],
             "top_risk_reducing": explanation["top_risk_reducing"],
             "all_attributions": explanation["all_attributions"],
+            "full_attribution_table": explanation.get("full_attribution_table"),
+            "base_value": explanation.get("base_value"),
+            "raw_margin": explanation.get("raw_margin"),
+            "output_scale": explanation.get("output_scale"),
+            "scale_units": explanation.get("scale_units"),
+            "scale_description": explanation.get("scale_description"),
+            "plain_english_summary": explanation.get("plain_english_summary"),
+            "reliability": explanation.get("reliability"),
             "degraded_mode": explanation.get("degraded_mode", False),
             "degraded_reason": explanation.get("degraded_reason"),
         }
