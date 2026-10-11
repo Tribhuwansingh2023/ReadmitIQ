@@ -32,7 +32,6 @@ COPY models/final/ ./models/final/
 COPY models/FROZEN_SELECTION.json ./models/
 COPY reports/metrics/ ./reports/metrics/
 COPY reports/demo/ ./reports/demo/
-COPY .env.example ./.env
 
 # Container Healthcheck verifying /health returns HTTP 200
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

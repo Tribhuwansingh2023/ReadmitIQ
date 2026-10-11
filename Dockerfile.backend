@@ -19,13 +19,14 @@ COPY requirements.txt pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code and models
+# Copy application source code, config, models, and scripts
 COPY api/ api/
 COPY src/ src/
+COPY configs/ configs/
 COPY models/final/ models/final/
+COPY models/FROZEN_SELECTION.json models/
 COPY reports/ reports/
 COPY scripts/ scripts/
-COPY .env.example .env
 
 # Set environment defaults
 ENV PYTHONUNBUFFERED=1 \
