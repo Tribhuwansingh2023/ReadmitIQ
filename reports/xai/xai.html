@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>xai</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7821,17 +7821,31 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">InconsistentVersionWarning</span>
+
+<span class="c1"># Ensure repository root is in sys.path</span>
+<span class="n">repo_root</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">repo_root</span> <span class="o">/</span> <span class="s1">'src'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="p">(</span><span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">'src'</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">repo_root</span><span class="o">.</span><span class="n">parent</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_root</span><span class="p">))</span>
+
+<span class="c1"># Suppress unpickling version warnings across scikit-learn patch differences (1.9.0 vs 1.9.1)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">InconsistentVersionWarning</span><span class="p">)</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">'ignore'</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">)</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.xai.local</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalExplainerV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.xai.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEATURE_GROUPS</span><span class="p">,</span> <span class="n">FEATURE_MODIFIABILITY</span><span class="p">,</span> <span class="n">PATHS</span><span class="p">,</span> <span class="n">wilson_score_interval</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">REPORTS_DIR</span><span class="p">,</span> <span class="n">DATA_DIR</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"ReadmitIQ XAI Environment &amp; Local Explainer Engine Loaded."</span><span class="p">)</span>
 <span class="n">explainer</span> <span class="o">=</span> <span class="n">LocalExplainerV2</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'ReadmitIQ XAI Environment &amp; Local Explainer Engine Loaded.'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7845,18 +7859,6 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>ReadmitIQ XAI Environment &amp; Local Explainer Engine Loaded.
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator LabelEncoder from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
-C:\Users\ravik\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\sklearn\base.py:525: InconsistentVersionWarning: Trying to unpickle estimator IsotonicRegression from version 1.9.0 when using version 1.9.1. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
-https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
-  warnings.warn(
 </pre>
 </div>
 </div>
@@ -7928,7 +7930,13 @@ https://scikit-learn.org/stable/model_persistence.html#security-maintainability-
   Top Increasing Driver: Prior Inpatient Admissions (SHAP: +1.1939)
   Unrecorded Features Segregated: 5 fields
 
-[High Tier]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>[High Tier]
   Assigned Tier: Medium
   Raw Score / Margin: 0.5025 (Base: -0.1960)
   Calibrated 30-Day Risk: 19.4%
@@ -7944,13 +7952,7 @@ https://scikit-learn.org/stable/model_persistence.html#security-maintainability-
   Top Increasing Driver: Prior Inpatient Admissions (SHAP: +0.2202)
   Unrecorded Features Segregated: 5 fields
 
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>[Low Tier (Unrecorded Data Showcase)]
+[Low Tier (Unrecorded Data Showcase)]
   Assigned Tier: Low
   Raw Score / Margin: -0.1947 (Base: -0.1960)
   Calibrated 30-Day Risk: 10.8%

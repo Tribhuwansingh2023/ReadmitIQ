@@ -84,10 +84,16 @@ class LocalExplainerV2:
     """Production local explanation engine for single patient clinical encounters."""
 
     def __init__(self):
+        import json
+        import warnings
+        from sklearn.exceptions import InconsistentVersionWarning
         import joblib
 
-        self.model = joblib.load(PATHS["model"])
-        self.calibrator = joblib.load(PATHS["calibrator"])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=InconsistentVersionWarning)
+            warnings.simplefilter("ignore", category=UserWarning)
+            self.model = joblib.load(PATHS["model"])
+            self.calibrator = joblib.load(PATHS["calibrator"])
         with open(PATHS["feature_list"], "r", encoding="utf-8") as f:
             meta = json.load(f)
         self.num_cols = meta["numeric_features"]
