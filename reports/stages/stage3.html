@@ -7982,13 +7982,7 @@ ChromaDB version: 1.5.9
 <pre>================================================================================
 SYNTHETIC CLINICAL DISCHARGE NOTES (3 SAMPLE ENCOUNTERS)
 ================================================================================
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>
+
 [Case 1] Encounter ID: 2278392 | Patient ID: 8222157
 Demographics: 5yo Female | Stay: 1 days | Primary Diag: diabetes
 Utilization: 0 ER visits | 41 Labs | 1 Medications
@@ -8483,9 +8477,12 @@ Takeaway: Embedding source audit identified partial-split note embeddings (13,90
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ChromaDB persistent collection '</span><span class="si">{</span><span class="n">coll_name</span><span class="si">}</span><span class="s2">' initialized. Current count: </span><span class="si">{</span><span class="n">existing_count</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-<span class="c1"># Populate collection if needed</span>
-<span class="k">if</span> <span class="n">existing_count</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Populating collection with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> training encounters..."</span><span class="p">)</span>
+<span class="c1"># Populate collection with checkpoint resumption support (idempotent upsert)</span>
+<span class="k">if</span> <span class="n">existing_count</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">existing_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Resuming ChromaDB indexing from checkpoint: </span><span class="si">{</span><span class="n">existing_count</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> encounters already indexed."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Populating collection with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> training encounters..."</span><span class="p">)</span>
     <span class="n">t0_pop</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="mi">5000</span>
     <span class="n">n_tr</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
@@ -8495,7 +8492,7 @@ Takeaway: Embedding source audit identified partial-split note embeddings (13,90
     <span class="n">stays</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s2">"time_in_hospital"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     <span class="n">diags</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s2">"diag_1_group"</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
     
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_tr</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">existing_count</span><span class="p">,</span> <span class="n">n_tr</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
         <span class="n">end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">n_tr</span><span class="p">)</span>
         <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"enc_</span><span class="si">{</span><span class="n">encs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">end</span><span class="p">)]</span>
         <span class="n">embs</span> <span class="o">=</span> <span class="n">X_tr_svd</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">end</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
@@ -8509,11 +8506,11 @@ Takeaway: Embedding source audit identified partial-split note embeddings (13,90
             <span class="p">}</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span>
         <span class="p">]</span>
-        <span class="n">coll</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="n">embs</span><span class="p">,</span> <span class="n">metadatas</span><span class="o">=</span><span class="n">metas</span><span class="p">)</span>
+        <span class="n">coll</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">=</span><span class="n">embs</span><span class="p">,</span> <span class="n">metadatas</span><span class="o">=</span><span class="n">metas</span><span class="p">)</span>
     <span class="n">pop_duration</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0_pop</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Successfully populated </span><span class="si">{</span><span class="n">coll</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> encounters in </span><span class="si">{</span><span class="n">pop_duration</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s!"</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Collection already fully populated with </span><span class="si">{</span><span class="n">coll</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> encounters."</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Collection already fully populated with </span><span class="si">{</span><span class="n">coll</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> encounters (100% complete; checkpoint validated)."</span><span class="p">)</span>
 
 <span class="c1"># Audit disk footprint</span>
 <span class="n">sqlite_file</span> <span class="o">=</span> <span class="n">chroma_dir</span> <span class="o">/</span> <span class="s2">"chroma.sqlite3"</span>
@@ -8560,17 +8557,17 @@ https://scikit-learn.org/stable/model_persistence.html#security-maintainability-
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Transformed 69,535 train encounters into 64-dim SVD vectors in 0.64s.
+<pre>Transformed 69,535 train encounters into 64-dim SVD vectors in 0.71s.
 SVD matrix shape: (69535, 64) | Unit norm check: 1.0000
+ChromaDB persistent collection 'train_collection_stage3' initialized. Current count: 69,535
+Collection already fully populated with 69,535 encounters (100% complete; checkpoint validated).
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>ChromaDB persistent collection 'train_collection_stage3' initialized. Current count: 69,535
-Collection already fully populated with 69,535 encounters.
-Collection status: 69,535 items indexed | SQLite database: 42.43 MB
+<pre>Collection status: 69,535 items indexed | SQLite database: 42.43 MB
 Active retriever: [Structured SVD Retriever (64-dim Latent Space)]
 Takeaway: Constructed persistent ChromaDB collection in models/stages/chroma_stage3 holding all 69,535 training encounters across 64 latent dimensions. Total disk footprint is 42.4 MB.
 </pre>
@@ -8875,7 +8872,7 @@ Takeaway: 5-fold patient-grouped out-of-fold retrieval yields stable precedent r
 <td>99.85%</td>
 <td>0.000016</td>
 <td>200/200 (100.0%)</td>
-<td>1.13s (176.6 queries/s)</td>
+<td>1.45s (138.0 queries/s)</td>
 </tr>
 </tbody>
 </table>
