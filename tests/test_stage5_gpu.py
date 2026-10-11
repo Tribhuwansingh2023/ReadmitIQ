@@ -1,7 +1,7 @@
 """Tests for Stage 5 GPU detection, banner rendering, and notebook integrity."""
 import json
 from pathlib import Path
-import pytest
+
 from notebooks.stages._stage_helpers import (
     get_local_gpu_info,
     render_gpu_active_banner,

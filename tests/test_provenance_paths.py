@@ -1,7 +1,7 @@
 """Test verification of headline provenance paths in ReadmitIQ."""
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

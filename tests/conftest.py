@@ -10,9 +10,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-try:
-    import faiss
-except (ImportError, Exception):
+import importlib.util
+
+if importlib.util.find_spec("faiss") is None:
     import numpy as np
 
     class _FallbackIndex:

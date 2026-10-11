@@ -4,7 +4,7 @@ clinical data leakage, patient/encounter split isolation, and metric consistency
 
 import json
 import re
-from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -17,13 +17,10 @@ from src.config import (
     METRICS_DIR,
     MODELS_DIR,
     PROCESSED_DATA_DIR,
-    RANDOM_SEED,
     TEST_PARQUET,
     TRAIN_PARQUET,
     VAL_PARQUET,
 )
-from src.evaluate import evaluate_predictions
-
 
 # -----------------------------------------------------------------------------
 # 1. Metric Calculation & Tie-Breaking Correctness Tests
@@ -64,7 +61,7 @@ def test_compute_roc_auc_exact_sklearn_agreement():
 
 def test_roc_auc_row_order_invariance():
     """Verify compute_roc_auc is invariant to array order reversal on tied scores.
-    
+
     The old flawed implementation used arbitrary argsort index ordering for ties,
     which caused AUC to fluctuate depending on row sorting. The fix guarantees invariance.
     """

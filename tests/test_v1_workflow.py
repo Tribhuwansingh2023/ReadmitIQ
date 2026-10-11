@@ -1,9 +1,8 @@
 import io
 import json
-from pathlib import Path
-from fastapi.testclient import TestClient
-import numpy as np
+
 import pytest
+from fastapi.testclient import TestClient
 
 from api.database import get_db, init_db
 from api.main import app

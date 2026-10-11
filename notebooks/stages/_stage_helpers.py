@@ -15,10 +15,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+class _FallbackHTML:
+    """Lightweight fallback for IPython.display.HTML supporting .data and string representation."""
+    def __init__(self, data: str = ""):
+        self.data = str(data)
+
+    def _repr_html_(self) -> str:
+        return self.data
+
+    def __str__(self) -> str:
+        return self.data
+
+
 try:
     from IPython.display import HTML, display
 except ImportError:
-    HTML = None
+    HTML = _FallbackHTML
     display = print
 from sklearn.exceptions import InconsistentVersionWarning
 

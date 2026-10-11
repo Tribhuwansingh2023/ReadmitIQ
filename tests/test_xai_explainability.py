@@ -18,13 +18,17 @@ Covers all 12 critical verification requirements:
 import json
 from pathlib import Path
 from typing import Any, Dict
+
 import pytest
 from fastapi.testclient import TestClient
 
+from api.database import init_db
 from api.main import app
-from api.database import get_db, init_db
-from api.service import get_service
-from src.explain import ModelExplainer, generate_plain_english_summary, check_explanation_reliability
+from src.explain import (
+    ModelExplainer,
+    check_explanation_reliability,
+    generate_plain_english_summary,
+)
 
 
 @pytest.fixture

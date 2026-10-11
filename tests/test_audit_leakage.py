@@ -71,7 +71,8 @@ def test_train_fitting_invariance_under_perturbed_validation():
     num_cols = [c for c in meta["numeric_features"] if c != "rag_struct_rate_k20"]
     cat_cols = meta["categorical_features"]
 
-    train_df = pd.read_parquet(TRAIN_PARQUET)
+    # Use representative sample (2000 rows) to verify pipeline invariance without unbounded RAM spike
+    train_df = pd.read_parquet(TRAIN_PARQUET).head(2000)
 
     # 1. Fit reference preprocessor on clean train
     pipe_clean = build_preprocessor(num_cols, cat_cols)

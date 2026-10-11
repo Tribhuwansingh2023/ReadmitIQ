@@ -11,14 +11,11 @@ Validates:
 - Data Quality Ingestion & Rejection Logging
 """
 
-import json
-from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from api.database import get_db, init_db
+from api.database import init_db
 from api.main import app
-from api.service import get_service
 
 client = TestClient(app)
 

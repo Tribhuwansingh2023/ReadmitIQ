@@ -1,7 +1,7 @@
 """Tests for Step 0: Scoring correctness, raw-score cutoffs, and test split audit."""
 
 import json
-from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -78,7 +78,7 @@ def test_isotonic_plateaus_vs_raw_score_cardinality(artifacts):
 
 def test_test_split_ranking_audit(artifacts):
     """Audit rank-based top-5/10/20% caught counts on held-out test split.
-    
+
     Examines difference between quicksort on calibrated probabilities (test_results.json)
     and true raw-score ranking with deterministic encounter_id tie-breaking.
     """
