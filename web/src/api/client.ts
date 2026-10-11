@@ -28,10 +28,14 @@ const getApiBaseUrl = () => {
     if ((hostname === "localhost" || hostname === "127.0.0.1") && window.location.port === "5173") {
       return `http://${hostname}:8000`;
     }
-    // In multi-service deployments (e.g. Vercel, Docker Nginx proxy), use same-origin relative URLs
+    // When hosted on Vercel, default to the live Render backend if VITE_API_BASE_URL is not set
+    if (hostname.endsWith("vercel.app")) {
+      return "https://readmitiq-wlw1.onrender.com";
+    }
+    // In multi-service deployments (e.g. Docker Nginx proxy), use same-origin relative URLs
     return "";
   }
-  return "http://127.0.0.1:8000";
+  return "https://readmitiq-wlw1.onrender.com";
 };
 
 export const API_BASE_URL = getApiBaseUrl();
