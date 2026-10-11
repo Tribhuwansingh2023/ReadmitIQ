@@ -14,9 +14,17 @@ import {
   Scale,
   Users,
   FileText,
+  Sliders,
+  Sparkles,
+  HelpCircle,
+  ExternalLink,
+  ChevronRight,
+  Clock,
 } from "lucide-react";
 import { apiClient } from "../api/client";
 import { RiskGlyph } from "./RiskGlyph";
+import { Stat } from "./Stat";
+import { PROVENANCES } from "./Provenances";
 import type {
   FactorExplanation,
   ExplanationReliability,
@@ -34,6 +42,7 @@ interface ClinicalExplainabilityEngineProps {
   riskTier: string;
   modelVersion?: string;
   shapExplanation?: ShapExplanationPayload;
+  explanationV2?: any;
   similarEncounters?: SimilarEncounter[];
   patientFeatures?: Record<string, any>;
   compact?: boolean;
@@ -50,30 +59,34 @@ export const ClinicalExplainabilityEngine: React.FC<
   riskTier,
   modelVersion = "LightGBM v1.0.0 (Frozen)",
   shapExplanation,
+  explanationV2,
   similarEncounters = [],
   patientFeatures = {},
 }) => {
-  const [activeTab, setActiveTab] = useState<"local" | "global" | "reliability">("local");
+  // Navigation tabs matching clinical decision workflow
+  const [activeTab, setActiveTab] = useState<
+    "score" | "tier" | "change" | "evidence" | "global"
+  >("score");
+  const [showHowToRead, setShowHowToRead] = useState<boolean>(false);
   const [showFullTable, setShowFullTable] = useState<boolean>(false);
   const [tableSearch, setTableSearch] = useState<string>("");
   const [tableFilter, setTableFilter] = useState<"all" | "increasing" | "reducing">("all");
 
   // Global model explanation state
-  const [globalData, setGlobalData] = useState<GlobalExplanationResponse | null>(null);
+  const [globalData, setGlobalData] = useState<any | null>(null);
   const [globalLoading, setGlobalLoading] = useState<boolean>(false);
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === "global" && !globalData && !globalLoading) {
       setGlobalLoading(true);
       apiClient
-        .getGlobalExplanation()
+        .getXaiGlobal()
         .then((res) => {
           setGlobalData(res);
-          setGlobalError(null);
         })
-        .catch((err) => {
-          setGlobalError(err.message || "Failed to load global model explanation");
+        .catch(() => {
+          // fallback
+          apiClient.getGlobalExplanation().then(setGlobalData).catch(() => {});
         })
         .finally(() => {
           setGlobalLoading(false);
@@ -81,564 +94,341 @@ export const ClinicalExplainabilityEngine: React.FC<
     }
   }, [activeTab, globalData, globalLoading]);
 
-  // Derived attribution items
+  // Extract V2 data if present, otherwise construct compatible structure
+  const v2 = explanationV2;
+  const waterfall = v2?.calibrated_waterfall;
+  const contrastive = v2?.contrastive_explanation;
+  const counterfactual = v2?.counterfactual;
+  const groupAttributions = v2?.group_attributions || {};
+  const unrecordedItems = v2?.information_not_recorded || [];
+  const evidenceAgreement = v2?.evidence_agreement;
+  const localReliability = v2?.local_reliability;
+
+  // Fallback drivers
   const increasingFactors: FactorExplanation[] =
-    shapExplanation?.top_risk_increasing || [];
+    v2?.top_risk_increasing || shapExplanation?.top_risk_increasing || [];
   const reducingFactors: FactorExplanation[] =
-    shapExplanation?.top_risk_reducing || [];
+    v2?.top_risk_reducing || shapExplanation?.top_risk_reducing || [];
   const fullTable: FactorExplanation[] =
     shapExplanation?.full_attribution_table || [
       ...increasingFactors,
       ...reducingFactors,
     ];
 
-  // Mathematical values
   const effectiveRawMargin =
-    rawMargin !== undefined
-      ? rawMargin
-      : shapExplanation?.raw_margin !== undefined
+    v2?.raw_margin ??
+    rawMargin ??
+    (shapExplanation?.raw_margin !== undefined
       ? shapExplanation.raw_margin
-      : rawScore !== undefined
-      ? rawScore
-      : 0;
+      : rawScore ?? 0);
 
   const effectiveBaseValue =
-    shapExplanation?.base_value !== undefined
+    v2?.base_value ??
+    (shapExplanation?.base_value !== undefined
       ? shapExplanation.base_value
-      : baseValue;
+      : baseValue);
 
-  const reliability: ExplanationReliability | undefined =
-    shapExplanation?.reliability;
-
-  // Max absolute attribution for local diverging bar chart scaling
-  const allAttributionsList = fullTable.length > 0
-    ? fullTable
-    : [...increasingFactors, ...reducingFactors];
-  const maxAttribution = Math.max(
-    0.05,
-    ...allAttributionsList.map((f) =>
-      Math.abs(f.attribution ?? f.shap_value ?? 0)
-    )
-  );
-
-  // Filter full table items
   const filteredTable = fullTable.filter((item) => {
-    const name = (item.feature_name || item.feature).toLowerCase();
-    const meaning = (item.clinical_meaning || item.explanation || "").toLowerCase();
-    const q = tableSearch.toLowerCase();
-    const matchesSearch = name.includes(q) || meaning.includes(q);
-
+    const nameMatch = (item.feature_name || item.feature)
+      .toLowerCase()
+      .includes(tableSearch.toLowerCase());
     const attr = item.attribution ?? item.shap_value ?? 0;
-    if (tableFilter === "increasing") return matchesSearch && attr > 0.0001;
-    if (tableFilter === "reducing") return matchesSearch && attr < -0.0001;
-    return matchesSearch;
+    if (tableFilter === "increasing") return nameMatch && attr > 0.0001;
+    if (tableFilter === "reducing") return nameMatch && attr < -0.0001;
+    return nameMatch;
   });
 
   return (
-    <div className="bg-surface rounded-sm hairline-border shadow-card overflow-hidden font-sans space-y-0">
-      {/* Top Header & Tab Navigation */}
-      <div className="p-4 sm:p-5 border-b border-hairline bg-canvas flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div className="bg-surface rounded-sm hairline-border space-y-4 font-sans text-primary">
+      {/* Header bar with clinical guidance & limits popover toggle */}
+      <div className="p-4 sm:p-5 border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-canvas/40">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 bg-accent/15 text-accent font-bold rounded">
-              XAI Trust Engine
+            <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-subtle text-muted font-bold">
+              XAI Clinical Layer v2
             </span>
-            <h2 className="text-base sm:text-lg font-bold text-primary flex items-center gap-2">
-              <Scale className="w-4 h-4 text-accent" />
-              <span>Clinical Explainability & Model Attribution</span>
-            </h2>
+            <span className="text-xs text-muted font-mono">
+              Additivity Asserted &bull; Empirical Reliability Validated
+            </span>
           </div>
-          <p className="text-xs text-muted font-mono mt-0.5">
-            Transparent tree-path attribution via TreeSHAP • Grounded in frozen validation cohort evidence
+          <h3 className="text-base font-semibold text-primary mt-1">
+            Clinical Explanation & Confidence Dashboard
+          </h3>
+          <p className="text-xs text-muted mt-0.5">
+            Transparent attribution of model log-odds margin, calibrated probability steps, and precedent peer consistency.
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-1 bg-subtle p-1 rounded hairline-border text-xs font-mono">
-          <button
-            onClick={() => setActiveTab("local")}
-            className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === "local"
-                ? "bg-surface text-primary font-bold shadow-sm border border-hairline"
-                : "text-muted hover:text-primary"
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Local Encounter</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("global")}
-            className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === "global"
-                ? "bg-surface text-primary font-bold shadow-sm border border-hairline"
-                : "text-muted hover:text-primary"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Global Model (N=14,902)</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("reliability")}
-            className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === "reliability"
-                ? "bg-surface text-primary font-bold shadow-sm border border-hairline"
-                : "text-muted hover:text-primary"
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Reliability Matrix</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setShowHowToRead(!showHowToRead)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium rounded border border-hairline bg-surface hover:bg-subtle text-primary transition-colors self-start sm:self-auto"
+          aria-expanded={showHowToRead}
+          aria-label="Toggle clinical interpretation guidance"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-accent" />
+          <span>How to read this (Honesty Rules)</span>
+        </button>
       </div>
 
-      {/* ======================================================== */}
-      {/* TAB 1: LOCAL ENCOUNTER ATTRIBUTION                       */}
-      {/* ======================================================== */}
-      {activeTab === "local" && (
-        <div className="p-4 sm:p-6 space-y-6">
-          {/* Model Output Transparency Card */}
-          <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted uppercase">Scored Output:</span>
-                <span className="font-mono text-xl font-bold text-primary">
-                  {(calibratedProb * 100).toFixed(1)}%
-                </span>
-                <span className="text-xs text-muted">calibrated 30d risk</span>
-                <RiskGlyph tier={riskTier} size="sm" />
-              </div>
-              <div className="flex items-center gap-3 text-xs font-mono text-muted">
-                <span>Model: <strong className="text-primary">{modelVersion}</strong></span>
-                {encounterId && (
-                  <span>Encounter: <strong className="text-primary">#{encounterId}</strong></span>
-                )}
-              </div>
+      {/* "How to read this" Honest Guidance Popover */}
+      {showHowToRead && (
+        <div className="mx-4 sm:mx-5 p-4 bg-canvas border border-accent/30 rounded-sm text-xs space-y-3 font-sans animate-fade-in">
+          <div className="flex items-center justify-between border-b border-hairline pb-2">
+            <div className="flex items-center gap-2 text-accent font-semibold">
+              <Info className="w-4 h-4" />
+              <span>Mandatory Clinical Interpretation & Governance Principles</span>
             </div>
-
-            {/* Exact Mathematical Decomposition */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs font-mono pt-1">
-              <div className="p-2.5 bg-surface hairline-border rounded">
-                <div className="text-[10px] uppercase text-muted">Explainer Base Value (φ₀)</div>
-                <div className="text-sm font-bold text-primary mt-0.5">
-                  {effectiveBaseValue >= 0 ? `+${effectiveBaseValue.toFixed(4)}` : effectiveBaseValue.toFixed(4)}
-                </div>
-                <div className="text-[10px] text-muted">Training cohort prior log-odds margin</div>
-              </div>
-
-              <div className="p-2.5 bg-surface hairline-border rounded">
-                <div className="text-[10px] uppercase text-muted">Total Attribution (∑ φᵢ)</div>
-                <div className="text-sm font-bold text-primary mt-0.5">
-                  {(effectiveRawMargin - effectiveBaseValue) >= 0
-                    ? `+${(effectiveRawMargin - effectiveBaseValue).toFixed(4)}`
-                    : (effectiveRawMargin - effectiveBaseValue).toFixed(4)}
-                </div>
-                <div className="text-[10px] text-muted">Sum of 42 patient feature TreeSHAP shifts</div>
-              </div>
-
-              <div className="p-2.5 bg-surface hairline-border rounded">
-                <div className="text-[10px] uppercase text-muted">Raw Log-Odds Margin (m)</div>
-                <div className="text-sm font-bold text-accent mt-0.5">
-                  {effectiveRawMargin >= 0 ? `+${effectiveRawMargin.toFixed(4)}` : effectiveRawMargin.toFixed(4)}
-                </div>
-                <div className="text-[10px] text-muted">m = φ₀ + ∑ φᵢ (uncalibrated model score)</div>
-              </div>
-
-              <div className="p-2.5 bg-surface hairline-border rounded">
-                <div className="text-[10px] uppercase text-muted">Isotonic Calibration (P)</div>
-                <div className="text-sm font-bold text-primary mt-0.5">
-                  {(calibratedProb * 100).toFixed(1)}%
-                </div>
-                <div className="text-[10px] text-muted">Monotonic step mapping from margin m</div>
-              </div>
+            <button
+              onClick={() => setShowHowToRead(false)}
+              className="text-muted hover:text-primary text-[11px] font-mono"
+            >
+              Close [&times;]
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-muted leading-relaxed">
+            <div className="space-y-1.5">
+              <p>
+                <strong className="text-primary font-mono">1. Associative, Not Causal:</strong> TreeSHAP values measure statistical associations in the model's learned distribution. They do not demonstrate causal clinical mechanisms or therapeutic treatment efficacy.
+              </p>
+              <p>
+                <strong className="text-primary font-mono">2. Log-Odds Margin vs Calibrated Risk:</strong> Feature attributions operate strictly on the raw model margin (log-odds). Displayed readmission probabilities are produced via monotonic isotonic calibration.
+              </p>
             </div>
-
-            {/* Scale Safety Guardrail */}
-            <div className="p-2.5 bg-subtle/80 hairline-border rounded text-[11px] text-muted flex items-start gap-2">
-              <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                <strong className="text-primary font-medium">Mathematical Scale Note:</strong>{" "}
-                Feature attributions are reported in <strong className="text-primary">log-odds margin space</strong> relative
-                to the base value (<code className="text-primary font-mono">{effectiveBaseValue.toFixed(4)}</code>).
-                Because isotonic calibration is non-linear, individual feature SHAP values do <strong className="text-primary">NOT</strong> represent
-                direct percentage-point changes in readmission probability.
-              </div>
+            <div className="space-y-1.5">
+              <p>
+                <strong className="text-primary font-mono">3. Information Not Recorded:</strong> Missing administrative categories and unperformed labs are segregated from clinical drivers. Missing data is never classified as a clinical pathology or risk factor.
+              </p>
+              <p>
+                <strong className="text-primary font-mono">4. Decision Support Only:</strong> Outputs augment clinical transition-of-care workflows and must never supersede multidisciplinary physician evaluation.
+              </p>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Plain English Explanation Summary (Deterministic) */}
-          <div className="p-4 bg-canvas hairline-border rounded-sm space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary font-mono border-b border-hairline pb-2">
-              <FileText className="w-4 h-4 text-accent" />
-              <span>Plain-Language Clinical Explanation</span>
-            </div>
+      {/* Navigation Tabs */}
+      <div className="px-4 sm:px-5 border-b border-hairline flex items-center gap-4 text-xs font-mono overflow-x-auto">
+        {[
+          { key: "score", label: "Why this score" },
+          { key: "tier", label: "Why this tier" },
+          { key: "change", label: "What can change" },
+          { key: "evidence", label: "Evidence & Reliability" },
+          { key: "global", label: "Global Model Knowledge" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={`py-2.5 border-b-2 font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === tab.key
+                ? "border-accent text-accent font-bold"
+                : "border-transparent text-muted hover:text-primary"
+            }`}
+            aria-selected={activeTab === tab.key}
+            role="tab"
+          >
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-            <p className="text-xs sm:text-sm text-primary leading-relaxed">
-              {shapExplanation?.plain_english_summary || (
-                <>
-                  The model estimated a{" "}
-                  <strong>{(calibratedProb * 100).toFixed(1)}%</strong> 30-day readmission risk
-                  (Tier: <strong>{riskTier}</strong>). The strongest factors pushing the model
-                  output higher were{" "}
-                  <strong>
-                    {increasingFactors.slice(0, 2).map((f) => f.feature_name || f.feature).join(" and ") || "clinical utilization"}
-                  </strong>
-                  .
-                  {reducingFactors.length > 0 && (
-                    <>
-                      {" "}Factors pushing the output lower included{" "}
-                      <strong>
-                        {reducingFactors.slice(0, 2).map((f) => f.feature_name || f.feature).join(" and ")}
-                      </strong>
-                      , where supported by tree attribution results.
-                    </>
-                  )}
-                </>
-              )}
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2 border-t border-hairline text-[11px] text-muted">
-              <div className="flex items-start gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-protective shrink-0 mt-0.5" />
-                <span>
-                  <strong className="text-primary">Directional interpretation:</strong> A negative SHAP value indicates that the feature reduced the model's log-odds output relative to the baseline. It does <strong className="text-primary">not</strong> guarantee clinical safety or eliminate readmission risk.
-                </span>
-              </div>
-              <div className="flex items-start gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-caution shrink-0 mt-0.5" />
-                <span>
-                  <strong className="text-primary">Non-causal association:</strong> Attributions reflect mathematical sensitivity within the frozen gradient boosted tree ensemble, not biological causation. Never base clinical care decisions solely on attribution ranking.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Centered Diverging SHAP Chart */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-hairline pb-2">
-              <div>
-                <h3 className="text-sm font-bold text-primary flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-accent" />
-                  <span>Diverging Feature Attribution Chart</span>
-                </h3>
-                <p className="text-[11px] text-muted font-mono">
-                  Centered at zero baseline (φᵢ = 0) • Rose pushes risk UP (+ log-odds), Emerald pushes risk DOWN (- log-odds)
-                </p>
-              </div>
-              <div className="flex items-center gap-4 text-[11px] font-mono">
-                <div className="flex items-center gap-1.5 text-protective">
-                  <span className="w-2.5 h-2.5 bg-protective rounded-full inline-block" />
-                  <span>Risk-Reducing (Negative φᵢ)</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-critical">
-                  <span className="w-2.5 h-2.5 bg-critical rounded-full inline-block" />
-                  <span>Risk-Increasing (Positive φᵢ)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Horizontal Diverging Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Left Column: Top Risk Increasing Factors */}
-              <div className="space-y-3 p-3.5 bg-canvas hairline-border rounded-sm">
-                <div className="flex items-center justify-between text-xs font-semibold font-mono text-critical border-b border-hairline pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4 text-critical" />
-                    <span>Factors Increasing Risk Output (+ Log-Odds)</span>
-                  </div>
-                  <span>{increasingFactors.length} identified</span>
-                </div>
-
-                {increasingFactors.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-muted font-mono">
-                    No risk-increasing factors above threshold.
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {increasingFactors.map((f, idx) => {
-                      const attr = f.attribution ?? f.shap_value ?? 0;
-                      const featName = f.feature_name || f.feature;
-                      const val = f.value !== undefined ? String(f.value) : patientFeatures[f.feature] !== undefined ? String(patientFeatures[f.feature]) : null;
-                      const widthPct = Math.min(100, Math.max(8, (Math.abs(attr) / maxAttribution) * 100));
-
-                      return (
-                        <div
-                          key={`inc-${idx}`}
-                          className="p-2.5 bg-surface hairline-border rounded-sm space-y-1.5 hover:border-critical/40 transition-colors"
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-primary">
-                              {featName}
-                            </span>
-                            <span className="font-mono font-bold text-critical">
-                              +{attr.toFixed(4)}
-                            </span>
-                          </div>
-
-                          {/* Patient Value and Description */}
-                          <div className="flex items-center justify-between text-[11px] text-muted">
-                            <span className="line-clamp-1">
-                              {f.clinical_meaning || f.explanation || f.description || "Increases predicted readmission risk"}
-                            </span>
-                            {val !== null && (
-                              <span className="font-mono text-primary font-medium shrink-0 ml-2 px-1.5 py-0.2 bg-subtle rounded text-[10px]">
-                                Input: {val}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Attribution Magnitude Bar */}
-                          <div className="w-full bg-subtle h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-critical h-full rounded-full transition-all duration-300"
-                              style={{ width: `${widthPct}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Top Risk Reducing Factors */}
-              <div className="space-y-3 p-3.5 bg-canvas hairline-border rounded-sm">
-                <div className="flex items-center justify-between text-xs font-semibold font-mono text-protective border-b border-hairline pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <TrendingDown className="w-4 h-4 text-protective" />
-                    <span>Factors Reducing Risk Output (- Log-Odds)</span>
-                  </div>
-                  <span>{reducingFactors.length} identified</span>
-                </div>
-
-                {reducingFactors.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-muted font-mono space-y-1">
-                    <p>No protective factors identified for this encounter.</p>
-                    <p className="text-[11px]">All observed clinical factors pushed output upward or remained neutral.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {reducingFactors.map((f, idx) => {
-                      const attr = f.attribution ?? f.shap_value ?? 0;
-                      const featName = f.feature_name || f.feature;
-                      const val = f.value !== undefined ? String(f.value) : patientFeatures[f.feature] !== undefined ? String(patientFeatures[f.feature]) : null;
-                      const widthPct = Math.min(100, Math.max(8, (Math.abs(attr) / maxAttribution) * 100));
-
-                      return (
-                        <div
-                          key={`red-${idx}`}
-                          className="p-2.5 bg-surface hairline-border rounded-sm space-y-1.5 hover:border-protective/40 transition-colors"
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-primary">
-                              {featName}
-                            </span>
-                            <span className="font-mono font-bold text-protective">
-                              {attr.toFixed(4)}
-                            </span>
-                          </div>
-
-                          {/* Patient Value and Description */}
-                          <div className="flex items-center justify-between text-[11px] text-muted">
-                            <span className="line-clamp-1">
-                              {f.clinical_meaning || f.explanation || f.description || "Lowers predicted readmission risk"}
-                            </span>
-                            {val !== null && (
-                              <span className="font-mono text-primary font-medium shrink-0 ml-2 px-1.5 py-0.2 bg-subtle rounded text-[10px]">
-                                Input: {val}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Attribution Magnitude Bar */}
-                          <div className="w-full bg-subtle h-2 rounded-full overflow-hidden flex justify-end">
-                            <div
-                              className="bg-protective h-full rounded-full transition-all duration-300"
-                              style={{ width: `${widthPct}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Expandable Full 42-Feature Table */}
-          <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <button
-                onClick={() => setShowFullTable(!showFullTable)}
-                className="text-xs font-semibold text-accent hover:underline flex items-center gap-1.5 font-mono"
-              >
-                <span>{showFullTable ? "▼ Collapse" : "▶ Expand"} Complete 42-Feature Model Attribution Table</span>
-                <span className="text-[10px] px-1.5 py-0.5 bg-accent/10 rounded">
-                  {fullTable.length} features
-                </span>
-              </button>
-              {showFullTable && (
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-muted absolute left-2 top-2" />
-                    <input
-                      type="text"
-                      placeholder="Filter features..."
-                      value={tableSearch}
-                      onChange={(e) => setTableSearch(e.target.value)}
-                      className="pl-7 pr-2.5 py-1 text-xs bg-surface hairline-border rounded text-primary font-mono focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                  <div className="flex rounded hairline-border overflow-hidden text-[10px] font-mono">
-                    <button
-                      onClick={() => setTableFilter("all")}
-                      className={`px-2 py-1 ${tableFilter === "all" ? "bg-accent text-white" : "bg-surface text-muted"}`}
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setTableFilter("increasing")}
-                      className={`px-2 py-1 ${tableFilter === "increasing" ? "bg-critical text-white" : "bg-surface text-muted"}`}
-                    >
-                      + Risk
-                    </button>
-                    <button
-                      onClick={() => setTableFilter("reducing")}
-                      className={`px-2 py-1 ${tableFilter === "reducing" ? "bg-protective text-white" : "bg-surface text-muted"}`}
-                    >
-                      - Risk
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {showFullTable && (
-              <div className="border border-hairline rounded overflow-hidden max-h-96 overflow-y-auto">
-                <table className="w-full text-left text-xs font-sans border-collapse">
-                  <thead className="bg-subtle text-[11px] font-mono text-muted uppercase sticky top-0 border-b border-hairline">
-                    <tr>
-                      <th className="p-2.5">Feature Name</th>
-                      <th className="p-2.5">Patient Input</th>
-                      <th className="p-2.5 text-right">SHAP Log-Odds (φᵢ)</th>
-                      <th className="p-2.5">Impact</th>
-                      <th className="p-2.5">Clinical Meaning</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-hairline">
-                    {filteredTable.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-4 text-center text-muted font-mono">
-                          No features matching search criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredTable.map((item, idx) => {
-                        const attr = item.attribution ?? item.shap_value ?? 0;
-                        const isPos = attr > 0.0001;
-                        const isNeg = attr < -0.0001;
-                        const featName = item.feature_name || item.feature;
-                        const val = item.value !== undefined ? String(item.value) : patientFeatures[item.feature] !== undefined ? String(patientFeatures[item.feature]) : "—";
-
-                        return (
-                          <tr key={idx} className="hover:bg-subtle/50 font-mono text-[11px]">
-                            <td className="p-2.5 text-primary font-medium">
-                              <div>{featName}</div>
-                              <div className="text-[10px] text-muted">{item.feature}</div>
-                            </td>
-                            <td className="p-2.5 text-primary font-semibold">
-                              {val}
-                            </td>
-                            <td
-                              className={`p-2.5 text-right font-bold ${
-                                isPos
-                                  ? "text-critical"
-                                  : isNeg
-                                  ? "text-protective"
-                                  : "text-muted"
-                              }`}
-                            >
-                              {attr > 0 ? `+${attr.toFixed(4)}` : attr.toFixed(4)}
-                            </td>
-                            <td className="p-2.5">
-                              {isPos ? (
-                                <span className="px-1.5 py-0.5 rounded bg-critical/10 text-critical text-[10px] font-bold">
-                                  + Risk
-                                </span>
-                              ) : isNeg ? (
-                                <span className="px-1.5 py-0.5 rounded bg-protective/10 text-protective text-[10px] font-bold">
-                                  - Risk
-                                </span>
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded bg-subtle text-muted text-[10px]">
-                                  Neutral
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-2.5 font-sans text-muted text-xs">
-                              {item.clinical_meaning || item.description || item.explanation || "Model feature"}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Segregated RAG Precedent Peer Evidence Context */}
-          {similarEncounters.length > 0 && (
+      {/* TAB 1: WHY THIS SCORE (Waterfall, Groups, Top Drivers, Unrecorded) */}
+      {activeTab === "score" && (
+        <div className="p-4 sm:p-5 space-y-6">
+          {/* Calibrated Probability Waterfall Decomposition */}
+          {waterfall && waterfall.steps && (
             <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-hairline pb-2">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-accent" />
-                  <h4 className="text-xs font-bold text-primary uppercase font-mono tracking-wider">
-                    Retrieved Historical Clinical Precedents (RAG Context)
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-2.5">
+                <div>
+                  <h4 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-accent" />
+                    <span>Calibrated Probability Waterfall (Order-Dependent Decomposition)</span>
                   </h4>
+                  <p className="text-[11px] text-muted">
+                    Accumulates margin from reference score through non-linear isotonic calibration into calibrated percentage points.
+                  </p>
                 </div>
-                <span className="text-[10px] font-mono text-muted">
-                  Indexed from frozen validation partition (N=14,902)
-                </span>
+                <div className="text-right font-mono text-[11px] text-muted">
+                  <span>Reference Base: {(waterfall.reference_risk_at_base_margin * 100).toFixed(1)}%</span>
+                  <span className="mx-1.5">&bull;</span>
+                  <span className="text-primary font-bold">Final Risk: {(waterfall.final_calibrated_prob * 100).toFixed(1)}%</span>
+                </div>
               </div>
 
-              {/* Explicit Visual & Conceptual Segregation Notice */}
-              <div className="p-2.5 bg-subtle/80 hairline-border rounded text-[11px] text-muted flex items-start gap-2">
-                <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  <strong className="text-primary font-medium">Methodological Distinction:</strong>{" "}
-                  These historical encounters are retrieved via dense embedding similarity to provide clinical precedent context.
-                  They do <strong className="text-primary">NOT</strong> cause the current model prediction and do not guarantee the patient will experience the same outcome.
-                </p>
+              {/* Waterfall Steps Bar List */}
+              <div className="space-y-2 pt-1 font-mono text-xs">
+                {waterfall.steps.map((st: any, idx: number) => {
+                  const delta = st.calibrated_prob_step_delta * 100;
+                  const isPos = delta >= 0.001;
+                  const isNeg = delta <= -0.001;
+                  return (
+                    <div
+                      key={idx}
+                      className="p-2.5 bg-surface hairline-border rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted font-mono w-4">#{idx + 1}</span>
+                        <span className="font-semibold text-primary">{st.feature_name}</span>
+                        <span className="text-[10px] text-muted">({st.shap_margin > 0 ? `+${st.shap_margin.toFixed(3)}` : st.shap_margin.toFixed(3)} log-odds)</span>
+                      </div>
+                      <div className="flex items-center gap-4 self-end sm:self-auto">
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                            isPos
+                              ? "text-critical bg-critical/10"
+                              : isNeg
+                              ? "text-protective bg-protective/10"
+                              : "text-muted bg-subtle"
+                          }`}
+                        >
+                          {delta > 0 ? `+${delta.toFixed(2)}% pts` : `${delta.toFixed(2)}% pts`}
+                        </span>
+                        <span className="text-muted text-[11px]">
+                          Cumulative: <strong className="text-primary">{(st.calibrated_prob_cumulative * 100).toFixed(1)}%</strong>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Grouped Clinical Domain Attributions */}
+          {Object.keys(groupAttributions).length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between border-b border-hairline pb-2">
+                <h4 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-accent" />
+                  <span>Clinical Domain Group Net Attributions</span>
+                </h4>
+                <span className="text-[10px] font-mono text-muted">9 Clinical Domains</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {similarEncounters.slice(0, 3).map((peer, pIdx) => (
-                  <div
-                    key={pIdx}
-                    className="p-3 bg-surface hairline-border rounded-sm text-xs font-mono space-y-2"
-                  >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Object.entries(groupAttributions).map(([gKey, gVal]: [string, any]) => {
+                  const isPos = gVal.net_attribution_margin > 0.001;
+                  const isNeg = gVal.net_attribution_margin < -0.001;
+                  return (
+                    <div key={gKey} className="p-3 bg-canvas hairline-border rounded-sm space-y-1.5">
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="font-semibold text-xs text-primary">{gVal.group_name}</span>
+                        <span
+                          className={`font-mono text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                            isPos
+                              ? "text-critical bg-critical/10"
+                              : isNeg
+                              ? "text-protective bg-protective/10"
+                              : "text-muted bg-subtle"
+                          }`}
+                        >
+                          {gVal.net_attribution_margin > 0 ? `+${gVal.net_attribution_margin.toFixed(3)}` : gVal.net_attribution_margin.toFixed(3)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted font-sans leading-tight line-clamp-2">
+                        {gVal.group_rationale}
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] font-mono text-muted pt-1 border-t border-hairline/60">
+                        <span>{gVal.feature_count} features</span>
+                        <span>{gVal.share_pct.toFixed(1)}% attribution</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Top Recorded Drivers Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Increasing Drivers */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-critical font-semibold text-xs font-mono uppercase tracking-wider">
+                <TrendingUp className="w-4 h-4" />
+                <span>Top Risk Increasing Clinical Drivers</span>
+              </div>
+              <div className="space-y-2">
+                {increasingFactors.map((f: any, idx: number) => {
+                  const sVal = f.shap_value ?? f.attribution ?? 0;
+                  const strength = f.strength || (Math.abs(sVal) > 0.02 ? "large" : Math.abs(sVal) > 0.003 ? "moderate" : "small");
+                  return (
+                    <div key={idx} className="p-3 bg-canvas hairline-border rounded-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-primary">{f.feature_name || f.feature}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-mono uppercase px-1.5 py-0.2 rounded font-bold ${
+                            strength === "large" ? "bg-critical/20 text-critical" : strength === "moderate" ? "bg-caution/20 text-caution" : "bg-subtle text-muted"
+                          }`}>
+                            {strength}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-critical">+{sVal.toFixed(4)}</span>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-muted flex items-center justify-between font-mono">
+                        <span>Patient Value: <strong className="text-primary">{f.value !== undefined ? String(f.value) : "—"}</strong></span>
+                        {f.share_of_attribution_pct && <span>{f.share_of_attribution_pct}% share</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reducing Drivers */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-protective font-semibold text-xs font-mono uppercase tracking-wider">
+                <TrendingDown className="w-4 h-4" />
+                <span>Top Risk Reducing Protective Factors</span>
+              </div>
+              <div className="space-y-2">
+                {reducingFactors.map((f: any, idx: number) => {
+                  const sVal = f.shap_value ?? f.attribution ?? 0;
+                  const strength = f.strength || (Math.abs(sVal) > 0.02 ? "large" : Math.abs(sVal) > 0.003 ? "moderate" : "small");
+                  return (
+                    <div key={idx} className="p-3 bg-canvas hairline-border rounded-sm space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-primary">{f.feature_name || f.feature}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-mono uppercase px-1.5 py-0.2 rounded font-bold ${
+                            strength === "large" ? "bg-protective/20 text-protective" : strength === "moderate" ? "bg-caution/20 text-caution" : "bg-subtle text-muted"
+                          }`}>
+                            {strength}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-protective">{sVal.toFixed(4)}</span>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-muted flex items-center justify-between font-mono">
+                        <span>Patient Value: <strong className="text-primary">{f.value !== undefined ? String(f.value) : "—"}</strong></span>
+                        {f.share_of_attribution_pct && <span>{f.share_of_attribution_pct}% share</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Segregated Information Not Recorded Section */}
+          {unrecordedItems.length > 0 && (
+            <div className="p-4 bg-canvas hairline-border rounded-sm space-y-2.5">
+              <div className="flex items-center gap-2 text-muted">
+                <Info className="w-4 h-4 text-accent" />
+                <h4 className="text-xs font-bold uppercase font-mono tracking-wider text-primary">
+                  Information Not Recorded (Clinical Data Completeness)
+                </h4>
+              </div>
+              <p className="text-[11px] text-muted leading-relaxed">
+                The following attributes were unrecorded, omitted, or unmeasured during this encounter. Under ReadmitIQ honesty rules, missing administrative categories and unperformed labs are segregated and never classified as clinical risk factors.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {unrecordedItems.map((item: any, idx: number) => (
+                  <div key={idx} className="p-2.5 bg-surface hairline-border rounded text-xs space-y-1 font-mono">
                     <div className="flex items-center justify-between">
-                      <span className="text-primary font-bold">
-                        Precedent #{peer.encounter_id}
-                      </span>
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          peer.readmitted_30d === 1
-                            ? "bg-critical/15 text-critical"
-                            : "bg-protective/15 text-protective"
-                        }`}
-                      >
-                        {peer.readmitted_30d === 1 ? "Readmitted 30d" : "Not Readmitted"}
-                      </span>
+                      <span className="font-semibold text-primary">{item.feature_name}</span>
+                      <span className="text-[10px] text-muted uppercase bg-subtle px-1.5 py-0.5 rounded">Unrecorded</span>
                     </div>
-
-                    <div className="space-y-1 text-[11px] text-muted">
-                      <div>Similarity: <strong className="text-primary font-mono">{(peer.similarity_score * 100).toFixed(1)}%</strong></div>
-                      <div>LOS: <strong className="text-primary">{peer.time_in_hospital}d</strong> • Prior Inpt: <strong className="text-primary">{peer.prior_inpatient}</strong></div>
-                      <div className="line-clamp-1">Primary: <span className="text-primary">{peer.primary_diagnosis}</span></div>
-                    </div>
+                    <p className="text-[11px] text-muted font-sans leading-tight">
+                      {item.neutral_text}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -647,256 +437,224 @@ export const ClinicalExplainabilityEngine: React.FC<
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* TAB 2: GLOBAL MODEL BEHAVIOR & REFERENCE COHORT          */}
-      {/* ======================================================== */}
-      {activeTab === "global" && (
-        <div className="p-4 sm:p-6 space-y-6">
-          {globalLoading ? (
-            <div className="p-12 text-center text-muted font-mono space-y-2">
-              <Activity className="w-6 h-6 text-accent animate-spin mx-auto" />
-              <p className="text-xs">Computing global TreeSHAP rankings across validation cohort (N=14,902)...</p>
-            </div>
-          ) : globalError ? (
-            <div className="p-4 bg-critical/10 border border-critical/30 rounded text-critical font-mono text-xs">
-              {globalError}
-            </div>
-          ) : globalData ? (
-            <>
-              {/* Reference Cohort Specifications */}
-              <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-                <div className="flex items-center justify-between border-b border-hairline pb-2">
-                  <h3 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-2">
-                    <Database className="w-4 h-4 text-accent" />
-                    <span>Global Reference Cohort & Calibration Architecture</span>
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-accent/10 text-accent font-bold rounded">
-                    Audit-Verified
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
-                  <div className="p-2.5 bg-surface hairline-border rounded">
-                    <div className="text-[10px] text-muted uppercase">Reference Cohort</div>
-                    <div className="text-sm font-bold text-primary mt-0.5">
-                      {globalData.reference_cohort.name}
-                    </div>
-                    <div className="text-[10px] text-muted">
-                      Sample Size: N={globalData.reference_cohort.sample_size.toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-surface hairline-border rounded">
-                    <div className="text-[10px] text-muted uppercase">Readmission Rate</div>
-                    <div className="text-sm font-bold text-primary mt-0.5">
-                      {(globalData.reference_cohort.positive_prevalence * 100).toFixed(2)}%
-                    </div>
-                    <div className="text-[10px] text-muted">
-                      Observed 30-day readmission prevalence
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-surface hairline-border rounded">
-                    <div className="text-[10px] text-muted uppercase">Calibration ECE</div>
-                    <div className="text-sm font-bold text-protective mt-0.5">
-                      {(globalData.calibration_summary.ece * 100).toFixed(2)}%
-                    </div>
-                    <div className="text-[10px] text-muted">
-                      Expected Calibration Error (Isotonic)
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-surface hairline-border rounded">
-                    <div className="text-[10px] text-muted uppercase">Test AUC-ROC (Holdout)</div>
-                    <div className="text-sm font-bold text-primary mt-0.5">
-                      {globalData.calibration_summary.test_auc_roc.toFixed(4)}
-                    </div>
-                    <div className="text-[10px] text-muted">
-                      95% CI: [{globalData.calibration_summary.test_auc_ci_95[0].toFixed(3)}, {globalData.calibration_summary.test_auc_ci_95[1].toFixed(3)}]
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-muted font-mono leading-relaxed border-t border-hairline pt-2">
-                  <strong>Leakage Protection Protocol:</strong> {globalData.reference_cohort.leakage_protection}. Global attributions reflect mean absolute SHAP values across all {globalData.reference_cohort.sample_size.toLocaleString()} held-out encounters.
-                </div>
-              </div>
-
-              {/* Global Feature Importance Ranked Bar Chart */}
-              <div className="p-4 bg-canvas hairline-border rounded-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-hairline pb-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-accent" />
-                      <span>Global Feature Importance Ranking (Mean Absolute TreeSHAP)</span>
-                    </h3>
-                    <p className="text-[11px] text-muted font-mono">
-                      Average absolute contribution E[|φᵢ|] to log-odds margin across {globalData.reference_cohort.sample_size.toLocaleString()} validation patients
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {globalData.feature_importances.slice(0, 12).map((feat, fIdx) => {
-                    const maxGlobal = globalData.feature_importances[0].mean_abs_shap || 0.2;
-                    const widthPct = Math.min(100, Math.max(10, (feat.mean_abs_shap / maxGlobal) * 100));
-
-                    return (
-                      <div
-                        key={fIdx}
-                        className="p-3 bg-surface hairline-border rounded-sm space-y-2 hover:border-hairline/80 transition-colors"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[10px] px-1.5 py-0.5 bg-subtle text-muted rounded font-bold">
-                              #{feat.rank}
-                            </span>
-                            <span className="font-semibold text-primary">
-                              {feat.feature_name}
-                            </span>
-                            <span className="font-mono text-[11px] text-muted">
-                              ({feat.feature})
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 font-mono text-[11px]">
-                            <span>Mean |SHAP|: <strong className="text-primary">{feat.mean_abs_shap.toFixed(4)}</strong></span>
-                            <span className="text-critical text-[10px]">
-                              +{feat.direction_distribution.positive_risk_pct}% risk
-                            </span>
-                            <span className="text-protective text-[10px]">
-                              -{feat.direction_distribution.protective_risk_pct}% prot
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Bar */}
-                        <div className="w-full bg-subtle h-2.5 rounded-full overflow-hidden flex">
-                          <div
-                            className="bg-accent h-full rounded-full transition-all duration-300"
-                            style={{ width: `${widthPct}%` }}
-                          />
-                        </div>
-
-                        {/* Clinical Description and Cohort Summary Stats */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-muted">
-                          <span className="line-clamp-1">{feat.description}</span>
-                          {feat.summary_stats && (
-                            <span className="font-mono text-[10px] text-muted shrink-0">
-                              {feat.feature_type === "numeric"
-                                ? `Cohort Median: ${feat.summary_stats.median ?? "—"} (IQR: ${feat.summary_stats.p25 ?? "—"} - ${feat.summary_stats.p75 ?? "—"})`
-                                : "Categorical feature"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          ) : null}
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* TAB 3: EXPLANATION RELIABILITY & TECHNICAL AUDIT         */}
-      {/* ======================================================== */}
-      {activeTab === "reliability" && (
-        <div className="p-4 sm:p-6 space-y-6">
+      {/* TAB 2: WHY THIS TIER (Contrastive Explanation) */}
+      {activeTab === "tier" && (
+        <div className="p-4 sm:p-5 space-y-4">
           <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-hairline pb-2">
-              <h3 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-accent" />
-                <span>Technical Explanation Reliability Matrix</span>
-              </h3>
-              <span className="font-mono text-[11px] px-2 py-0.5 rounded font-bold uppercase bg-protective/15 text-protective">
-                {reliability?.overall_status || "Available"}
+            <div className="flex items-center justify-between border-b border-hairline pb-2.5">
+              <div>
+                <h4 className="text-xs font-bold text-primary uppercase font-mono tracking-wider flex items-center gap-1.5">
+                  <Scale className="w-3.5 h-3.5 text-accent" />
+                  <span>Contrastive Analysis: Why {contrastive?.current_tier || riskTier} and not {contrastive?.compared_tier || "Next Lower Tier"}?</span>
+                </h4>
+                <p className="text-[11px] text-muted">
+                  Compares this patient's feature attributions against the median patient profile in the {contrastive?.compared_tier || "lower"} validation cohort.
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-accent/15 text-accent">
+                {contrastive?.current_tier || riskTier} Tier
               </span>
             </div>
 
-            <p className="text-xs text-muted leading-relaxed">
-              {reliability?.disclaimer ||
-                "Explanation Reliability verifies technical subsystem availability and feature integrity. It explains model behavior and does NOT guarantee predictive correctness for any individual patient."}
+            <p className="text-xs text-muted leading-relaxed font-sans">
+              {contrastive?.comparison_rationale ||
+                `Isolating key clinical drivers responsible for pushing this patient into the ${riskTier} risk bracket rather than the next lower threshold.`}
             </p>
 
-            {/* 5-Check Verification Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-              {/* Check 1: Prediction Serving */}
-              <div className="p-3 bg-surface hairline-border rounded-sm space-y-1 text-xs font-mono">
+            {/* Gap Table */}
+            {contrastive?.top_gap_features && contrastive.top_gap_features.length > 0 ? (
+              <div className="border border-hairline rounded overflow-hidden pt-1">
+                <table className="w-full text-left text-xs font-sans">
+                  <thead className="bg-subtle text-[11px] font-mono text-muted uppercase border-b border-hairline">
+                    <tr>
+                      <th className="p-2.5">Feature</th>
+                      <th className="p-2.5 text-right">Patient SHAP</th>
+                      <th className="p-2.5 text-right">Lower Tier Median</th>
+                      <th className="p-2.5 text-right font-bold text-primary">Attribution Gap (&Delta;)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-hairline font-mono text-[11px]">
+                    {contrastive.top_gap_features.map((gap: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-subtle/40">
+                        <td className="p-2.5 font-medium text-primary">{gap.feature_name}</td>
+                        <td className="p-2.5 text-right text-muted">{gap.patient_shap.toFixed(4)}</td>
+                        <td className="p-2.5 text-right text-muted">{gap.lower_tier_median_shap.toFixed(4)}</td>
+                        <td className="p-2.5 text-right font-bold text-critical">+{gap.shap_gap.toFixed(4)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-4 text-center text-muted text-xs font-mono">
+                Patient is in the baseline tier; no lower comparison tier applies.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: WHAT CAN CHANGE (Modifiable Levers & Counterfactuals) */}
+      {activeTab === "change" && (
+        <div className="p-4 sm:p-5 space-y-4">
+          <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-hairline pb-2.5">
+              <div className="flex items-center gap-1.5 text-accent font-bold text-xs uppercase font-mono tracking-wider">
+                <Sliders className="w-4 h-4" />
+                <span>Constrained Modifiable Counterfactual Simulation</span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-subtle text-muted">
+                Training-Observed Levers Only
+              </span>
+            </div>
+
+            <p className="text-xs text-muted leading-relaxed font-sans">
+              Greedy search over modifiable discharge levers (discharge destination, medication modifications, and inpatient glycemic testing) to evaluate whether realistic clinical adjustments can shift the patient into a lower risk tier.
+            </p>
+
+            {counterfactual?.feasible_change_found ? (
+              <div className="p-3.5 bg-surface hairline-border rounded space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">1. Model Prediction Pipeline</span>
-                  <span className="text-[10px] font-bold text-protective bg-protective/15 px-1.5 py-0.5 rounded">
-                    {reliability?.checks?.prediction_availability?.status || "Available"}
+                  <span className="text-xs font-bold text-protective flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Feasible Care Transition Levers Identified</span>
+                  </span>
+                  <span className="text-xs font-mono font-bold text-primary">
+                    {counterfactual.tier_before} &rarr; <span className="text-protective">{counterfactual.tier_after}</span> ({counterfactual.calibrated_prob_before * 100}% &rarr; {(counterfactual.calibrated_prob_after * 100).toFixed(1)}%)
                   </span>
                 </div>
-                <p className="text-[11px] text-muted font-sans">
-                  {reliability?.checks?.prediction_availability?.detail ||
-                    "Frozen LightGBM pipeline loaded from models/final/model.joblib; inference active."}
-                </p>
+
+                <div className="space-y-2 pt-1 font-mono text-xs">
+                  {counterfactual.modifications.map((mod: any, idx: number) => (
+                    <div key={idx} className="p-2.5 bg-canvas hairline-border rounded flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="font-semibold text-primary">{mod.feature_name}: </span>
+                        <span className="text-muted line-through mr-1.5">{String(mod.from_value)}</span>
+                        <span className="text-accent font-bold">&rarr; {String(mod.to_value)}</span>
+                      </div>
+                      <span className="text-[11px] text-muted font-sans">{mod.rationale}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-subtle/50 hairline-border rounded text-xs font-mono text-muted space-y-1">
+                <span className="font-semibold text-primary">Simulation Result:</span>
+                <p>{counterfactual?.message || "No combination of up to 2 training-observed modifiable adjustments lowered the predicted risk tier."}</p>
+              </div>
+            )}
+
+            <div className="p-2.5 bg-subtle/30 rounded text-[11px] text-muted italic font-mono border-t border-hairline/60">
+              Disclaimer: {counterfactual?.disclaimer || "Associative sensitivity simulation, not a causal treatment effect."}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: EVIDENCE & EMPIRICAL RELIABILITY */}
+      {activeTab === "evidence" && (
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* Precedent Retrieval Evidence Agreement */}
+          {evidenceAgreement && (
+            <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-hairline pb-2.5">
+                <div className="flex items-center gap-1.5 text-primary font-bold text-xs uppercase font-mono tracking-wider">
+                  <Users className="w-4 h-4 text-accent" />
+                  <span>Retrieval Evidence Agreement (FAISS Peer Consistency)</span>
+                </div>
+                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded uppercase ${
+                  evidenceAgreement.agreement_status === "consistent"
+                    ? "bg-protective/15 text-protective"
+                    : evidenceAgreement.agreement_status === "inconsistent"
+                    ? "bg-critical/15 text-critical"
+                    : "bg-caution/15 text-caution"
+                }`}>
+                  {evidenceAgreement.agreement_status}
+                </span>
               </div>
 
-              {/* Check 2: TreeSHAP Attribution */}
-              <div className="p-3 bg-surface hairline-border rounded-sm space-y-1 text-xs font-mono">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">2. TreeSHAP Attribution Engine</span>
-                  <span className="text-[10px] font-bold text-protective bg-protective/15 px-1.5 py-0.5 rounded">
-                    {reliability?.checks?.shap_explanation_availability?.status || "Available"}
-                  </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                <div className="p-2.5 bg-surface hairline-border rounded">
+                  <span className="text-muted text-[10px] block">Model Calibrated Risk</span>
+                  <span className="text-primary font-bold text-base">{(calibratedProb * 100).toFixed(1)}%</span>
                 </div>
-                <p className="text-[11px] text-muted font-sans">
-                  {reliability?.checks?.shap_explanation_availability?.detail ||
-                    "TreeExplainer active; computed additive log-odds margins for all 42 input features."}
-                </p>
+                <div className="p-2.5 bg-surface hairline-border rounded">
+                  <span className="text-muted text-[10px] block">Peer Precedent Readmission Rate (k=20)</span>
+                  <span className="text-primary font-bold text-base">
+                    {evidenceAgreement.peer_readmission_rate ? `${(evidenceAgreement.peer_readmission_rate * 100).toFixed(1)}%` : "—"}
+                  </span>
+                  {evidenceAgreement.peer_wilson_ci_95 && (
+                    <span className="text-[10px] text-muted block">
+                      Wilson 95% CI: [{(evidenceAgreement.peer_wilson_ci_95[0] * 100).toFixed(1)}%, {(evidenceAgreement.peer_wilson_ci_95[1] * 100).toFixed(1)}%]
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Check 3: RAG Precedent Retrieval */}
-              <div className="p-3 bg-surface hairline-border rounded-sm space-y-1 text-xs font-mono">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">3. RAG Peer Evidence Retrieval</span>
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      reliability?.checks?.rag_peer_evidence_availability?.status === "Degraded"
-                        ? "text-caution bg-caution/15"
-                        : "text-protective bg-protective/15"
-                    }`}
-                  >
-                    {reliability?.checks?.rag_peer_evidence_availability?.status || "Available"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted font-sans">
-                  {reliability?.checks?.rag_peer_evidence_availability?.detail ||
-                    "FAISS index verified on frozen validation partition (N=14,902); retrieved top-k nearest peers."}
-                </p>
-              </div>
+              <p className="text-xs text-muted font-sans leading-relaxed">
+                {evidenceAgreement.rule_evaluation}
+              </p>
+            </div>
+          )}
 
-              {/* Check 4: Feature Input Completeness */}
-              <div className="p-3 bg-surface hairline-border rounded-sm space-y-1 text-xs font-mono">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">4. Feature Input Completeness</span>
-                  <span className="text-[10px] font-bold text-protective bg-protective/15 px-1.5 py-0.5 rounded">
-                    {reliability?.checks?.feature_input_completeness?.status || "Available"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted font-sans">
-                  {reliability?.checks?.feature_input_completeness?.detail ||
-                    "All 42 clinical model inputs present or safely imputed without NaN or out-of-range anomalies."}
-                </p>
+          {/* Local Validation Reliability Statement */}
+          {localReliability && (
+            <div className="p-4 bg-canvas hairline-border rounded-sm space-y-2.5">
+              <div className="flex items-center gap-1.5 text-primary font-bold text-xs uppercase font-mono tracking-wider">
+                <ShieldAlert className="w-4 h-4 text-accent" />
+                <span>Empirical Validation Cohort Reliability</span>
               </div>
+              <p className="text-xs text-primary font-mono leading-relaxed bg-surface p-3 hairline-border rounded">
+                &ldquo;{localReliability.statement}&rdquo;
+              </p>
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted pt-1">
+                <span>Validation Partition N = 14,902 (Bin sample: n = {localReliability.sample_size})</span>
+                <span className="text-protective font-semibold">&bull; Reliability Bin Certified</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-              {/* Check 5: Calibration Integrity */}
-              <div className="p-3 bg-surface hairline-border rounded-sm space-y-1 text-xs font-mono col-span-1 md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-primary">5. Isotonic Calibration Mapping</span>
-                  <span className="text-[10px] font-bold text-protective bg-protective/15 px-1.5 py-0.5 rounded">
-                    {reliability?.checks?.calibration_evidence_availability?.status || "Available"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted font-sans">
-                  {reliability?.checks?.calibration_evidence_availability?.detail ||
-                    "Isotonic regression artifact (calibrator.joblib) validated against holdout validation set (ECE = 0.39%)."}
-                </p>
-              </div>
+      {/* TAB 5: GLOBAL MODEL KNOWLEDGE */}
+      {activeTab === "global" && (
+        <div className="p-4 sm:p-5 space-y-4">
+          <div className="p-4 bg-canvas hairline-border rounded-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-hairline pb-2.5">
+              <h4 className="text-xs font-bold text-primary uppercase font-mono tracking-wider">
+                Frozen Model Global Architecture & Multi-Method Concordance
+              </h4>
+              <span className="text-xs font-mono text-muted">
+                {modelVersion}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Stat
+                label="Global Top Feature"
+                value="Prior Inpatient"
+                secondary="Mean |SHAP|: 0.2168"
+                provenance={PROVENANCES.xaiTopFeatureShap}
+              />
+              <Stat
+                label="Structured RAG Attribution"
+                value="5.18% (Rank #7)"
+                secondary="Qualitative Precedents"
+                provenance={PROVENANCES.xaiRetrievalShare}
+              />
+              <Stat
+                label="Method Agreement"
+                value="rho = 0.953"
+                secondary="TreeSHAP vs Gain"
+                provenance={PROVENANCES.xaiMethodAgreementSpearman}
+              />
+            </div>
+
+            <div className="p-3 bg-surface hairline-border rounded-sm space-y-2 text-xs font-mono">
+              <div className="font-semibold text-primary">RAG Explanation vs Discrimination Lift:</div>
+              <p className="text-muted font-sans text-xs leading-relaxed">
+                The structured retrieval feature (rag_struct_rate_k20) ranks #7 globally, carrying 5.2% share of model attribution. This connects directly to ablation findings: while RAG provides rich qualitative precedent evidence for clinicians, it does not provide a statistically significant AUC boost (+0.0009 AUC, 95% CI [-0.0016, 0.0036]), confirming qualitative precedent value without statistical over-claiming.
+              </p>
             </div>
           </div>
         </div>

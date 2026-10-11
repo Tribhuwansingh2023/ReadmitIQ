@@ -1,0 +1,12 @@
+{
+  "metric": "abs_shap_log_odds",
+  "sample_size": 5000,
+  "small_threshold_max": 0.0032,
+  "moderate_threshold_max": 0.0197,
+  "percentile_cutoffs": {
+    "small_up_to": 33.33,
+    "moderate_up_to": 66.67,
+    "large_above": 66.67
+  },
+  "description": "Computed tertile quantiles of absolute SHAP impact values over validation reference cohort."
+}

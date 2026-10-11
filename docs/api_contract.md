@@ -162,14 +162,139 @@ Retrieves top-$k$ nearest historical training encounters for a query patient pro
 ### 2.4 `POST /explain`
 Returns fine-grained SHAP attribution values and narrative clinical explanations for a patient.
 
-#### Response `200 OK`
+- **Query Parameters**: `detail` (optional string, `basic` | `full`, default: `basic`). When `detail=full`, returns the complete `explanation_v2` object.
+
+#### Response `200 OK` (Standard)
 ```json
 {
   "top_risk_increasing": [ ... ],
   "top_risk_reducing": [ ... ],
   "all_attributions": {
     "number_inpatient": 0.384,
-    "A1Cresult": 0.192, ...
+    "A1Cresult": 0.192
+  },
+  "explanation_v2": null
+}
+```
+
+#### Response `200 OK` (With `?detail=full`)
+```json
+{
+  "top_risk_increasing": [ ... ],
+  "top_risk_reducing": [ ... ],
+  "all_attributions": { ... },
+  "explanation_v2": {
+    "additivity_check": {
+      "raw_margin": 0.724,
+      "base_value": -0.1959,
+      "sum_of_contributions": 0.9199,
+      "absolute_error": 3.6e-7,
+      "tolerance": 1e-6,
+      "is_valid": true
+    },
+    "reference_risk": {
+      "calibrated_risk_at_base_margin": 0.1075,
+      "mean_calibrated_risk_validation": 0.1150,
+      "note": "Reference risks do not equal prevalence by construction."
+    },
+    "calibrated_waterfall": [
+      {
+        "step_name": "Base Reference",
+        "feature": "base_value",
+        "cumulative_calibrated_risk": 0.1075,
+        "delta_calibrated_risk": 0.0,
+        "raw_attribution": 0.0
+      },
+      {
+        "step_name": "Prior Inpatient Admissions",
+        "feature": "number_inpatient",
+        "cumulative_calibrated_risk": 0.1824,
+        "delta_calibrated_risk": 0.0749,
+        "raw_attribution": 0.6239
+      }
+    ],
+    "clinical_feature_groups": [
+      {
+        "group_id": "prior_utilization",
+        "group_name": "Prior Healthcare Utilization",
+        "total_attribution_log_odds": 0.762,
+        "share_of_attribution_pct": 42.1,
+        "drivers": [ ... ]
+      }
+    ],
+    "unrecorded_features": [
+      {
+        "feature": "payer_code",
+        "value": "Missing",
+        "explanation": "Payer information was not recorded; the model treats this as its own category.",
+        "raw_attribution": 0.028
+      }
+    ],
+    "contrastive_explanation": {
+      "patient_tier": "Critical",
+      "comparison_tier": "High",
+      "contrastive_drivers": [ ... ]
+    },
+    "counterfactual_search": {
+      "status": "feasible_change_found",
+      "baseline_tier": "Critical",
+      "target_tier": "High",
+      "recommended_changes": [ ... ],
+      "disclaimer": "Associative model sensitivity, not a causal clinical effect."
+    },
+    "evidence_agreement": {
+      "model_calibrated_risk": 0.2959,
+      "neighbor_readmission_rate": 0.3000,
+      "neighbor_wilson_ci_95": [0.147, 0.516],
+      "status": "consistent",
+      "shared_features": [ ... ],
+      "divergent_features": [ ... ]
+    },
+    "local_reliability": {
+      "score_bin": "[0.250, 0.350]",
+      "validation_n": 500,
+      "observed_readmission_rate": 0.284,
+      "wilson_ci_95": [0.246, 0.325]
+    }
+  }
+}
+```
+
+---
+
+### 2.5 `GET /xai/global` (and `GET /v1/xai/global`)
+Returns precomputed global model explainability metrics and quality audit benchmarks from `reports/xai/*.json`. Returns `"status": "pending"` if reports are absent.
+
+#### Response `200 OK`
+```json
+{
+  "status": "ready",
+  "global_importance": { ... },
+  "method_agreement": { ... },
+  "explanation_quality": { ... },
+  "subgroup_summary": { ... },
+  "thresholds": { ... },
+  "local_reliability": { ... },
+  "tier_references": { ... }
+}
+```
+
+---
+
+### 2.6 `POST /v1/discharges/{id}/counterfactual`
+Computes an on-demand constrained counterfactual search for a persisted patient discharge, evaluating whether modifiable clinical factors can shift the patient's risk tier under real serving pipeline inference.
+
+#### Response `200 OK`
+```json
+{
+  "encounter_id": 12849102,
+  "baseline_risk": 0.2642,
+  "baseline_tier": "Critical",
+  "counterfactual": {
+    "status": "feasible_change_found",
+    "target_tier": "High",
+    "recommended_changes": [ ... ],
+    "disclaimer": "Associative model sensitivity, not a causal clinical effect."
   }
 }
 ```

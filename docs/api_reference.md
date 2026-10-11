@@ -119,3 +119,28 @@ Simulates model sensitivity under hypothetical input feature variations without 
 
 ### `GET /v1/monitoring`
 Returns live operational metrics: total counts, tier mix, raw-score distribution PSI, feature covariate PSI, RAG vector store health, data quality rejection events, and empirical ROC-AUC with small-n statistical reliability guards.
+
+---
+
+## 8. Explainable AI (XAI v2) Endpoints
+
+### `POST /explain` (or `POST /v1/explain`)
+Computes fine-grained TreeSHAP explanations. Set query parameter `detail=full` to receive the full 10-point clinical explanation payload (`explanation_v2`) including calibrated waterfall, feature groups, unrecorded fields, contrastive tier gap, and local validation reliability.
+
+### `GET /xai/global` (and `GET /v1/xai/global`)
+Returns saved global explanation and quality audit artifacts from `reports/xai/*.json`:
+- Global importance with 95% bootstrap CIs
+- Multi-method rank correlation matrix (TreeSHAP, Gain, Permutation, Std LR)
+- Explanation quality benchmarks (faithfulness ratio, perturbation stability, Adebayo sanity check)
+- Monotonicity and TreeSHAP interaction audit
+- Demographic subgroup explanation equity distributions ($n \ge 100$)
+- Empirical strength thresholds and local reliability bins
+
+### `POST /v1/discharges/{id}/counterfactual`
+Computes an on-demand constrained counterfactual search for a persisted patient discharge:
+- Only modifies features tagged as `modifiable` in `configs/xai.yaml`
+- Restricts values to observed training boundaries
+- Evaluates candidate modifications through the real serving pipeline
+- Returns the minimal modification required to transition to a lower risk tier, or indicates `"no feasible change found"`
+- Labeled strictly as associative model sensitivity, not causal effect
+

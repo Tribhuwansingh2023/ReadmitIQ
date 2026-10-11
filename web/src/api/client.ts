@@ -298,6 +298,24 @@ export const apiClient = {
     }
   },
 
+  async getXaiGlobal(): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/v1/xai/global`);
+      return await handleResponse<any>(res);
+    } catch {
+      const res = await fetch(`${API_BASE_URL}/xai/global`);
+      return handleResponse<any>(res);
+    }
+  },
+
+  async getDischargeCounterfactual(dischargeId: number): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/v1/discharges/${dischargeId}/counterfactual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    return handleResponse<any>(res);
+  },
+
   async getCohort(capacity: number = 0.1): Promise<CohortResponse> {
     const res = await fetch(
       `${API_BASE_URL}/cohort?capacity=${capacity.toFixed(2)}`,
@@ -310,3 +328,4 @@ export const apiClient = {
     return handleResponse<MetricsResponse>(res);
   },
 };
+

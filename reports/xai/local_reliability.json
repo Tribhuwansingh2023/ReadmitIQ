@@ -1,0 +1,164 @@
+{
+  "bins": [
+    {
+      "bin_index": 0,
+      "prob_range": [
+        0.0,
+        0.0483
+      ],
+      "mean_predicted_prob": 0.0436,
+      "n_patients": 514,
+      "positive_count": 20,
+      "observed_readmission_rate": 0.0389,
+      "wilson_ci_95": [
+        0.0253,
+        0.0593
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 1,
+      "prob_range": [
+        0.0484,
+        0.062
+      ],
+      "mean_predicted_prob": 0.0561,
+      "n_patients": 524,
+      "positive_count": 25,
+      "observed_readmission_rate": 0.0477,
+      "wilson_ci_95": [
+        0.0325,
+        0.0695
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 2,
+      "prob_range": [
+        0.0678,
+        0.0724
+      ],
+      "mean_predicted_prob": 0.0706,
+      "n_patients": 813,
+      "positive_count": 49,
+      "observed_readmission_rate": 0.0603,
+      "wilson_ci_95": [
+        0.0459,
+        0.0788
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 3,
+      "prob_range": [
+        0.0908,
+        0.0908
+      ],
+      "mean_predicted_prob": 0.0908,
+      "n_patients": 261,
+      "positive_count": 31,
+      "observed_readmission_rate": 0.1188,
+      "wilson_ci_95": [
+        0.0849,
+        0.1637
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 4,
+      "prob_range": [
+        0.0909,
+        0.1075
+      ],
+      "mean_predicted_prob": 0.0965,
+      "n_patients": 486,
+      "positive_count": 51,
+      "observed_readmission_rate": 0.1049,
+      "wilson_ci_95": [
+        0.0807,
+        0.1354
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 5,
+      "prob_range": [
+        0.1083,
+        0.1083
+      ],
+      "mean_predicted_prob": 0.1083,
+      "n_patients": 501,
+      "positive_count": 60,
+      "observed_readmission_rate": 0.1198,
+      "wilson_ci_95": [
+        0.0942,
+        0.1511
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 6,
+      "prob_range": [
+        0.1237,
+        0.1237
+      ],
+      "mean_predicted_prob": 0.1237,
+      "n_patients": 460,
+      "positive_count": 63,
+      "observed_readmission_rate": 0.137,
+      "wilson_ci_95": [
+        0.1085,
+        0.1714
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 7,
+      "prob_range": [
+        0.125,
+        0.1551
+      ],
+      "mean_predicted_prob": 0.1506,
+      "n_patients": 555,
+      "positive_count": 87,
+      "observed_readmission_rate": 0.1568,
+      "wilson_ci_95": [
+        0.1289,
+        0.1894
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 8,
+      "prob_range": [
+        0.1724,
+        0.194
+      ],
+      "mean_predicted_prob": 0.1818,
+      "n_patients": 432,
+      "positive_count": 70,
+      "observed_readmission_rate": 0.162,
+      "wilson_ci_95": [
+        0.1303,
+        0.1997
+      ],
+      "reliable": true
+    },
+    {
+      "bin_index": 9,
+      "prob_range": [
+        0.2008,
+        1.0
+      ],
+      "mean_predicted_prob": 0.2689,
+      "n_patients": 454,
+      "positive_count": 113,
+      "observed_readmission_rate": 0.2489,
+      "wilson_ci_95": [
+        0.2113,
+        0.2907
+      ],
+      "reliable": true
+    }
+  ]
+}

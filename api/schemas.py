@@ -213,6 +213,29 @@ class ExplainResponse(BaseModel):
     reliability: Optional[ExplanationReliability] = None
     degraded_mode: Optional[bool] = False
     degraded_reason: Optional[str] = None
+    explanation_v2: Optional[Dict[str, Any]] = None
+
+
+class CounterfactualModification(BaseModel):
+    feature: str
+    feature_name: str
+    from_value: Any
+    to_value: Any
+    rationale: Optional[str] = None
+
+
+class CounterfactualResponse(BaseModel):
+    feasible_change_found: bool
+    status: Optional[str] = None
+    message: Optional[str] = None
+    discharge_id: Optional[int] = None
+    tier_before: Optional[str] = None
+    tier_after: Optional[str] = None
+    calibrated_prob_before: Optional[float] = None
+    calibrated_prob_after: Optional[float] = None
+    prob_reduction_pct_points: Optional[float] = None
+    modifications: Optional[List[CounterfactualModification]] = None
+    disclaimer: str = "Associative sensitivity simulation, not a causal treatment effect."
 
 
 class CohortPatient(BaseModel):

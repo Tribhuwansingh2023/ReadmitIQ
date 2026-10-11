@@ -17,12 +17,12 @@ SECURITY / AUTH / PRIVACY NOTE:
   Free-text clinical action notes MUST NOT contain PHI.
 """
 
-from contextlib import contextmanager
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import sqlite3
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Generator, Optional
 
 from src.config import BASE_DIR
@@ -70,8 +70,7 @@ def get_db(db_path: Optional[Path] = None) -> Generator[sqlite3.Connection, None
 def init_db(db_path: Optional[Path] = None) -> None:
     """Initialize schema tables and indexes."""
     with get_db(db_path) as conn:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS discharges (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 received_at TEXT NOT NULL,
@@ -175,8 +174,7 @@ def init_db(db_path: Optional[Path] = None) -> None:
 
             CREATE INDEX IF NOT EXISTS idx_data_quality_events_ts ON data_quality_events(ts);
             CREATE INDEX IF NOT EXISTS idx_data_quality_events_type ON data_quality_events(event_type);
-            """
-        )
+            """)
 
 
 def log_audit(

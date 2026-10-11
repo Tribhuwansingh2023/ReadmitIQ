@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI, HTTPException, Query, status
@@ -30,6 +31,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # Startup event to initialize SQLite database in WAL mode and seed if empty
 @app.on_event("startup")
 def on_startup():
@@ -37,9 +39,11 @@ def on_startup():
     if os.getenv("READMITIQ_AUTO_SEED", "true").lower() in ("true", "1", "yes"):
         try:
             from scripts.seed_demo import seed_if_empty
+
             seed_if_empty()
         except Exception as e:
             logger.warning("Database auto-seed deferred or skipped: %s", e)
+
 
 # CORS configuration
 origins_env = os.getenv(
@@ -98,7 +102,9 @@ def health_check():
 @app.post("/predict", response_model=PredictResponse, status_code=status.HTTP_200_OK)
 def predict_readmission(
     encounter: PatientEncounterRequest,
-    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
+    allow_degraded: bool = Query(
+        default=False, description="Allow degraded mode if RAG retrieval fails"
+    ),
 ):
     """Predict calibrated 30-day readmission risk, risk tier, SHAP explanations, and similar encounters."""
     svc = get_service()
@@ -117,7 +123,9 @@ def predict_readmission(
         )
     except Exception as e:
         logger.error("Inference processing error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Inference processing error. Please verify encounter inputs.")
+        raise HTTPException(
+            status_code=500, detail="Inference processing error. Please verify encounter inputs."
+        )
 
 
 @app.post("/similar", response_model=SimilarResponse, status_code=status.HTTP_200_OK)
@@ -137,7 +145,20 @@ def find_similar_patients(req: SimilarRequest):
         raise HTTPException(status_code=422, detail="Invalid retrieval input parameters.")
     except Exception as e:
         logger.error("Retrieval processing error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Retrieval processing error. Please verify request inputs.")
+        raise HTTPException(
+            status_code=500, detail="Retrieval processing error. Please verify request inputs."
+        )
+
+
+@app.get("/xai/global", status_code=status.HTTP_200_OK)
+def get_xai_global_summary_endpoint():
+    """Return comprehensive Explainable AI (v2) global evaluation results and quality metrics."""
+    svc = get_service()
+    try:
+        return svc.get_xai_global_summary()
+    except Exception as e:
+        logger.error("XAI global summary error: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"XAI global summary processing error: {e}")
 
 
 @app.get("/explain/global", status_code=status.HTTP_200_OK)
@@ -155,13 +176,20 @@ def get_global_model_explanation():
 def explain_patient_risk(
     encounter: PatientEncounterRequest,
     top_k: int = Query(default=3, ge=1, le=10),
-    allow_degraded: bool = Query(default=False, description="Allow degraded mode if RAG retrieval fails"),
+    allow_degraded: bool = Query(
+        default=False, description="Allow degraded mode if RAG retrieval fails"
+    ),
+    detail: Optional[str] = Query(
+        default=None, description="Set to 'full' for complete local explanation v2"
+    ),
 ):
     """Generate fine-grained SHAP factor attributions for a single encounter."""
     svc = get_service()
     try:
         patient_dict = encounter.model_dump()
-        explanation = svc.explain(patient_dict, top_k=top_k, allow_degraded=allow_degraded)
+        explanation = svc.explain(
+            patient_dict, top_k=top_k, allow_degraded=allow_degraded, detail=detail
+        )
         return {
             "top_risk_increasing": explanation["top_risk_increasing"],
             "top_risk_reducing": explanation["top_risk_reducing"],
@@ -176,10 +204,13 @@ def explain_patient_risk(
             "reliability": explanation.get("reliability"),
             "degraded_mode": explanation.get("degraded_mode", False),
             "degraded_reason": explanation.get("degraded_reason"),
+            "explanation_v2": explanation.get("explanation_v2"),
         }
     except (ValueError, TypeError) as ve:
         logger.warning("Explainability input validation error: %s", ve, exc_info=True)
-        raise HTTPException(status_code=422, detail="Invalid encounter input data for explainability.")
+        raise HTTPException(
+            status_code=422, detail="Invalid encounter input data for explainability."
+        )
     except ExplainerError as ee:
         logger.warning("Explainability explainer/retrieval error: %s", ee, exc_info=True)
         raise HTTPException(
@@ -188,7 +219,10 @@ def explain_patient_risk(
         )
     except Exception as e:
         logger.error("Explainability processing error: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail="Explainability processing error. Please verify encounter inputs.")
+        raise HTTPException(
+            status_code=500,
+            detail="Explainability processing error. Please verify encounter inputs.",
+        )
 
 
 @app.get("/cohort", response_model=CohortResponse, status_code=status.HTTP_200_OK)

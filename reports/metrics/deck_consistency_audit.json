@@ -1,7 +1,7 @@
 {
   "timestamp": "2026-10-09T05:30:00Z",
-  "total_checks": 31,
-  "passed_checks": 31,
+  "total_checks": 39,
+  "passed_checks": 39,
   "accuracy_rate_pct": 100.0,
   "results": [
     {
@@ -232,6 +232,70 @@
       "metric_name": "Disk Reduction in Lite Mode (90.9%)",
       "pattern": "90.9",
       "source_artifact": "reports/metrics/serving_footprint.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Faithfulness Deletion Ratio (3.16x)",
+      "pattern": "3\\.16x|3\\.16",
+      "source_artifact": "reports/xai/explanation_quality.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Explanation Stability Jaccard (0.992)",
+      "pattern": "0.992",
+      "source_artifact": "reports/xai/explanation_quality.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": false
+    },
+    {
+      "metric_name": "Adebayo Sanity Check Correlation (-0.0587)",
+      "pattern": "\\-0\\.0587",
+      "source_artifact": "reports/xai/explanation_quality.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "TreeSHAP Additivity Violation (3.60e-07)",
+      "pattern": "3\\.60e\\-07|3\\.6e\\-7",
+      "source_artifact": "reports/xai/explanation_quality.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "RAG Attribution Share (5.18% / 5.2%)",
+      "pattern": "5\\.18%|5\\.2%",
+      "source_artifact": "reports/xai/global_importance.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Method Agreement TreeSHAP vs Gain (0.953)",
+      "pattern": "0.953",
+      "source_artifact": "reports/xai/method_agreement.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "Method Agreement TreeSHAP vs Permutation (0.885)",
+      "pattern": "0.885",
+      "source_artifact": "reports/xai/method_agreement.json",
+      "status": "PASS",
+      "found_in_deck": true,
+      "found_in_qa": true
+    },
+    {
+      "metric_name": "CPU Explanation Latency (10.85ms)",
+      "pattern": "10.85",
+      "source_artifact": "reports/xai/latency.json",
       "status": "PASS",
       "found_in_deck": true,
       "found_in_qa": true

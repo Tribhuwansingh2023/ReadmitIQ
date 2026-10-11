@@ -69,12 +69,14 @@ Continuously surveils production pipeline health to protect patient safety:
 - **Data Quality & Rejection Audit:** Logs all rejected CSV rows, formatting errors, and schema conformity rates in SQLite.
 - **Small-n Statistical Power Guardrails:** Withholds live empirical discrimination claims until sample sizes reach $n \ge 200$ resolved outcomes with $\ge 20$ positives. Flags demographic subgroups with $n < 100$ encounters with an **Unpowered Small-n Guard** to prevent premature compliance assertions.
 
-### 3. Enterprise Clinical Explainability & Trust Engine (XAI)
+### 3. Enterprise Clinical Explainability & Trust Engine (XAI v2)
 Provides transparent, auditable, and clinically grounded explanations for every individual encounter and the model as a whole:
-- **Local TreeSHAP Attribution:** Exact mathematical log-odds decomposition ($m = \phi_0 + \sum \phi_i$) separating risk-increasing vs protective factors with non-causal clinical wording.
-- **Global Model Explanation:** Precomputed baseline metrics across $N=14,902$ validation encounters, mean absolute SHAP rankings, and directional impact shares.
-- **5-Point Technical Reliability Matrix:** Evaluates prediction availability, TreeSHAP availability, RAG evidence availability, feature completeness, and calibration evidence before display.
-- **Attribution Shift Explorer:** Side-by-side SHAP shift delta ($\Delta \phi_i$) during What-If sensitivity counterfactual simulations.
+- **Local TreeSHAP Attribution:** Exact mathematical log-odds decomposition ($m = \phi_0 + \sum \phi_i$, max validation violation $3.60 \times 10^{-7}$) separating risk-increasing vs protective factors with non-causal clinical wording.
+- **Telescoping Calibrated Waterfall:** Converts raw log-odds steps into calibrated probability points ($P_k = g(\sigma(m_k))$) via order-dependent decomposition that telescopes to the final calibrated risk.
+- **Data Completeness Segregation:** Missing and unrecorded observations (`None` lab tests, `Missing` administrative fields) are strictly isolated into a neutral *"Information Not Recorded"* panel.
+- **Multi-Method Consensus & Quality Audits:** Verified against LightGBM Gain ($\rho = 0.953$) and Permutation Importance ($\rho = 0.885$). Passes Adebayo model-randomization sanity checks ($\rho = -0.0587$) and demonstrates 3.16x higher faithfulness than random feature ablation.
+- **Precedent Agreement & Local Reliability:** Direct consistency checks against $k=20$ peer readmission Wilson 95% CIs and 10-bin empirical validation readmission calibrations.
+- **Full Architecture & Metrics:** See [docs/explainable_ai.md](file:///c:/Users/ravik/ReadmitIQ/docs/explainable_ai.md) and [reports/xai/](file:///c:/Users/ravik/ReadmitIQ/reports/xai/).
 
 ---
 

@@ -207,3 +207,55 @@
 ### Q35: 'What if the hospital care coordinator disagrees with the model's suggested action?'
 - **Answer:** The clinician's judgment always supersedes the algorithm. Our suggested interventions are rule-based clinical transition pathways, clearly disclaimed as decision support, not medical advice.
 - **What NOT to Say:** *"The algorithm is smarter than the nurse."*
+
+---
+
+## 16. Explainable AI (XAI v2) & Trustworthy Auditing
+
+### Q36: Why should clinicians trust SHAP over simpler explanations?
+- **Answer:** TreeSHAP possesses mathematical efficiency and consistency guarantees (Lundberg et al., 2020), ensuring that base margin plus the sum of all local feature attributions telescopes identically to the model's raw score margin ($m = \phi_0 + \sum \phi_i$). We validated this additivity over 5,000 validation encounters: our maximum observed numerical violation was **3.60e-07**, far within the 1e-06 tolerance. Furthermore, TreeSHAP demonstrates strong empirical consensus with LightGBM split gain ($\rho = 0.953$) and permutation importance ($\rho = 0.885$).
+- **What NOT to Say:** *"We trust SHAP because it's the most popular library on GitHub."*
+
+### Q37: Is a SHAP attribution a causal effect of a clinical risk factor?
+- **Answer:** **No, absolutely not.** SHAP attributions represent local feature associations within the frozen gradient-boosted decision tree ensemble. They describe how the model computes its mathematical score margin, not clinical etiology or physiological cause-and-effect. For example, high prior inpatient visits increases the model score, but hospital admission itself is a marker of underlying disease fragility, not the biological cause of a future readmission.
+- **What NOT to Say:** *"If you change this feature by 1 point, it causes the patient's biological readmission risk to drop."*
+
+### Q38: Why did an unrecorded or 'Missing' value matter to the model?
+- **Answer:** In real-world EHR systems, missing data is rarely missing at random. A missing payer code or unmeasured lab test indicates institutional documentation patterns or clinical judgment (e.g. physician decided an HbA1c test was unnecessary). In our XAI layer, all missing and unrecorded values (e.g., `payer_code: Missing`, `A1Cresult: None`) are segregated into an **"Information Not Recorded"** section with neutral phrasing and strictly excluded from clinical top drivers to prevent misleading the care team.
+- **What NOT to Say:** *"The patient is high risk because their doctor forgot to write down their insurance."*
+
+### Q39: Do explanations differ systematically across demographic groups?
+- **Answer:** We audited feature group attributions across racial and gender cohorts on the validation set (`reports/xai/subgroup_xai.json`). For groups with adequate power ($N \ge 100$), prior healthcare utilization drives **26.8%** of attribution for Caucasian patients, **25.9%** for African American patients, and **27.1%** for Hispanic patients. Demographic attributes themselves (`race`, `gender`) account for under **0.6%** of total attribution, and removing them completely leaves discrimination virtually unchanged (AUC 0.6597 vs 0.6590, $\Delta = +0.0007$).
+- **What NOT to Say:** *"The model uses race to decide who gets readmitted."*
+
+### Q40: Does Structured RAG explain the prediction or does it predict the outcome?
+- **Answer:** **It explains, it does not predict.** In our feature importance audit (`reports/xai/global_importance.json`), the structured retrieval feature (`rag_struct_rate_k20`) ranks **#7 overall** with a **5.18% share of attribution**. However, on the locked test set, our paired bootstrap test proved that adding RAG yields a delta AUC of **+0.0004 [95% CI: -0.0025, +0.0031]**, which crosses zero. RAG gives care teams case-based precedent context (inspecting 20 similar peer trajectories) rather than score inflation.
+- **What NOT to Say:** *"RAG makes the predictions while the tree does the explaining."*
+
+### Q41: What is explanation faithfulness and how did you measure it?
+- **Answer:** Faithfulness measures whether features identified as important by TreeSHAP actually drive the model's predictions. We performed an ablation benchmark: iteratively replacing top-k SHAP features with training medians/modes versus random feature ablation. Removing the top-5 SHAP features degraded prediction accuracy **3.16 times faster** than random ablation (`faithfulness_ratio_k5 = 3.16`). This confirms that top SHAP drivers represent genuinely faithful predictors rather than noise.
+- **What NOT to Say:** *"Faithfulness means our model is 100% faithful to the patient."*
+
+### Q42: Why is the calibrated probability waterfall order-dependent?
+- **Answer:** TreeSHAP additivity holds strictly in the **raw score margin (log-odds space)**. However, clinicians need risk expressed in calibrated probability points. To bridge this, we sort drivers by descending magnitude, accumulate margins, and pass each intermediate sum through the sigmoid and non-linear isotonic calibrator (P_k = g(sigma(m_k))). Because the calibrator is piecewise linear/monotonic, intermediate differences (Delta P_k = P_k - P_(k-1)) depend on the evaluation sequence. The waterfall telescopes exactly to the calibrated risk, and we explicitly disclose it as an order-dependent decomposition.
+- **What NOT to Say:** *"The probability steps are independent and add up the same way in any order."*
+
+### Q43: How were the strength thresholds (small, moderate, large) determined?
+- **Answer:** Thresholds are **empirically computed, never typed or hardcoded**. In `scripts/run_xai_analysis.py`, we computed the 33.3rd and 66.7th percentiles of absolute SHAP attributions over 5,000 validation encounters (`reports/xai/thresholds.json`). This yielded empirical boundaries: Small ($\le 0.0032$), Moderate ($0.0032 < |\phi| \le 0.0197$), and Large ($> 0.0197$).
+- **What NOT to Say:** *"We picked 0.01 and 0.05 because they sounded like good cutoff numbers."*
+
+### Q44: Can counterfactual care plans guarantee that a patient will not be readmitted?
+- **Answer:** **No.** Our counterfactual search evaluates model sensitivity under hypothetical variations in modifiable factors (such as arranging home health care or stabilizing diabetes medication regimens). It solves for the smallest feasible combination (at most 2 changes) that lowers the model's calibrated risk tier within the training data distribution. We clearly label this in the UI as **associative sensitivity**, not guaranteed clinical prevention.
+- **What NOT to Say:** *"If the nurse follows our counterfactual plan, the patient is 100% guaranteed not to return."*
+
+### Q45: Why do explanation methods like TreeSHAP and Logistic Regression disagree?
+- **Answer:** TreeSHAP and LightGBM gain correlate strongly ($\rho = 0.953$), but both diverge sharply from standardized logistic regression coefficients ($\rho = 0.121$). This is expected: logistic regression assumes linear, monotonic relationships without interaction terms. In contrast, TreeSHAP captures threshold non-linearities (e.g., risk accelerating after 2 inpatient visits) and multi-way tree interactions (such as prior admissions interacting with discharge destination).
+- **What NOT to Say:** *"One of the algorithms has a bug so their rankings don't match."*
+
+### Q46: How was the model-randomization sanity check performed?
+- **Answer:** Following Adebayo et al. (NeurIPS 2018), we trained a shadow LightGBM model on randomly permuted training labels using identical architecture and hyperparameters (`reports/xai/randomized_sanity_model.joblib`). We computed TreeSHAP attributions on the validation cohort and evaluated the Spearman rank correlation against the real model's explanations. The mean instance-level correlation was **$\rho = -0.0587$** (near zero), confirming that our explanations depend on genuinely learned clinical relationships, passing the sanity check.
+- **What NOT to Say:** *"We checked that the code ran without throwing an exception."*
+
+### Q47: How fast is an explanation, and does it fit real-time clinical workflows?
+- **Answer:** Our local explanation engine (`LocalExplainerV2`) pre-caches TreeExplainer and validation reference tables at startup. On standard CPU hardware, generating a full 10-point local explanation (additivity check, calibrated waterfall, contrastive gaps, modifiable partition, and reliability lookup) takes **10.85 milliseconds**, well below our 300 ms SLA budget (`reports/xai/latency.json`). It functions seamlessly in both Full and Lite container serving modes.
+- **What NOT to Say:** *"It takes about a minute per patient so the nurse has to wait."*
